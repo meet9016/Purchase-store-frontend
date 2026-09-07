@@ -24,6 +24,8 @@ interface DashboardOverviewProps {
   purchaseOrders: PurchaseOrder[];
   stocks: Stock[];
   vendorBills: VendorBill[];
+  currentUser?: any;
+  rolePermissions?: any[];
   setActiveTab: (tab: SidebarTab) => void;
   onOpenCreatePRModal: () => void;
   onOpenCreatePOModal: () => void;
@@ -36,6 +38,8 @@ export function DashboardOverview({
   purchaseOrders,
   stocks,
   vendorBills,
+  currentUser,
+  rolePermissions = [],
   setActiveTab,
   onOpenCreatePRModal,
   onOpenCreatePOModal
@@ -44,6 +48,18 @@ export function DashboardOverview({
   const activePos = purchaseOrders.filter(po => po.status === 'Approved' || po.status === 'Partially Received' || po.status === 'Order Placed');
   const lowStockCount = stocks.filter(s => s.quantity <= (s.reorderLevel || 10)).length;
   const pendingBills = vendorBills.filter(b => b.status === 'Submitted' || b.status === 'Verified' || b.status === 'Pending Verification');
+
+  const canCreatePR = currentUser?.role === 'Admin' || (() => {
+    const rp = rolePermissions.find(r => r.role?.toLowerCase() === currentUser?.role?.toLowerCase());
+    if (!rp || !rp.permissions || !rp.permissions['Purchase Requests']) return true;
+    return !!rp.permissions['Purchase Requests'].create;
+  })();
+
+  const canCreatePO = currentUser?.role === 'Admin' || (() => {
+    const rp = rolePermissions.find(r => r.role?.toLowerCase() === currentUser?.role?.toLowerCase());
+    if (!rp || !rp.permissions || !rp.permissions['Purchase Orders']) return true;
+    return !!rp.permissions['Purchase Orders'].create;
+  })();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -67,6 +83,7 @@ export function DashboardOverview({
           </span>
         );
       case 'Rejected':
+      case 'Disputed':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
             <XCircle className="w-3.5 h-3.5 mr-1" />
@@ -102,21 +119,25 @@ export function DashboardOverview({
         </div>
 
         <div className="flex items-center space-x-3 flex-shrink-0">
-          <Button
-            variant="outline"
-            icon={<Plus className="w-4 h-4" />}
-            onClick={onOpenCreatePOModal}
-          >
-            Create PO
-          </Button>
-          <Button
-            variant="primary"
-            icon={<Plus className="w-4 h-4" />}
-            onClick={onOpenCreatePRModal}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-600/20"
-          >
-            Create PR
-          </Button>
+          {canCreatePO && (
+            <Button
+              variant="outline"
+              icon={<Plus className="w-4 h-4" />}
+              onClick={onOpenCreatePOModal}
+            >
+              Create PO
+            </Button>
+          )}
+          {canCreatePR && (
+            <Button
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
+              onClick={onOpenCreatePRModal}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-600/20"
+            >
+              Create PR
+            </Button>
+          )}
         </div>
       </div>
 

@@ -297,9 +297,19 @@ export interface Notification {
   timestamp: string;
 }
 
+export interface ActionCapability {
+  viewGlobal?: boolean;
+  viewOwn?: boolean;
+  create?: boolean;
+  update?: boolean;
+  delete?: boolean;
+}
+
 export interface RolePermission {
+  id?: string;
   role: string;
   modules: string[];
+  permissions?: Record<string, ActionCapability>;
 }
 
 // Environment API Base Configuration
@@ -657,13 +667,92 @@ const INITIAL_NOTIFICATIONS: Notification[] = [
   }
 ];
 
-const DEFAULT_ROLE_PERMISSIONS: RolePermission[] = [
-  { role: 'Admin', modules: ['dashboard', 'masters', 'pr', 'po', 'grn', 'stock', 'outward', 'bills', 'payment-req', 'payments', 'reports', 'audit', 'notifications', 'permissions'] },
-  { role: 'Requester', modules: ['dashboard', 'pr', 'stock', 'reports'] },
-  { role: 'Purchase', modules: ['dashboard', 'masters', 'pr', 'po', 'payment-req', 'reports'] },
-  { role: 'Store', modules: ['dashboard', 'pr', 'grn', 'stock', 'outward', 'reports'] },
-  { role: 'Accounts', modules: ['dashboard', 'pr', 'po', 'grn', 'bills', 'payment-req', 'payments', 'reports'] },
-  { role: 'Management', modules: ['dashboard', 'masters', 'pr', 'po', 'grn', 'stock', 'bills', 'payment-req', 'reports', 'audit'] }
+export const DEFAULT_ROLE_PERMISSIONS: RolePermission[] = [
+  {
+    role: 'Admin',
+    modules: ['dashboard', 'masters', 'pr', 'po', 'grn', 'stock', 'outward', 'bills', 'payment-req', 'payments', 'reports', 'audit', 'notifications', 'permissions'],
+    permissions: {
+      'Leads': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'User': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Department Management': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Lead Statuses': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Lead Sources': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Category': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Product': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Stock': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'City Master': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Reports': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Purchase Requests': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Purchase Orders': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Goods Receipt (GRN)': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Store Outward': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Vendor Invoices': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Payment Requests': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Payment Entries': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+    }
+  },
+  {
+    role: 'Requester',
+    modules: ['dashboard', 'pr', 'stock', 'reports', 'notifications'],
+    permissions: {
+      'Purchase Requests': { viewGlobal: false, viewOwn: true, create: true, update: true, delete: false },
+      'Product': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+      'Stock': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+      'Reports': { viewGlobal: false, viewOwn: true, create: false, update: false, delete: false },
+    }
+  },
+  {
+    role: 'Approver',
+    modules: ['dashboard', 'pr', 'po', 'payment-req', 'reports', 'notifications'],
+    permissions: {
+      'Purchase Requests': { viewGlobal: true, viewOwn: true, create: false, update: true, delete: false },
+      'Purchase Orders': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Payment Requests': { viewGlobal: true, viewOwn: true, create: false, update: true, delete: false },
+      'Reports': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+    }
+  },
+  {
+    role: 'Purchase',
+    modules: ['dashboard', 'masters', 'pr', 'po', 'grn', 'reports', 'notifications'],
+    permissions: {
+      'Category': { viewGlobal: true, viewOwn: false, create: true, update: true, delete: false },
+      'Product': { viewGlobal: true, viewOwn: false, create: true, update: true, delete: false },
+      'Purchase Requests': { viewGlobal: true, viewOwn: false, create: false, update: true, delete: false },
+      'Purchase Orders': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true },
+      'Goods Receipt (GRN)': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Reports': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+    }
+  },
+  {
+    role: 'Store',
+    modules: ['dashboard', 'grn', 'stock', 'outward', 'reports', 'notifications'],
+    permissions: {
+      'Product': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+      'Stock': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Goods Receipt (GRN)': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Store Outward': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Reports': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+    }
+  },
+  {
+    role: 'Accounts',
+    modules: ['dashboard', 'bills', 'payment-req', 'payments', 'reports', 'notifications'],
+    permissions: {
+      'Vendor Invoices': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Payment Requests': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Payment Entries': { viewGlobal: true, viewOwn: true, create: true, update: true, delete: false },
+      'Reports': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+    }
+  },
+  {
+    role: 'Management',
+    modules: ['dashboard', 'reports', 'audit', 'notifications'],
+    permissions: {
+      'Reports': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+      'User': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+      'Purchase Orders': { viewGlobal: true, viewOwn: false, create: false, update: false, delete: false },
+    }
+  }
 ];
 
 const DB_KEY = 'purchase_store_enterprise_db_v2';

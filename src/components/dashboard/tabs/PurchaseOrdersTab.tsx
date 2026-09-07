@@ -12,6 +12,7 @@ interface PurchaseOrdersTabProps {
   vendors: Vendor[];
   projects: Project[];
   currentUser: User | null;
+  rolePermissions?: any[];
   onOpenCreatePOModal: () => void;
   onSelectPoDetail: (po: PurchaseOrder) => void;
   onUpdatePOStatus: (poId: string, status: PurchaseOrder['status']) => void;
@@ -20,6 +21,7 @@ interface PurchaseOrdersTabProps {
 export function PurchaseOrdersTab({
   purchaseOrders,
   currentUser,
+  rolePermissions = [],
   onOpenCreatePOModal,
   onSelectPoDetail,
   onUpdatePOStatus
@@ -30,6 +32,12 @@ export function PurchaseOrdersTab({
   const formatCurrency = (num: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
   };
+
+  const canCreatePO = currentUser?.role === 'Admin' || (() => {
+    const rp = rolePermissions.find(r => r.role?.toLowerCase() === currentUser?.role?.toLowerCase());
+    if (!rp || !rp.permissions || !rp.permissions['Purchase Orders']) return true;
+    return !!rp.permissions['Purchase Orders'].create;
+  })();
 
   return (
     <div className="space-y-6">
@@ -61,13 +69,15 @@ export function PurchaseOrdersTab({
             />
           </div>
 
-          <Button
-            variant="primary"
-            icon={<Plus className="h-4 w-4" />}
-            onClick={onOpenCreatePOModal}
-          >
-            Create New PO
-          </Button>
+          {canCreatePO && (
+            <Button
+              variant="primary"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={onOpenCreatePOModal}
+            >
+              Create New PO
+            </Button>
+          )}
         </div>
       </div>
 
@@ -77,17 +87,17 @@ export function PurchaseOrdersTab({
         data={filteredPos}
         itemsPerPage={10}
         renderRow={(po) => (
-          <tr key={po.id} className="custom-table-row">
-            <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{po.poNumber}</td>
-            <td className="px-5 py-4 font-semibold text-slate-800 text-sm">{po.vendorName}</td>
-            <td className="px-5 py-4 font-medium text-slate-700 text-sm">{po.projectName}</td>
-            <td className="px-5 py-4 font-normal text-slate-600 text-sm">{po.poDate}</td>
-            <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{formatCurrency(po.totalPOAmount || po.totalAmount || 0)}</td>
-            <td className="px-5 py-4">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                po.status === 'Approved' || po.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                po.status === 'Partially Received' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                'bg-amber-50 text-amber-700 border border-amber-200'
+          <tr key={po.id} className="hover:bg-slate-50/80 transition-colors">
+            <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{po.poNumber}</td>
+            <td className="px-4 py-2.5 font-medium text-slate-800 text-xs">{po.vendorName}</td>
+            <td className="px-4 py-2.5 font-normal text-slate-700 text-xs">{po.projectName}</td>
+            <td className="px-4 py-2.5 font-normal text-slate-600 text-xs">{po.poDate}</td>
+            <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{formatCurrency(po.totalPOAmount || po.totalAmount || 0)}</td>
+            <td className="px-4 py-2.5">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+                po.status === 'Approved' || po.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' :
+                po.status === 'Partially Received' ? 'bg-blue-50 text-blue-700 border border-blue-200/70' :
+                'bg-amber-50 text-amber-700 border border-amber-200/70'
               }`}>
                 {po.status}
               </span>

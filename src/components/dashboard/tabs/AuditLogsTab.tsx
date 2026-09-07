@@ -29,20 +29,20 @@ export function AuditLogsTab({ auditLogs }: AuditLogsTabProps) {
         emptyMessage="No audit logs recorded yet."
         renderRow={(log) => (
           <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-            <td className="px-5 py-3.5 text-xs font-mono text-slate-500 whitespace-nowrap">
+            <td className="px-4 py-2.5 text-xs font-mono text-slate-500 whitespace-nowrap">
               {new Date(log.timestamp).toLocaleString('en-IN', {
                 day: '2-digit', month: 'short', year: 'numeric',
                 hour: '2-digit', minute: '2-digit', second: '2-digit'
               })}
             </td>
-            <td className="px-5 py-3.5 text-sm font-bold text-[#0F172C]">{log.userName || log.userId}</td>
-            <td className="px-5 py-3.5">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+            <td className="px-4 py-2.5 text-xs font-medium text-slate-800">{log.userName || log.userId}</td>
+            <td className="px-4 py-2.5">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60">
                 {log.action}
               </span>
             </td>
-            <td className="px-5 py-3.5 text-xs font-semibold text-slate-600">{log.module}</td>
-            <td className="px-5 py-3.5 text-sm text-slate-700">{log.newValue || log.oldValue || '-'}</td>
+            <td className="px-4 py-2.5 text-xs font-normal text-slate-600">{log.module}</td>
+            <td className="px-4 py-2.5 text-xs font-normal text-slate-700">{log.newValue || log.oldValue || '-'}</td>
           </tr>
         )}
       />

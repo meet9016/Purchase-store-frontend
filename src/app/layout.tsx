@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { ReduxProvider } from '@/redux/ReduxProvider';
 import './globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
 });
-
 
 export const metadata: Metadata = {
   title: 'Purchase Store | Enterprise Store & Payment Management',
@@ -22,10 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased text-slate-800 bg-slate-50`}>
-        {children}
-        <Toaster richColors position="top-right" />
+        <ReduxProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </ReduxProvider>
       </body>
     </html>
   );
 }
-

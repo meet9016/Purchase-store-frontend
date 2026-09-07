@@ -2,16 +2,18 @@
 
 import React, { useState } from 'react';
 import { getDatabase, saveDatabase } from '@/lib/storeData';
-import { 
-  KeyRound, 
-  Mail, 
-  ShieldAlert, 
-  ShoppingBag, 
-  Eye, 
-  EyeOff, 
+import { authApi } from '@/lib/api';
+import { toast } from 'sonner';
+import {
+  KeyRound,
+  Mail,
+  ShieldAlert,
+  ShoppingBag,
+  Eye,
+  EyeOff,
   ArrowRight,
   FileSpreadsheet,
-  PackageCheck, 
+  PackageCheck,
   CreditCard,
   Sparkles
 } from 'lucide-react';
@@ -23,20 +25,53 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+<<<<<<< HEAD
   const performLogin = (targetEmail: string, targetPass: string) => {
+=======
+  const fillAdminCredentials = () => {
+    setEmail('admin@gmail.com');
+    setPassword('123456');
+    setError('');
+  };
+
+  const performLogin = async (targetEmail: string, targetPass: string) => {
+>>>>>>> 99f80a6 (feat: initialize purchase store application with comprehensive domain models, state management, and dashboard tab structure)
     setError('');
     setLoading(true);
 
     const cleanEmail = targetEmail.toLowerCase().trim();
     const cleanPass = targetPass.trim();
 
-    const activeDb = getDatabase();
+    // Try backend API first
+    try {
+      const result = await authApi.login(cleanEmail, cleanPass);
+      if (result.status === 'success' && result.token && result.user) {
+        localStorage.setItem('auth_token', result.token);
+        localStorage.setItem('active_user', JSON.stringify(result.user));
+        toast.success(`Welcome back, ${result.user.name || 'User'}!`);
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 400);
+        return;
+      }
+    } catch (apiErr: any) {
+      // If backend returns a specific auth error, show it and stop
+      const errMsg = apiErr?.message || '';
+      if (errMsg.includes('Invalid email or password') || errMsg.includes('inactive') || errMsg.includes('not found')) {
+        setLoading(false);
+        setError(errMsg);
+        toast.error(errMsg);
+        return;
+      }
+      // Otherwise fall through to local auth (backend might be offline)
+    }
 
-    // Check if user exists in database or admin match
+    // Local fallback authentication (offline mode)
+    const activeDb = getDatabase();
     let user = activeDb.users.find(u => u.email.toLowerCase().trim() === cleanEmail);
 
-    // Fallback for admin credentials (admin@gmail.com / admin@gamin.com)
-    if (!user && (cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin@gamin.com' || cleanEmail === 'admin')) {
+    // Fallback for admin credentials
+    if (!user && (cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin')) {
       user = {
         id: 'usr-admin',
         name: 'Alok Sharma',
@@ -62,7 +97,7 @@ export default function LoginPage() {
       return;
     }
 
-    // Password verification (Accepts 123456 or user's custom saved password)
+    // Password verification
     const validPassword = user.password || '123456';
     if (cleanPass !== '123456' && cleanPass !== validPassword) {
       setLoading(false);
@@ -70,10 +105,13 @@ export default function LoginPage() {
       return;
     }
 
-    // Store active session and redirect instantly
+    // Store local session
     localStorage.setItem('active_user', JSON.stringify(user));
     localStorage.setItem('auth_token', 'local_standalone_session_' + Date.now());
-    window.location.href = '/dashboard';
+    toast.success(`Welcome back, ${user.name || 'User'}!`);
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 400);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -180,7 +218,7 @@ export default function LoginPage() {
               </div>
               <span className="text-lg font-black text-[#0F172C]">Purchase Store</span>
             </div>
-            
+
             <h2 className="text-2xl font-black text-[#0F172C] tracking-tight">
               Enterprise Sign In
             </h2>
@@ -197,6 +235,11 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Quick Login Hint */}
+          <div className="mb-5 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 font-medium">
+            <span className="font-bold">Demo Login:</span> admin@gmail.com / 123456
+          </div>
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -206,12 +249,14 @@ export default function LoginPage() {
               <div className="relative flex items-center">
                 <Mail className="absolute left-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/10 transition-all shadow-xs"
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -225,18 +270,21 @@ export default function LoginPage() {
               <div className="relative flex items-center">
                 <KeyRound className="absolute left-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••"
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/10 transition-all shadow-xs"
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                   tabIndex={-1}
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -244,6 +292,7 @@ export default function LoginPage() {
             </div>
 
             <button
+              id="login-submit-btn"
               type="submit"
               disabled={loading}
               className="w-full mt-3 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-70 active:scale-[0.99]"
