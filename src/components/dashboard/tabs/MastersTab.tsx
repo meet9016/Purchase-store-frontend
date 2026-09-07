@@ -15,6 +15,8 @@ interface MastersTabProps {
   vendors: Vendor[];
   categories: Category[];
   items: Item[];
+  currentUser?: any;
+  rolePermissions?: any[];
   
   onAddUser: (user: Omit<User, 'id'>) => void;
   onEditUser?: (id: string, user: Partial<User>) => void;
@@ -43,6 +45,8 @@ export function MastersTab({
   vendors,
   categories,
   items,
+  currentUser,
+  rolePermissions = [],
   onAddUser,
   onEditUser,
   onDeleteUser,
@@ -62,6 +66,22 @@ export function MastersTab({
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'vendors' | 'projects' | 'users'>('items');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Check create permission based on current sub-tab
+  const canCreateCurrentSubTab = currentUser?.role === 'Admin' || (() => {
+    const featureMap: Record<string, string> = {
+      items: 'Product',
+      categories: 'Category',
+      vendors: 'Leads',
+      projects: 'Department Management',
+      users: 'User',
+    };
+    const featureName = featureMap[subTab];
+    if (!featureName) return true;
+    const rp = rolePermissions.find((r: any) => r.role?.toLowerCase() === currentUser?.role?.toLowerCase());
+    if (!rp || !rp.permissions || !rp.permissions[featureName]) return true;
+    return !!rp.permissions[featureName].create;
+  })();
 
   // Delete Confirmation Modal State
   const [deleteModalState, setDeleteModalState] = useState<{
@@ -207,13 +227,15 @@ export function MastersTab({
           ))}
         </div>
 
-        <Button
-          variant="primary"
-          icon={<Plus className="w-4 h-4" />}
-          onClick={handleOpenAdd}
-        >
-          Add New {getSubTabLabel(subTab)}
-        </Button>
+        {canCreateCurrentSubTab && (
+          <Button
+            variant="primary"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={handleOpenAdd}
+          >
+            Add New {getSubTabLabel(subTab)}
+          </Button>
+        )}
       </div>
 
       {/* SubTab Views with Polished Action Icon Buttons */}
@@ -225,29 +247,29 @@ export function MastersTab({
           emptyMessage="No master items found. Click 'Add New Item' to create one."
           renderRow={(item) => (
             <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-5 py-3.5 font-mono text-slate-800 text-xs font-semibold">{item.itemCode || '-'}</td>
-              <td className="px-5 py-3.5 font-bold text-[#0F172C] text-sm">{item.name}</td>
-              <td className="px-5 py-3.5 text-slate-600 text-xs font-medium">{item.categoryName || 'General'}</td>
-              <td className="px-5 py-3.5 text-slate-700 text-xs font-semibold">{item.unit}</td>
-              <td className="px-5 py-3.5 text-slate-700 text-xs font-semibold">{item.minStock || 0}</td>
-              <td className="px-5 py-3.5 text-slate-700 text-xs font-semibold">{item.reorderLevel || 0}</td>
-              <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                <div className="inline-flex items-center space-x-2 justify-end">
+              <td className="px-4 py-2.5 font-mono text-slate-600 text-xs font-normal">{item.itemCode || '-'}</td>
+              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{item.name}</td>
+              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{item.categoryName || 'General'}</td>
+              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{item.unit}</td>
+              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{item.minStock || 0}</td>
+              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{item.reorderLevel || 0}</td>
+              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(item)}
-                    className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Edit Item"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTriggerDelete(item.id, item.name, 'item')}
-                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Delete Item"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </td>
@@ -264,25 +286,25 @@ export function MastersTab({
           emptyMessage="No categories created yet. Click 'Add New Category' to create one."
           renderRow={(cat) => (
             <tr key={cat.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-5 py-3.5 font-bold text-[#0F172C] text-sm">{cat.name}</td>
-              <td className="px-5 py-3.5 text-slate-600 text-sm font-normal">{cat.description || '-'}</td>
-              <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                <div className="inline-flex items-center space-x-2 justify-end">
+              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{cat.name}</td>
+              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{cat.description || '-'}</td>
+              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(cat)}
-                    className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Edit Category"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTriggerDelete(cat.id, cat.name, 'category')}
-                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Delete Category"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </td>
@@ -299,34 +321,34 @@ export function MastersTab({
           emptyMessage="No vendors registered yet. Click 'Add New Vendor' to create one."
           renderRow={(ven) => (
             <tr key={ven.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-5 py-3.5 font-bold text-[#0F172C] text-sm">{ven.name}</td>
-              <td className="px-5 py-3.5 text-slate-700 text-sm font-medium">{ven.contactPerson}</td>
-              <td className="px-5 py-3.5 text-slate-600 text-xs font-normal">
-                <div className="font-semibold text-slate-800">{ven.phone}</div>
-                <div className="text-slate-500">{ven.email}</div>
+              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{ven.name}</td>
+              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{ven.contactPerson}</td>
+              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">
+                <div className="font-medium text-slate-800">{ven.phone}</div>
+                <div className="text-slate-500 text-[11px]">{ven.email}</div>
               </td>
-              <td className="px-5 py-3.5 text-slate-600 text-xs font-mono font-medium">
+              <td className="px-4 py-2.5 text-slate-600 text-xs font-mono font-normal">
                 <div>GST: {ven.gstNo || '-'}</div>
                 <div>PAN: {ven.panNo || '-'}</div>
               </td>
-              <td className="px-5 py-3.5 text-slate-700 text-sm font-semibold">{ven.creditPeriod} Days</td>
-              <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                <div className="inline-flex items-center space-x-2 justify-end">
+              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{ven.creditPeriod} Days</td>
+              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(ven)}
-                    className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Edit Vendor"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTriggerDelete(ven.id, ven.name, 'vendor')}
-                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Delete Vendor"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </td>
@@ -343,32 +365,32 @@ export function MastersTab({
           emptyMessage="No project sites configured yet. Click 'Add New Project' to create one."
           renderRow={(prj) => (
             <tr key={prj.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-5 py-3.5 font-bold text-[#0F172C] text-sm">{prj.name}</td>
-              <td className="px-5 py-3.5 text-slate-600 text-sm font-normal">{prj.location}</td>
-              <td className="px-5 py-3.5">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                  prj.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-700 border border-slate-200'
+              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{prj.name}</td>
+              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{prj.location}</td>
+              <td className="px-4 py-2.5">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+                  prj.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-slate-100 text-slate-700 border border-slate-200'
                 }`}>
                   {prj.status}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                <div className="inline-flex items-center space-x-2 justify-end">
+              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(prj)}
-                    className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Edit Project"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTriggerDelete(prj.id, prj.name, 'project')}
-                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Delete Project"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </td>
@@ -385,48 +407,45 @@ export function MastersTab({
           emptyMessage="No users registered yet."
           renderRow={(usr) => (
             <tr key={usr.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-5 py-3.5 font-bold text-[#0F172C] text-sm">{usr.name}</td>
-              <td className="px-5 py-3.5 text-slate-600 text-sm font-normal">{usr.email}</td>
-              <td className="px-5 py-3.5">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
+              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{usr.name}</td>
+              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{usr.email}</td>
+              <td className="px-4 py-2.5">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/70 text-[11px] font-medium">
                   {usr.role}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-slate-700 text-sm font-medium">{usr.department || '-'}</td>
-              <td className="px-5 py-3.5">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                  usr.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{usr.department || '-'}</td>
+              <td className="px-4 py-2.5">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+                  usr.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
                 }`}>
                   {usr.active ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                <div className="inline-flex items-center space-x-2 justify-end">
+              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(usr)}
-                    className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Edit User"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
-                  {usr.role !== 'Admin' && (
-                    <button
-                      type="button"
-                      onClick={() => handleTriggerDelete(usr.id, usr.name, 'user')}
-                      className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
-                      title="Delete User"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleTriggerDelete(usr.id, usr.name, 'user')}
+                    className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                    title="Delete User"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </td>
             </tr>
           )}
         />
       )}
-
       {/* Modal Dialog for Add / Edit */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">

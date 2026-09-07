@@ -12,6 +12,7 @@ interface PurchaseRequestsTabProps {
   projects: Project[];
   items: Item[];
   currentUser: User | null;
+  rolePermissions?: any[];
   onOpenCreatePRModal: () => void;
   onUpdatePRStatus: (prId: string, status: PurchaseRequest['status'], reason?: string) => void;
   onSelectPRDetail: (pr: PurchaseRequest) => void;
@@ -20,6 +21,7 @@ interface PurchaseRequestsTabProps {
 export function PurchaseRequestsTab({
   purchaseRequests,
   currentUser,
+  rolePermissions = [],
   onOpenCreatePRModal,
   onUpdatePRStatus,
   onSelectPRDetail
@@ -30,6 +32,13 @@ export function PurchaseRequestsTab({
 
   const filteredPrs = purchaseRequests.filter(pr => !filterStatus || pr.status === filterStatus);
   const isApproverOrAdmin = currentUser?.role === 'Approver' || currentUser?.role === 'Admin' || currentUser?.role === 'Purchase Manager';
+
+  // Check create permission
+  const canCreatePR = currentUser?.role === 'Admin' || (() => {
+    const rp = rolePermissions.find(r => r.role?.toLowerCase() === currentUser?.role?.toLowerCase());
+    if (!rp || !rp.permissions || !rp.permissions['Purchase Requests']) return true;
+    return !!rp.permissions['Purchase Requests'].create;
+  })();
 
   return (
     <div className="space-y-6">
@@ -60,13 +69,15 @@ export function PurchaseRequestsTab({
             />
           </div>
 
-          <Button
-            variant="primary"
-            icon={<Plus className="h-4 w-4" />}
-            onClick={onOpenCreatePRModal}
-          >
-            Create New PR
-          </Button>
+          {canCreatePR && (
+            <Button
+              variant="primary"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={onOpenCreatePRModal}
+            >
+              Create New PR
+            </Button>
+          )}
         </div>
       </div>
 
@@ -76,28 +87,28 @@ export function PurchaseRequestsTab({
         data={filteredPrs}
         itemsPerPage={10}
         renderRow={(pr) => (
-          <tr key={pr.id} className="custom-table-row">
-            <td className="px-5 py-3.5 font-bold text-[#0F172C] text-xs">{pr.prNumber}</td>
-            <td className="px-5 py-3.5 font-semibold text-slate-800 text-xs">{pr.projectName}</td>
-            <td className="px-5 py-3.5 font-medium text-slate-700 text-xs">{pr.requesterName}</td>
-            <td className="px-5 py-3.5 font-normal text-slate-600 text-xs">{pr.requiredDate}</td>
-            <td className="px-5 py-3.5">
-              <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium">
+          <tr key={pr.id} className="hover:bg-slate-50/80 transition-colors">
+            <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{pr.prNumber}</td>
+            <td className="px-4 py-2.5 font-normal text-slate-700 text-xs">{pr.projectName}</td>
+            <td className="px-4 py-2.5 font-normal text-slate-700 text-xs">{pr.requesterName}</td>
+            <td className="px-4 py-2.5 font-normal text-slate-600 text-xs">{pr.requiredDate}</td>
+            <td className="px-4 py-2.5">
+              <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-normal">
                 {pr.items?.length || 0} Line Items
               </span>
             </td>
-            <td className="px-5 py-3.5">
-              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                pr.priority === 'High' || pr.priority === 'Urgent' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-600'
+            <td className="px-4 py-2.5">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase ${
+                pr.priority === 'High' || pr.priority === 'Urgent' ? 'bg-rose-50 text-rose-700 border border-rose-200/70' : 'bg-slate-100 text-slate-600'
               }`}>
                 {pr.priority}
               </span>
             </td>
-            <td className="px-5 py-3.5">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                pr.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                pr.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                'bg-amber-50 text-amber-700 border border-amber-200'
+            <td className="px-4 py-2.5">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+                pr.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' :
+                pr.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200/70' :
+                'bg-amber-50 text-amber-700 border border-amber-200/70'
               }`}>
                 {pr.status}
               </span>

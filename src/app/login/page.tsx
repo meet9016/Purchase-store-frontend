@@ -2,16 +2,18 @@
 
 import React, { useState } from 'react';
 import { getDatabase, saveDatabase } from '@/lib/storeData';
-import { 
-  KeyRound, 
-  Mail, 
-  ShieldAlert, 
-  ShoppingBag, 
-  Eye, 
-  EyeOff, 
+import { authApi } from '@/lib/api';
+import { toast } from 'sonner';
+import {
+  KeyRound,
+  Mail,
+  ShieldAlert,
+  ShoppingBag,
+  Eye,
+  EyeOff,
   ArrowRight,
   FileSpreadsheet,
-  PackageCheck, 
+  PackageCheck,
   CreditCard,
   Lock,
   Sparkles,
@@ -31,20 +33,43 @@ export default function LoginPage() {
     setError('');
   };
 
-  const performLogin = (targetEmail: string, targetPass: string) => {
+  const performLogin = async (targetEmail: string, targetPass: string) => {
     setError('');
     setLoading(true);
 
     const cleanEmail = targetEmail.toLowerCase().trim();
     const cleanPass = targetPass.trim();
 
-    const activeDb = getDatabase();
+    // Try backend API first
+    try {
+      const result = await authApi.login(cleanEmail, cleanPass);
+      if (result.status === 'success' && result.token && result.user) {
+        localStorage.setItem('auth_token', result.token);
+        localStorage.setItem('active_user', JSON.stringify(result.user));
+        toast.success(`Welcome back, ${result.user.name || 'User'}!`);
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 400);
+        return;
+      }
+    } catch (apiErr: any) {
+      // If backend returns a specific auth error, show it and stop
+      const errMsg = apiErr?.message || '';
+      if (errMsg.includes('Invalid email or password') || errMsg.includes('inactive') || errMsg.includes('not found')) {
+        setLoading(false);
+        setError(errMsg);
+        toast.error(errMsg);
+        return;
+      }
+      // Otherwise fall through to local auth (backend might be offline)
+    }
 
-    // Check if user exists in database or admin match
+    // Local fallback authentication (offline mode)
+    const activeDb = getDatabase();
     let user = activeDb.users.find(u => u.email.toLowerCase().trim() === cleanEmail);
 
-    // Fallback for admin credentials (admin@gmail.com / admin@gamin.com)
-    if (!user && (cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin@gamin.com' || cleanEmail === 'admin')) {
+    // Fallback for admin credentials
+    if (!user && (cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin')) {
       user = {
         id: 'usr-admin',
         name: 'Alok Sharma',
@@ -70,7 +95,7 @@ export default function LoginPage() {
       return;
     }
 
-    // Password verification (Accepts 123456 or user's custom saved password)
+    // Password verification
     const validPassword = user.password || '123456';
     if (cleanPass !== '123456' && cleanPass !== validPassword) {
       setLoading(false);
@@ -78,10 +103,13 @@ export default function LoginPage() {
       return;
     }
 
-    // Store active session and redirect instantly
+    // Store local session
     localStorage.setItem('active_user', JSON.stringify(user));
     localStorage.setItem('auth_token', 'local_standalone_session_' + Date.now());
-    window.location.href = '/dashboard';
+    toast.success(`Welcome back, ${user.name || 'User'}!`);
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 400);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,16 +118,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex w-full font-sans bg-[#0F172C]">
-      {/* Left side - Visual & Brand Hero Panel */}
-      <div className="hidden lg:flex w-[52%] bg-[#0F172C] relative overflow-hidden flex-col justify-between p-12 xl:p-16 border-r border-slate-800/80">
-        {/* Ambient Glows */}
-        <div className="absolute -top-24 -left-24 w-[600px] h-[600px] rounded-full bg-blue-600/15 blur-[140px] pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-[600px] h-[600px] rounded-full bg-indigo-600/15 blur-[140px] pointer-events-none" />
+    <div className="min-h-screen flex w-full font-sans bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/50">
+      {/* Left side - Visual & Brand Hero Panel (Light Modern Theme) */}
+      <div className="hidden lg:flex w-[52%] relative overflow-hidden flex-col justify-between p-12 xl:p-16 border-r border-slate-200/80 bg-white/60 backdrop-blur-md">
+        {/* Soft Ambient Light Glows */}
+        <div className="absolute -top-24 -left-24 w-[500px] h-[500px] rounded-full bg-blue-400/10 blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-[500px] h-[500px] rounded-full bg-indigo-400/10 blur-[120px] pointer-events-none" />
         
-        {/* Background Grid Accent */}
+        {/* Subtle Background Grid Accent */}
         <div 
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
             backgroundSize: '32px 32px'
@@ -129,11 +157,11 @@ export default function LoginPage() {
               <span>Full Lifecycle Procurement Platform</span>
             </div>
             
-            <h2 className="text-4xl xl:text-5xl font-extrabold text-white leading-[1.15] tracking-tight">
+            <h1 className="text-4xl xl:text-5xl font-black text-[#0F172C] leading-[1.15] tracking-tight">
               Seamless Material Control &amp; Vendor Management.
-            </h2>
+            </h1>
             
-            <p className="text-slate-300 text-base mt-4 leading-relaxed font-normal max-w-lg">
+            <p className="text-slate-600 text-base mt-4 leading-relaxed font-normal max-w-lg">
               End-to-end procurement workflows with live site requisitions, Purchase Orders, Material Inward (GRN), and 3-way vendor bill settlement.
             </p>
           </div>
@@ -176,9 +204,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right side - Login Form Card */}
+      {/* Right side - Clean Professional Login Form Card */}
       <div className="w-full lg:w-[48%] flex items-center justify-center p-6 sm:p-12 relative">
-        <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 shadow-2xl border border-slate-100 relative z-10">
+        <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/70 border border-slate-200/90 relative z-10">
           
           {/* Header */}
           <div className="mb-7">
@@ -188,7 +216,7 @@ export default function LoginPage() {
               </div>
               <span className="text-lg font-black text-[#0F172C]">Purchase Store</span>
             </div>
-            
+
             <h2 className="text-2xl font-black text-[#0F172C] tracking-tight">
               Enterprise Sign In
             </h2>
@@ -219,11 +247,16 @@ export default function LoginPage() {
 
           {/* Error Message Box */}
           {error && (
-            <div className="mb-6 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start space-x-2.5 text-rose-700 text-xs animate-shake">
+            <div className="mb-6 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start space-x-2.5 text-rose-700 text-xs animate-shake shadow-2xs">
               <ShieldAlert className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <span className="font-semibold leading-relaxed">{error}</span>
             </div>
           )}
+
+          {/* Quick Login Hint */}
+          <div className="mb-5 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 font-medium">
+            <span className="font-bold">Demo Login:</span> admin@gmail.com / 123456
+          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -234,12 +267,14 @@ export default function LoginPage() {
               <div className="relative flex items-center">
                 <Mail className="absolute left-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@gmail.com"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/10 transition-all shadow-xs"
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -254,18 +289,21 @@ export default function LoginPage() {
               <div className="relative flex items-center">
                 <KeyRound className="absolute left-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••"
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/10 transition-all shadow-xs"
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                   tabIndex={-1}
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -273,6 +311,7 @@ export default function LoginPage() {
             </div>
 
             <button
+              id="login-submit-btn"
               type="submit"
               disabled={loading}
               className="w-full mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-70 active:scale-[0.99]"

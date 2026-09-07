@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { User, RolePermission } from '@/lib/storeData';
+import { FeatureName } from '@/lib/permissions';
 import {
   LayoutDashboard,
   Database,
@@ -53,9 +54,38 @@ export function SidebarNav({
   unreadNotificationsCount
 }: SidebarProps) {
   const currentRole = currentUser?.role || 'Admin';
-  const allowedModules = rolePermissions.find(rp => rp.role === currentRole)?.modules || [
-    'dashboard', 'masters', 'pr', 'po', 'grn', 'stock', 'outward', 'bills', 'payment-req', 'payments', 'reports', 'audit', 'notifications', 'permissions'
-  ];
+  const rolePerm = rolePermissions.find(rp => rp.role.toLowerCase() === currentRole.toLowerCase());
+
+  // Mapping from SidebarTab to FeatureName in Permission Matrix
+  const tabFeatureMap: Partial<Record<SidebarTab, FeatureName>> = {
+    masters: 'Product',
+    pr: 'Purchase Requests',
+    po: 'Purchase Orders',
+    grn: 'Goods Receipt (GRN)',
+    stock: 'Stock',
+    outward: 'Store Outward',
+    bills: 'Vendor Invoices',
+    'payment-req': 'Payment Requests',
+    payments: 'Payment Entries',
+    reports: 'Reports',
+  };
+
+  const isTabVisible = (tabId: SidebarTab): boolean => {
+    if (currentRole === 'Admin') return true;
+    if (tabId === 'dashboard' || tabId === 'notifications') return true;
+    if (tabId === 'permissions' || tabId === 'audit') return false; // Admin/Management only
+
+    const featureName = tabFeatureMap[tabId];
+    if (featureName && rolePerm && rolePerm.permissions) {
+      const p = rolePerm.permissions[featureName];
+      // If neither viewGlobal nor viewOwn is selected, the module is hidden!
+      return !!(p?.viewGlobal || p?.viewOwn);
+    }
+
+    // Default fallback to allowedModules if no granular perm defined
+    const allowedModules = rolePerm?.modules || ['dashboard', 'pr', 'po', 'stock'];
+    return allowedModules.includes(tabId);
+  };
 
   const menuItems: { id: SidebarTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="h-4.5 w-4.5" /> },
@@ -98,7 +128,7 @@ export function SidebarNav({
         </p>
 
         {menuItems.map((item) => {
-          const isAllowed = allowedModules.includes(item.id);
+          const isAllowed = isTabVisible(item.id);
           if (!isAllowed) return null;
           const isActive = activeTab === item.id;
           return (
