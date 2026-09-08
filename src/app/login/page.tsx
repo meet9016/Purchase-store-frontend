@@ -1,318 +1,312 @@
 "use client";
 
 import React, { useState } from 'react';
-import { getDatabase, saveDatabase } from '@/lib/storeData';
-import { authApi } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { getDatabase, saveDatabase, deduplicateById } from '@/lib/storeData';
+import { authApi, rolePermissionsApi } from '@/lib/api';
 import { toast } from 'sonner';
 import {
-  KeyRound,
+  Lock,
   Mail,
-  ShieldAlert,
-  ShoppingBag,
   Eye,
   EyeOff,
+  ShoppingBag,
+  AlertCircle,
   ArrowRight,
-  FileSpreadsheet,
-  PackageCheck,
-  CreditCard,
-  Sparkles
+  User as UserIcon,
+  Shield,
+  Building,
+  CheckCircle2
 } from 'lucide-react';
 
+const DEMO_ROLES = [
+  { role: 'Admin', email: 'admin@gmail.com', pass: '123456', desc: 'Full System Access' },
+  { role: 'Purchase', email: 'purchase@gmail.com', pass: '123456', desc: 'PO & Vendor Lead' },
+  { role: 'Store', email: 'store@gmail.com', pass: '123456', desc: 'GRN & Stock Inward' },
+  { role: 'Accounts', email: 'accounts@gmail.com', pass: '123456', desc: 'Bills & Disbursements' },
+  { role: 'Approver', email: 'approver@gmail.com', pass: '123456', desc: 'PR/PO Authorization' }
+];
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@gmail.com');
-  const [password, setPassword] = useState('123456');
+  // Login Form
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Status & Validation
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-<<<<<<< HEAD
-  const performLogin = (targetEmail: string, targetPass: string) => {
-=======
-  const fillAdminCredentials = () => {
-    setEmail('admin@gmail.com');
-    setPassword('123456');
-    setError('');
+  const router = useRouter();
+
+  const validateLoginForm = () => {
+    const errs: Record<string, string> = {};
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail) {
+      errs.email = 'Email is required';
+    } else if (!EMAIL_REGEX.test(cleanEmail)) {
+      errs.email = 'Please enter a valid email address';
+    }
+
+    if (!password) {
+      errs.password = 'Password is required';
+    }
+
+    setValidationErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const performLogin = async (targetEmail: string, targetPass: string) => {
->>>>>>> 99f80a6 (feat: initialize purchase store application with comprehensive domain models, state management, and dashboard tab structure)
     setError('');
     setLoading(true);
 
     const cleanEmail = targetEmail.toLowerCase().trim();
     const cleanPass = targetPass.trim();
 
-    // Try backend API first
+    // 1. Try Backend API Authentication
     try {
       const result = await authApi.login(cleanEmail, cleanPass);
-      if (result.status === 'success' && result.token && result.user) {
-        localStorage.setItem('auth_token', result.token);
-        localStorage.setItem('active_user', JSON.stringify(result.user));
-        toast.success(`Welcome back, ${result.user.name || 'User'}!`);
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 400);
+      const authData = (result?.data || result) as any;
+      const token = authData?.token;
+      const user = authData?.user;
+
+      if (token && user) {
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('active_user', JSON.stringify(user));
+
+        try {
+          const rolesRes = await rolePermissionsApi.getAll();
+          if (rolesRes?.status === 200 || rolesRes?.status === 'success') {
+            const fetchedRoles = deduplicateById(rolesRes.data as any);
+            localStorage.setItem('cached_roles', JSON.stringify(fetchedRoles));
+          }
+        } catch (e) {
+          console.warn('Failed to fetch role permissions during login', e);
+        }
+
+        toast.success(`Welcome back, ${user.name || 'User'}!`);
+        window.location.href = '/dashboard';
         return;
       }
     } catch (apiErr: any) {
-      // If backend returns a specific auth error, show it and stop
-      const errMsg = apiErr?.message || '';
-      if (errMsg.includes('Invalid email or password') || errMsg.includes('inactive') || errMsg.includes('not found')) {
+      const serverMsg = apiErr?.message || apiErr?.data?.message || apiErr?.response?.data?.message;
+      console.warn('[Backend Auth Failed]', serverMsg || apiErr);
+
+      // If backend explicitly rejected with invalid credentials (400, 401, 403, 404)
+      if (apiErr?.status === 401 || apiErr?.status === 400 || apiErr?.status === 403 || apiErr?.status === 404) {
+        const errorMsg = serverMsg || 'Invalid email or password. Please try again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setLoading(false);
-        setError(errMsg);
-        toast.error(errMsg);
         return;
       }
-      // Otherwise fall through to local auth (backend might be offline)
     }
 
-    // Local fallback authentication (offline mode)
+    // 2. Local Fallback authentication (Only if backend server is unreachable)
     const activeDb = getDatabase();
-    let user = activeDb.users.find(u => u.email.toLowerCase().trim() === cleanEmail);
+    let user = activeDb?.users?.find((u) => u.email.toLowerCase().trim() === cleanEmail);
 
-    // Fallback for admin credentials
-    if (!user && (cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin')) {
-      user = {
-        id: 'usr-admin',
-        name: 'Alok Sharma',
-        email: 'admin@gmail.com',
-        role: 'Admin',
-        department: 'Executive Management',
-        active: true,
-        password: '123456'
+    // Auto-seed demo role if matching demo email
+    const demoMatch = DEMO_ROLES.find((d) => d.email.toLowerCase().trim() === cleanEmail);
+    if (!user && demoMatch) {
+      const defaultNames: Record<string, string> = {
+        Admin: 'Alok Sharma',
+        Purchase: 'Rahul Verma',
+        Store: 'Vikram Singh',
+        Accounts: 'Sneha Patel',
+        Approver: 'Priya Mehta',
       };
-      activeDb.users.unshift(user);
-      saveDatabase(activeDb);
+      user = {
+        id: `usr-${Date.now()}`,
+        name: defaultNames[demoMatch.role] || demoMatch.role,
+        email: cleanEmail,
+        role: demoMatch.role,
+        department: 'Operations Division',
+        active: true,
+        password: demoMatch.pass || '123456',
+      };
+      if (activeDb?.users) {
+        activeDb.users.push(user);
+        saveDatabase(activeDb);
+      }
     }
 
     if (!user) {
+      const errMsg = `Account '${targetEmail}' not found.`;
       setLoading(false);
-      setError(`Account '${targetEmail}' not found. Please verify your email.`);
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
     if (!user.active) {
+      const errMsg = 'This user account is currently deactivated.';
       setLoading(false);
-      setError('This account is currently deactivated. Please contact Administrator.');
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
-    // Password verification
     const validPassword = user.password || '123456';
     if (cleanPass !== '123456' && cleanPass !== validPassword) {
+      const errMsg = 'Invalid email or password.';
       setLoading(false);
-      setError('Incorrect password. Please try again.');
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
-    // Store local session
     localStorage.setItem('active_user', JSON.stringify(user));
-    localStorage.setItem('auth_token', 'local_standalone_session_' + Date.now());
+    localStorage.setItem('auth_token', 'local_jwt_' + Date.now());
     toast.success(`Welcome back, ${user.name || 'User'}!`);
-    setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 400);
+    window.location.href = '/dashboard';
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (!validateLoginForm()) return;
     performLogin(email, password);
   };
 
   return (
-    <div className="min-h-screen flex w-full font-sans bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/50">
-      {/* Left side - Visual & Brand Hero Panel (Light Modern Theme) */}
-      <div className="hidden lg:flex w-[52%] relative overflow-hidden flex-col justify-between p-12 xl:p-16 border-r border-slate-200/80 bg-white/60 backdrop-blur-md">
-        {/* Soft Ambient Light Glows */}
-        <div className="absolute -top-24 -left-24 w-[500px] h-[500px] rounded-full bg-blue-400/10 blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-[500px] h-[500px] rounded-full bg-indigo-400/10 blur-[120px] pointer-events-none" />
-        
-        {/* Subtle Background Grid Accent */}
-        <div 
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, #0F172C 1px, transparent 0)`,
-            backgroundSize: '28px 28px'
-          }}
-        />
-
-        {/* Top Brand Header */}
-        <div className="relative z-10">
-          <div className="flex items-center space-x-3.5 mb-10">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/25 flex items-center justify-center font-bold">
-              <ShoppingBag className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xl font-black text-[#0F172C] tracking-tight">Purchase Store</span>
-                <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-700 border border-blue-200 rounded-full">
-                  Enterprise
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-semibold tracking-wide">Procurement &amp; Inventory ERP</p>
-            </div>
-          </div>
-
-          <div className="max-w-xl">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold mb-6 shadow-2xs">
-              <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-              <span>Full Lifecycle Procurement Platform</span>
-            </div>
-            
-            <h1 className="text-4xl xl:text-5xl font-black text-[#0F172C] leading-[1.15] tracking-tight">
-              Seamless Material Control &amp; Vendor Management.
-            </h1>
-            
-            <p className="text-slate-600 text-base mt-4 leading-relaxed font-normal max-w-lg">
-              End-to-end procurement workflows with live site requisitions, Purchase Orders, Material Inward (GRN), and 3-way vendor bill settlement.
-            </p>
-          </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white">
+      {/* Brand Header */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/20 mb-3">
+          <ShoppingBag className="w-6 h-6" />
         </div>
-
-        {/* Feature Cards Grid (Light Elevated Cards) */}
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3.5 my-8 max-w-xl">
-          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-blue-200 transition-all">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mb-3 shadow-2xs">
-              <FileSpreadsheet className="h-5 w-5" />
-            </div>
-            <h3 className="text-[#0F172C] text-sm font-bold">Requisitions &amp; PO</h3>
-            <p className="text-slate-500 text-xs mt-1 leading-snug">Multi-level approvals and live PO issuance.</p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-200 transition-all">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mb-3 shadow-2xs">
-              <PackageCheck className="h-5 w-5" />
-            </div>
-            <h3 className="text-[#0F172C] text-sm font-bold">GRN &amp; Inventory</h3>
-            <p className="text-slate-500 text-xs mt-1 leading-snug">Real-time stock ledger, inward and outward issues.</p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-amber-200 transition-all">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center mb-3 shadow-2xs">
-              <CreditCard className="h-5 w-5" />
-            </div>
-            <h3 className="text-[#0F172C] text-sm font-bold">Vendor Invoices</h3>
-            <p className="text-slate-500 text-xs mt-1 leading-snug">3-way bill matching, payment requests &amp; vouchers.</p>
-          </div>
-        </div>
-
-        {/* Bottom Status Bar */}
-        <div className="relative z-10 flex items-center justify-between text-slate-500 text-xs font-semibold border-t border-slate-200/80 pt-5 max-w-xl">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-slate-700">Secure Enterprise Portal • High Availability</span>
-          </div>
-          <span className="text-slate-500">v2.5 Enterprise</span>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#0F172C]">
+          Purchase &amp; Store Management
+        </h1>
+        <p className="mt-1 text-xs text-slate-500 font-medium">
+          Enterprise procurement, material inward &amp; vendor settlements
+        </p>
       </div>
 
-      {/* Right side - Clean Professional Login Form Card */}
-      <div className="w-full lg:w-[48%] flex items-center justify-center p-6 sm:p-12 relative">
-        <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/70 border border-slate-200/90 relative z-10">
-          
-          {/* Header */}
-          <div className="mb-7">
-            <div className="flex items-center space-x-2.5 mb-2 lg:hidden">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
-                <ShoppingBag className="h-5 w-5" />
-              </div>
-              <span className="text-lg font-black text-[#0F172C]">Purchase Store</span>
-            </div>
-
-            <h2 className="text-2xl font-black text-[#0F172C] tracking-tight">
-              Enterprise Sign In
-            </h2>
-            <p className="text-xs text-slate-500 font-medium mt-1">
-              Enter your credentials to access the procurement dashboard
-            </p>
+          {/* Main Login Card */}
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-6 px-6 shadow-sm border border-slate-200/90 rounded-2xl sm:px-8">
+          <div className="mb-5 text-center">
+            <h2 className="text-base font-bold text-slate-900">Sign In to Your Account</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Enter your credentials to access the portal</p>
           </div>
 
-          {/* Error Message Box */}
           {error && (
-            <div className="mb-6 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start space-x-2.5 text-rose-700 text-xs animate-shake shadow-2xs">
-              <ShieldAlert className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span className="font-semibold leading-relaxed">{error}</span>
+            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2 text-rose-700 text-xs animate-shake">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
-          {/* Quick Login Hint */}
-          <div className="mb-5 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 font-medium">
-            <span className="font-bold">Demo Login:</span> admin@gmail.com / 123456
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Login Form */}
+          <form noValidate onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5 select-none">
-                Email Address
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Email Address <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
-              <div className="relative flex items-center">
-                <Mail className="absolute left-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="h-4 w-4" />
+                </div>
                 <input
-                  id="login-email"
+                  id="email-input"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (validationErrors.email) setValidationErrors((prev) => ({ ...prev, email: '' }));
+                  }}
                   placeholder="name@company.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/10 transition-all shadow-xs"
-                  required
-                  autoComplete="email"
+                  className={`block w-full pl-10 pr-3.5 py-2.5 text-xs border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none transition-colors ${
+                    validationErrors.email
+                      ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-50/20'
+                      : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+                  }`}
                 />
               </div>
+              {validationErrors.email && (
+                <p className="mt-1 text-[11px] text-rose-600 font-medium">{validationErrors.email}</p>
+              )}
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700 select-none">
-                  Password
-                </label>
-              </div>
-              <div className="relative flex items-center">
-                <KeyRound className="absolute left-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Password <span className="text-red-500 font-bold ml-0.5">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="h-4 w-4" />
+                </div>
                 <input
-                  id="login-password"
+                  id="password-input"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/10 transition-all shadow-xs"
-                  required
-                  autoComplete="current-password"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (validationErrors.password) setValidationErrors((prev) => ({ ...prev, password: '' }));
+                  }}
+                  placeholder="••••••••"
+                  className={`block w-full pl-10 pr-10 py-2.5 text-xs border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none transition-colors ${
+                    validationErrors.password
+                      ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                      : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                   tabIndex={-1}
-                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {validationErrors.password && (
+                <p className="mt-1 text-[11px] text-rose-600 font-medium">{validationErrors.password}</p>
+              )}
             </div>
 
-            <button
-              id="login-submit-btn"
-              type="submit"
-              disabled={loading}
-              className="w-full mt-3 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-600/25 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-70 active:scale-[0.99]"
-            >
-              {loading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In to Workspace</span>
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
-          </form>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center text-slate-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 accent-blue-600"
+                />
+                <span className="ml-2 font-medium">Remember me</span>
+              </label>
+            </div>
 
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-xl shadow-xs text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:outline-none transition-colors cursor-pointer disabled:opacity-60 shadow-blue-600/20"
+              >
+                {loading ? (
+                  <span className="flex items-center space-x-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Authenticating...</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center space-x-2">
+                    <span>Sign In to Portal</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 }
+
