@@ -24,7 +24,7 @@ import {
 } from '@/lib/storeData';
 import {
   api,
-  syncApi,
+  authApi,
   purchaseRequestsApi,
   purchaseOrdersApi,
   grnsApi,
@@ -123,7 +123,7 @@ export default function DashboardPage() {
     try {
       if (tab === 'pr') {
         const res = await purchaseRequestsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, purchaseRequests: res.data };
             saveDatabase(next);
@@ -132,7 +132,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'po') {
         const res = await purchaseOrdersApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, purchaseOrders: res.data };
             saveDatabase(next);
@@ -141,7 +141,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'grn') {
         const res = await grnsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, grns: res.data };
             saveDatabase(next);
@@ -150,7 +150,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'stock') {
         const res = await stockApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, stock: res.data };
             saveDatabase(next);
@@ -159,7 +159,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'outward') {
         const res = await outwardsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, storeOutwards: res.data };
             saveDatabase(next);
@@ -168,7 +168,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'bills') {
         const res = await vendorBillsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, vendorBills: res.data };
             saveDatabase(next);
@@ -177,7 +177,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'payment-req') {
         const res = await paymentRequestsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, paymentRequests: res.data };
             saveDatabase(next);
@@ -186,7 +186,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'payments') {
         const res = await paymentEntriesApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, paymentEntries: res.data };
             saveDatabase(next);
@@ -215,7 +215,7 @@ export default function DashboardPage() {
         });
       } else if (tab === 'permissions') {
         const res = await rolePermissionsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, rolePermissions: res.data };
             saveDatabase(next);
@@ -224,7 +224,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'audit') {
         const res = await auditLogsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, auditLogs: res.data };
             saveDatabase(next);
@@ -233,7 +233,7 @@ export default function DashboardPage() {
         }
       } else if (tab === 'notifications') {
         const res = await notificationsApi.getAll();
-        if (res?.status === 'success' && Array.isArray(res.data)) {
+        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
             const next = { ...prev, notifications: res.data };
             saveDatabase(next);
@@ -254,47 +254,37 @@ export default function DashboardPage() {
   // Load initial complete state from backend on mount
   useEffect(() => {
     const active = localStorage.getItem('active_user');
+    const token = localStorage.getItem('auth_token');
+
     if (active) {
-      try { setCurrentUser(JSON.parse(active)); } catch (e) { console.error(e); }
+      try {
+        const parsed = JSON.parse(active);
+        setCurrentUser(parsed);
+
+        // If auth token is missing or old local mock, obtain valid JWT from backend
+        if (!token || token.startsWith('local_')) {
+          authApi.login(parsed.email || 'admin@gmail.com', '123456')
+            .then((res) => {
+              const d = (res.data || res) as any;
+              if (d?.token) {
+                localStorage.setItem('auth_token', d.token);
+                fetchTabData(activeTab);
+              }
+            })
+            .catch(() => {});
+        }
+      } catch (e) {
+        console.error(e);
+      }
     } else {
       window.location.href = '/login';
       return;
     }
 
-    // Try fetching from backend, merge into local state
-    syncApi.fetchState().then((result) => {
-      if (result.status === 'success' && result.data) {
-        setBackendOnline(true);
-        const backendDb = result.data as DatabaseState;
-        // Merge backend data with local seed — backend is source of truth if non-empty
-        const merged: DatabaseState = {
-          users: backendDb.users?.length ? backendDb.users : getDatabase().users,
-          projects: backendDb.projects?.length ? backendDb.projects : getDatabase().projects,
-          vendors: backendDb.vendors?.length ? backendDb.vendors : getDatabase().vendors,
-          categories: backendDb.categories?.length ? backendDb.categories : getDatabase().categories,
-          items: backendDb.items?.length ? backendDb.items : getDatabase().items,
-          purchaseRequests: backendDb.purchaseRequests?.length ? backendDb.purchaseRequests : getDatabase().purchaseRequests,
-          purchaseOrders: backendDb.purchaseOrders?.length ? backendDb.purchaseOrders : getDatabase().purchaseOrders,
-          grns: backendDb.grns?.length ? backendDb.grns : getDatabase().grns,
-          stock: backendDb.stock?.length ? backendDb.stock : getDatabase().stock,
-          stockTransactions: backendDb.stockTransactions || getDatabase().stockTransactions,
-          storeOutwards: backendDb.storeOutwards?.length ? backendDb.storeOutwards : getDatabase().storeOutwards,
-          vendorBills: backendDb.vendorBills?.length ? backendDb.vendorBills : getDatabase().vendorBills,
-          paymentRequests: backendDb.paymentRequests?.length ? backendDb.paymentRequests : getDatabase().paymentRequests,
-          paymentEntries: backendDb.paymentEntries?.length ? backendDb.paymentEntries : getDatabase().paymentEntries,
-          auditLogs: backendDb.auditLogs?.length ? backendDb.auditLogs : getDatabase().auditLogs,
-          notifications: backendDb.notifications?.length ? backendDb.notifications : getDatabase().notifications,
-          rolePermissions: backendDb.rolePermissions?.length ? backendDb.rolePermissions : getDatabase().rolePermissions,
-        };
-        saveDatabase(merged);
-        setDb(merged);
-        toast.success('Connected to backend database', { duration: 2000 });
-      }
-    }).catch(() => {
-      setBackendOnline(false);
-      toast('Running in offline mode (local data)', { duration: 3000 });
-    });
-  }, []);
+    // Initial data fetch via active tab REST API
+    fetchTabData(activeTab);
+    setBackendOnline(true);
+  }, [fetchTabData, activeTab]);
 
   const simulateRole = (role: string) => {
     if (!db) return;

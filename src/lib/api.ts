@@ -1,6 +1,7 @@
-// Purchase Store Enterprise — Complete API Service Layer
-// All backend REST API endpoints mapped to typed TypeScript functions
+// Purchase Store Enterprise — Centralized Typed API Service Layer
+// Built with Axios Client, Interceptors, and Standard Response Envelopes
 
+import axiosClient from './axiosClient';
 import {
   DatabaseState,
   User,
@@ -18,196 +19,382 @@ import {
   PaymentEntry,
   AuditLog,
   Notification,
-  RolePermission
+  RolePermission,
 } from './storeData';
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005/api';
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
 
-// Helper for HTTP requests
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+export interface ApiResponseEnvelope<T> {
+  status: number | string;
+  message: string;
+  data: T;
+  pagination?: PaginationMeta;
+}
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(token && !token.startsWith('local_') ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers || {}),
-  };
-
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  const json = await response.json();
-  if (!response.ok) {
-    throw new Error(json.message || json.error || `HTTP ${response.status} request failed`);
-  }
-  return json;
+export interface QueryParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+  [key: string]: any;
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 export const authApi = {
   login: async (email: string, password: string = '123456') => {
-    return request<{ status: string; token: string; user: User; message?: string }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
+    const res = await axiosClient.post<ApiResponseEnvelope<{ token: string; user: User }>>('/auth/login', {
+      email,
+      password,
     });
+    return res.data;
   },
   getMe: async () => {
-    return request<{ status: string; user: User }>('/auth/me', { method: 'GET' });
+    const res = await axiosClient.get<ApiResponseEnvelope<User>>('/auth/me');
+    return res.data;
   },
 };
 
 // ─── SYNC (BULK) ──────────────────────────────────────────────────────────────
 export const syncApi = {
   fetchState: async () => {
-    return request<{ status: string; data?: DatabaseState; message?: string }>('/sync', { method: 'GET' });
+    const res = await axiosClient.get<ApiResponseEnvelope<DatabaseState>>('/sync');
+    return res.data;
   },
   saveState: async (state: DatabaseState) => {
-    return request<{ status: string; message: string }>('/sync', {
-      method: 'POST',
-      body: JSON.stringify(state),
-    });
+    const res = await axiosClient.post<ApiResponseEnvelope<null>>('/sync', state);
+    return res.data;
   },
 };
 
 // ─── USERS ────────────────────────────────────────────────────────────────────
 export const usersApi = {
-  getAll: async () => request<{ status: string; count: number; data: User[] }>('/users', { method: 'GET' }),
-  create: async (user: Omit<User, 'id'>) => request<{ status: string; user: User }>('/users', { method: 'POST', body: JSON.stringify(user) }),
-  update: async (id: string, user: Partial<User>) => request<{ status: string; user: User }>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(user) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/users/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<User[]>>('/users', { params });
+    return res.data;
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<User>>(`/users/${id}`);
+    return res.data;
+  },
+  create: async (user: Omit<User, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<User>>('/users', user);
+    return res.data;
+  },
+  update: async (id: string, user: Partial<User>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<User>>(`/users/${id}`, user);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/users/${id}`);
+    return res.data;
+  },
 };
 
 // ─── PROJECTS ─────────────────────────────────────────────────────────────────
 export const projectsApi = {
-  getAll: async () => request<{ status: string; data: Project[] }>('/projects', { method: 'GET' }),
-  getById: async (id: string) => request<{ status: string; data: Project }>(`/projects/${id}`, { method: 'GET' }),
-  create: async (data: Omit<Project, 'id'>) => request<{ status: string; data: Project }>('/projects', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<Project>) => request<{ status: string; data: Project }>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/projects/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Project[]>>('/projects', { params });
+    return res.data;
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Project>>(`/projects/${id}`);
+    return res.data;
+  },
+  create: async (data: Omit<Project, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<Project>>('/projects', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<Project>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<Project>>(`/projects/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/projects/${id}`);
+    return res.data;
+  },
 };
 
 // ─── VENDORS ──────────────────────────────────────────────────────────────────
 export const vendorsApi = {
-  getAll: async () => request<{ status: string; data: Vendor[] }>('/vendors', { method: 'GET' }),
-  getById: async (id: string) => request<{ status: string; data: Vendor }>(`/vendors/${id}`, { method: 'GET' }),
-  create: async (data: Omit<Vendor, 'id'>) => request<{ status: string; data: Vendor }>('/vendors', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<Vendor>) => request<{ status: string; data: Vendor }>(`/vendors/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/vendors/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Vendor[]>>('/vendors', { params });
+    return res.data;
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Vendor>>(`/vendors/${id}`);
+    return res.data;
+  },
+  create: async (data: Omit<Vendor, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<Vendor>>('/vendors', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<Vendor>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<Vendor>>(`/vendors/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/vendors/${id}`);
+    return res.data;
+  },
 };
 
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 export const categoriesApi = {
-  getAll: async () => request<{ status: string; data: Category[] }>('/categories', { method: 'GET' }),
-  create: async (data: Omit<Category, 'id'>) => request<{ status: string; data: Category }>('/categories', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<Category>) => request<{ status: string; data: Category }>(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/categories/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Category[]>>('/categories', { params });
+    return res.data;
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Category>>(`/categories/${id}`);
+    return res.data;
+  },
+  create: async (data: Omit<Category, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<Category>>('/categories', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<Category>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<Category>>(`/categories/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/categories/${id}`);
+    return res.data;
+  },
 };
 
 // ─── ITEMS ────────────────────────────────────────────────────────────────────
 export const itemsApi = {
-  getAll: async () => request<{ status: string; data: Item[] }>('/items', { method: 'GET' }),
-  create: async (data: Omit<Item, 'id'>) => request<{ status: string; data: Item }>('/items', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<Item>) => request<{ status: string; data: Item }>(`/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/items/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Item[]>>('/items', { params });
+    return res.data;
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Item>>(`/items/${id}`);
+    return res.data;
+  },
+  create: async (data: Omit<Item, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<Item>>('/items', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<Item>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<Item>>(`/items/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/items/${id}`);
+    return res.data;
+  },
 };
 
 // ─── PURCHASE REQUESTS ────────────────────────────────────────────────────────
 export const purchaseRequestsApi = {
-  getAll: async () => request<{ status: string; data: PurchaseRequest[] }>('/purchase-requests', { method: 'GET' }),
-  create: async (data: Omit<PurchaseRequest, 'id'>) => request<{ status: string; data: PurchaseRequest }>('/purchase-requests', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<PurchaseRequest>) => request<{ status: string; data: PurchaseRequest }>(`/purchase-requests/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/purchase-requests/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<PurchaseRequest[]>>('/purchase-requests', { params });
+    return res.data;
+  },
+  create: async (data: Omit<PurchaseRequest, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<PurchaseRequest>>('/purchase-requests', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<PurchaseRequest>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<PurchaseRequest>>(`/purchase-requests/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/purchase-requests/${id}`);
+    return res.data;
+  },
 };
 
 // ─── PURCHASE ORDERS ─────────────────────────────────────────────────────────
 export const purchaseOrdersApi = {
-  getAll: async () => request<{ status: string; data: PurchaseOrder[] }>('/purchase-orders', { method: 'GET' }),
-  create: async (data: Omit<PurchaseOrder, 'id'>) => request<{ status: string; data: PurchaseOrder }>('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<PurchaseOrder>) => request<{ status: string; data: PurchaseOrder }>(`/purchase-orders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/purchase-orders/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<PurchaseOrder[]>>('/purchase-orders', { params });
+    return res.data;
+  },
+  create: async (data: Omit<PurchaseOrder, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<PurchaseOrder>>('/purchase-orders', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<PurchaseOrder>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<PurchaseOrder>>(`/purchase-orders/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/purchase-orders/${id}`);
+    return res.data;
+  },
 };
 
 // ─── GRNS ─────────────────────────────────────────────────────────────────────
 export const grnsApi = {
-  getAll: async () => request<{ status: string; data: GRN[] }>('/grns', { method: 'GET' }),
-  create: async (data: Omit<GRN, 'id'>) => request<{ status: string; data: GRN }>('/grns', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<GRN>) => request<{ status: string; data: GRN }>(`/grns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/grns/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<GRN[]>>('/grns', { params });
+    return res.data;
+  },
+  create: async (data: Omit<GRN, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<GRN>>('/grns', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<GRN>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<GRN>>(`/grns/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/grns/${id}`);
+    return res.data;
+  },
 };
 
 // ─── STOCK ────────────────────────────────────────────────────────────────────
 export const stockApi = {
-  getAll: async (projectId?: string) => {
-    const qs = projectId ? `?projectId=${projectId}` : '';
-    return request<{ status: string; data: Stock[] }>(`/stock${qs}`, { method: 'GET' });
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Stock[]>>('/stock', { params });
+    return res.data;
   },
-  update: async (id: string, data: Partial<Stock>) => request<{ status: string; data: Stock }>(`/stock/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  getTransactions: async (projectId?: string, itemId?: string) => {
-    const params = new URLSearchParams();
-    if (projectId) params.append('projectId', projectId);
-    if (itemId) params.append('itemId', itemId);
-    return request<{ status: string; data: any[] }>(`/stock-transactions?${params}`, { method: 'GET' });
+  update: async (id: string, data: Partial<Stock>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<Stock>>(`/stock/${id}`, data);
+    return res.data;
+  },
+  getTransactions: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<any[]>>('/stock-transactions', { params });
+    return res.data;
   },
 };
 
 // ─── STORE OUTWARDS ───────────────────────────────────────────────────────────
 export const outwardsApi = {
-  getAll: async () => request<{ status: string; data: StoreOutward[] }>('/store-outwards', { method: 'GET' }),
-  create: async (data: Omit<StoreOutward, 'id'>) => request<{ status: string; data: StoreOutward }>('/store-outwards', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<StoreOutward>) => request<{ status: string; data: StoreOutward }>(`/store-outwards/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/store-outwards/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<StoreOutward[]>>('/store-outwards', { params });
+    return res.data;
+  },
+  create: async (data: Omit<StoreOutward, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<StoreOutward>>('/store-outwards', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<StoreOutward>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<StoreOutward>>(`/store-outwards/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/store-outwards/${id}`);
+    return res.data;
+  },
 };
 
 // ─── VENDOR BILLS ─────────────────────────────────────────────────────────────
 export const vendorBillsApi = {
-  getAll: async () => request<{ status: string; data: VendorBill[] }>('/vendor-bills', { method: 'GET' }),
-  create: async (data: Omit<VendorBill, 'id'>) => request<{ status: string; data: VendorBill }>('/vendor-bills', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<VendorBill>) => request<{ status: string; data: VendorBill }>(`/vendor-bills/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/vendor-bills/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<VendorBill[]>>('/vendor-bills', { params });
+    return res.data;
+  },
+  create: async (data: Omit<VendorBill, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<VendorBill>>('/vendor-bills', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<VendorBill>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<VendorBill>>(`/vendor-bills/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/vendor-bills/${id}`);
+    return res.data;
+  },
 };
 
 // ─── PAYMENT REQUESTS ─────────────────────────────────────────────────────────
 export const paymentRequestsApi = {
-  getAll: async () => request<{ status: string; data: PaymentRequest[] }>('/payment-requests', { method: 'GET' }),
-  create: async (data: Omit<PaymentRequest, 'id'>) => request<{ status: string; data: PaymentRequest }>('/payment-requests', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<PaymentRequest>) => request<{ status: string; data: PaymentRequest }>(`/payment-requests/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/payment-requests/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<PaymentRequest[]>>('/payment-requests', { params });
+    return res.data;
+  },
+  create: async (data: Omit<PaymentRequest, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<PaymentRequest>>('/payment-requests', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<PaymentRequest>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<PaymentRequest>>(`/payment-requests/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/payment-requests/${id}`);
+    return res.data;
+  },
 };
 
-// ─── PAYMENT ENTRIES ─────────────────────────────────────────────────────────
+// ─── PAYMENT ENTRIES ──────────────────────────────────────────────────────────
 export const paymentEntriesApi = {
-  getAll: async () => request<{ status: string; data: PaymentEntry[] }>('/payment-entries', { method: 'GET' }),
-  create: async (data: Omit<PaymentEntry, 'id'>) => request<{ status: string; data: PaymentEntry }>('/payment-entries', { method: 'POST', body: JSON.stringify(data) }),
-  update: async (id: string, data: Partial<PaymentEntry>) => request<{ status: string; data: PaymentEntry }>(`/payment-entries/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/payment-entries/${id}`, { method: 'DELETE' }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<PaymentEntry[]>>('/payment-entries', { params });
+    return res.data;
+  },
+  create: async (data: Omit<PaymentEntry, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<PaymentEntry>>('/payment-entries', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<PaymentEntry>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<PaymentEntry>>(`/payment-entries/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/payment-entries/${id}`);
+    return res.data;
+  },
 };
 
 // ─── AUDIT LOGS ───────────────────────────────────────────────────────────────
 export const auditLogsApi = {
-  getAll: async () => request<{ status: string; data: AuditLog[] }>('/audit-logs', { method: 'GET' }),
-  create: async (data: Omit<AuditLog, 'id'>) => request<{ status: string; data: AuditLog }>('/audit-logs', { method: 'POST', body: JSON.stringify(data) }),
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<AuditLog[]>>('/audit-logs', { params });
+    return res.data;
+  },
+  create: async (data: Omit<AuditLog, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<AuditLog>>('/audit-logs', data);
+    return res.data;
+  },
 };
 
 // ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
 export const notificationsApi = {
-  getAll: async (role?: string) => {
-    const qs = role ? `?role=${role}` : '';
-    return request<{ status: string; data: Notification[] }>(`/notifications${qs}`, { method: 'GET' });
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Notification[]>>('/notifications', { params });
+    return res.data;
   },
-  create: async (data: Omit<Notification, 'id'>) => request<{ status: string; data: Notification }>('/notifications', { method: 'POST', body: JSON.stringify(data) }),
-  markRead: async (id: string) => request<{ status: string; message: string }>(`/notifications/${id}/read`, { method: 'PUT' }),
-  delete: async (id: string) => request<{ status: string; message: string }>(`/notifications/${id}`, { method: 'DELETE' }),
+  create: async (data: Omit<Notification, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<Notification>>('/notifications', data);
+    return res.data;
+  },
+  markRead: async (id: string) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<Notification>>(`/notifications/${id}/read`);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/notifications/${id}`);
+    return res.data;
+  },
 };
 
 // ─── ROLE PERMISSIONS ─────────────────────────────────────────────────────────
 export const rolePermissionsApi = {
-  getAll: async () => request<{ status: string; data: RolePermission[] }>('/role-permissions', { method: 'GET' }),
-  update: async (role: string, payload: { modules?: string[]; permissions?: Record<string, any>; newRoleName?: string }) =>
-    request<{ status: string; data: RolePermission }>(`/role-permissions/${role}`, { method: 'PUT', body: JSON.stringify(payload) }),
-  delete: async (role: string) => request<{ status: string; message: string }>(`/role-permissions/${role}`, { method: 'DELETE' }),
+  getAll: async () => {
+    const res = await axiosClient.get<ApiResponseEnvelope<RolePermission[]>>('/role-permissions');
+    return res.data;
+  },
+  update: async (role: string, payload: { modules?: string[]; permissions?: Record<string, any>; newRoleName?: string }) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<RolePermission>>(`/role-permissions/${role}`, payload);
+    return res.data;
+  },
+  delete: async (role: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/role-permissions/${role}`);
+    return res.data;
+  },
 };
 
 // ─── CONSOLIDATED API CLIENT ──────────────────────────────────────────────────

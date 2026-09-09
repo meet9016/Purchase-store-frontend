@@ -20,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} antialiased text-slate-800 bg-slate-50`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased text-slate-800 bg-slate-50`} suppressHydrationWarning>
         <ReduxProvider>
           {children}
           <Toaster richColors position="top-right" />
