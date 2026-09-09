@@ -10,24 +10,20 @@ import {
   Mail,
   Eye,
   EyeOff,
-  ShoppingBag,
+  Building2,
+  ShieldCheck,
   AlertCircle,
   ArrowRight,
-  User as UserIcon,
-  Shield,
-  Building,
-  CheckCircle2
+  UserCheck
 } from 'lucide-react';
 
-const DEMO_ROLES = [
-  { role: 'Admin', email: 'admin@gmail.com', pass: '123456', desc: 'Full System Access' },
-  { role: 'Purchase', email: 'purchase@gmail.com', pass: '123456', desc: 'PO & Vendor Lead' },
-  { role: 'Store', email: 'store@gmail.com', pass: '123456', desc: 'GRN & Stock Inward' },
-  { role: 'Accounts', email: 'accounts@gmail.com', pass: '123456', desc: 'Bills & Disbursements' },
-  { role: 'Approver', email: 'approver@gmail.com', pass: '123456', desc: 'PR/PO Authorization' }
+const QUICK_ROLES = [
+  { role: 'Admin', email: 'admin@gmail.com', name: 'Alok Sharma', desc: 'Full Access' },
+  { role: 'Site Engineer', email: 'vikram@company.com', name: 'Vikram Patel', desc: 'Requisitions (PR)' },
+  { role: 'Purchase Manager', email: 'priya@company.com', name: 'Priya Sharma', desc: 'POs & Quotations' },
+  { role: 'Store Keeper', email: 'rajesh@company.com', name: 'Rajesh Kumar', desc: 'GRN & Stock Inward' },
+  { role: 'Accountant', email: 'amit@company.com', name: 'Amit Verma', desc: 'Bills & Payments' },
 ];
-
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export default function LoginPage() {
   // Login Form
@@ -35,30 +31,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-
-  // Status & Validation
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-
-  const validateLoginForm = () => {
-    const errs: Record<string, string> = {};
-    const cleanEmail = email.trim();
-
-    if (!cleanEmail) {
-      errs.email = 'Email is required';
-    } else if (!EMAIL_REGEX.test(cleanEmail)) {
-      errs.email = 'Please enter a valid email address';
-    }
-
-    if (!password) {
-      errs.password = 'Password is required';
-    }
-
-    setValidationErrors(errs);
-    return Object.keys(errs).length === 0;
+  const selectRole = (roleEmail: string) => {
+    setEmail(roleEmail);
+    setPassword('123456');
+    setError('');
   };
 
   const performLogin = async (targetEmail: string, targetPass: string) => {
@@ -68,58 +48,43 @@ export default function LoginPage() {
     const cleanEmail = targetEmail.toLowerCase().trim();
     const cleanPass = targetPass.trim();
 
-    // 1. Try Backend API Authentication
+    // 1. Try Backend API first
     try {
       const result = await authApi.login(cleanEmail, cleanPass);
-      const authData = (result?.data || result) as any;
+      const authData = (result.data || result) as any;
       const token = authData?.token;
       const user = authData?.user;
 
-      if (token && user) {
+      if ((result.status === 200 || result.status === 'success') && token && user) {
         localStorage.setItem('auth_token', token);
         localStorage.setItem('active_user', JSON.stringify(user));
-
-        try {
-          const rolesRes = await rolePermissionsApi.getAll();
-          if (rolesRes?.status === 200 || rolesRes?.status === 'success') {
-            const fetchedRoles = deduplicateById(rolesRes.data as any);
-            localStorage.setItem('cached_roles', JSON.stringify(fetchedRoles));
-          }
-        } catch (e) {
-          console.warn('Failed to fetch role permissions during login', e);
-        }
-
         toast.success(`Welcome back, ${user.name || 'User'}!`);
-        window.location.href = '/dashboard';
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 300);
         return;
       }
     } catch (apiErr: any) {
-      const serverMsg = apiErr?.message || apiErr?.data?.message || apiErr?.response?.data?.message;
-      console.warn('[Backend Auth Failed]', serverMsg || apiErr);
-
-      // If backend explicitly rejected with invalid credentials (400, 401, 403, 404)
-      if (apiErr?.status === 401 || apiErr?.status === 400 || apiErr?.status === 403 || apiErr?.status === 404) {
-        const errorMsg = serverMsg || 'Invalid email or password. Please try again.';
-        setError(errorMsg);
-        toast.error(errorMsg);
+      const errMsg = apiErr?.message || '';
+      if (errMsg.includes('Invalid email or password') || errMsg.includes('inactive') || errMsg.includes('not found')) {
         setLoading(false);
         return;
       }
     }
 
-    // 2. Local Fallback authentication (Only if backend server is unreachable)
+    // 2. Local Fallback authentication
     const activeDb = getDatabase();
     let user = activeDb?.users?.find((u) => u.email.toLowerCase().trim() === cleanEmail);
 
-    // Auto-seed demo role if matching demo email
-    const demoMatch = DEMO_ROLES.find((d) => d.email.toLowerCase().trim() === cleanEmail);
-    if (!user && demoMatch) {
-      const defaultNames: Record<string, string> = {
-        Admin: 'Alok Sharma',
-        Purchase: 'Rahul Verma',
-        Store: 'Vikram Singh',
-        Accounts: 'Sneha Patel',
-        Approver: 'Priya Mehta',
+    if (!user && (cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin')) {
+      user = {
+        id: 'usr-admin',
+        name: 'Alok Sharma',
+        email: 'admin@gmail.com',
+        role: 'Admin',
+        department: 'Executive Management',
+        active: true,
+        password: '123456'
       };
       user = {
         id: `usr-${Date.now()}`,
@@ -139,16 +104,14 @@ export default function LoginPage() {
     if (!user) {
       const errMsg = `Account '${targetEmail}' not found.`;
       setLoading(false);
-      setError(errMsg);
-      toast.error(errMsg);
+      setError(`User with email '${targetEmail}' not found. Check demo accounts below.`);
       return;
     }
 
     if (!user.active) {
       const errMsg = 'This user account is currently deactivated.';
       setLoading(false);
-      setError(errMsg);
-      toast.error(errMsg);
+      setError('This staff account is currently deactivated.');
       return;
     }
 
@@ -162,9 +125,11 @@ export default function LoginPage() {
     }
 
     localStorage.setItem('active_user', JSON.stringify(user));
-    localStorage.setItem('auth_token', 'local_jwt_' + Date.now());
+    localStorage.setItem('auth_token', 'local_session_' + Date.now());
     toast.success(`Welcome back, ${user.name || 'User'}!`);
-    window.location.href = '/dashboard';
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 300);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -175,43 +140,38 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white">
-      {/* Brand Header */}
+    <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Top Brand Info */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/20 mb-3">
-          <ShoppingBag className="w-6 h-6" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-900 text-white shadow-sm mb-3">
+          <Building2 className="w-6 h-6" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#0F172C]">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Purchase &amp; Store Management
         </h1>
-        <p className="mt-1 text-xs text-slate-500 font-medium">
-          Enterprise procurement, material inward &amp; vendor settlements
+        <p className="mt-1 text-sm text-slate-600">
+          Sign in to access your procurement portal
         </p>
       </div>
 
-          {/* Main Login Card */}
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-6 px-6 shadow-sm border border-slate-200/90 rounded-2xl sm:px-8">
-          <div className="mb-5 text-center">
-            <h2 className="text-base font-bold text-slate-900">Sign In to Your Account</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Enter your credentials to access the portal</p>
-          </div>
-
+      {/* Main Login Card */}
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-6 shadow-sm border border-slate-200 sm:rounded-xl sm:px-10">
+          
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start space-x-2 text-rose-700 text-xs animate-shake">
+            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start space-x-2 text-red-700 text-xs">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span className="font-medium">{error}</span>
             </div>
           )}
 
-          {/* Login Form */}
-          <form noValidate onSubmit={handleLoginSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Email Address <span className="text-red-500 font-bold ml-0.5">*</span>
+                Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Mail className="h-4 w-4" />
                 </div>
                 <input
@@ -223,11 +183,9 @@ export default function LoginPage() {
                     if (validationErrors.email) setValidationErrors((prev) => ({ ...prev, email: '' }));
                   }}
                   placeholder="name@company.com"
-                  className={`block w-full pl-10 pr-3.5 py-2.5 text-xs border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none transition-colors ${
-                    validationErrors.email
-                      ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-50/20'
-                      : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
-                  }`}
+                  className="block w-full pl-9 pr-3 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
+                  required
+                  autoComplete="email"
                 />
               </div>
               {validationErrors.email && (
@@ -237,10 +195,10 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Password <span className="text-red-500 font-bold ml-0.5">*</span>
+                Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Lock className="h-4 w-4" />
                 </div>
                 <input
@@ -252,16 +210,14 @@ export default function LoginPage() {
                     if (validationErrors.password) setValidationErrors((prev) => ({ ...prev, password: '' }));
                   }}
                   placeholder="••••••••"
-                  className={`block w-full pl-10 pr-10 py-2.5 text-xs border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none transition-colors ${
-                    validationErrors.password
-                      ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
-                      : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
-                  }`}
+                  className="block w-full pl-9 pr-10 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-colors"
+                  required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -273,37 +229,83 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center text-slate-600 cursor-pointer select-none">
+              <label className="flex items-center text-slate-600 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 accent-blue-600"
+                  className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 accent-slate-900"
                 />
                 <span className="ml-2 font-medium">Remember me</span>
               </label>
+
+              <span className="text-slate-500 font-medium text-[11px]">
+                Default password: <span className="font-mono font-semibold text-slate-700">123456</span>
+              </span>
             </div>
 
             <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-xl shadow-xs text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:outline-none transition-colors cursor-pointer disabled:opacity-60 shadow-blue-600/20"
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-all cursor-pointer disabled:opacity-60"
               >
                 {loading ? (
                   <span className="flex items-center space-x-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Authenticating...</span>
+                    <span>Signing in...</span>
                   </span>
                 ) : (
                   <span className="flex items-center space-x-2">
-                    <span>Sign In to Portal</span>
+                    <span>Sign In</span>
                     <ArrowRight className="w-4 h-4" />
                   </span>
                 )}
               </button>
             </div>
           </form>
+
+          {/* Quick Demo Staff Logins */}
+          <div className="mt-6 pt-5 border-t border-slate-200">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-slate-500" />
+                <span>Quick Select Demo Role:</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {QUICK_ROLES.map((item) => {
+                const isSelected = email === item.email;
+                return (
+                  <button
+                    key={item.email}
+                    type="button"
+                    onClick={() => selectRole(item.email)}
+                    className={`text-left p-2 rounded-lg border text-xs transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-slate-900 bg-slate-50 text-slate-900 font-medium ring-1 ring-slate-900'
+                        : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div className="font-semibold text-slate-900 flex items-center justify-between">
+                      <span>{item.role}</span>
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />}
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">{item.name}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-5 text-center">
+            <p className="text-[11px] text-slate-400 flex items-center justify-center space-x-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+              <span>Purchase Store ERP • Enterprise Edition</span>
+            </p>
+          </div>
+
         </div>
       </div>
     </div>

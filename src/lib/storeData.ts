@@ -852,41 +852,12 @@ function getInitialSeed(): DatabaseState {
 }
 
 export async function fetchInitialData(): Promise<DatabaseState> {
-  // Always return instantaneous localStorage state for pure frontend zero-lag experience
-  const localData = getDatabase();
-
-  // Async non-blocking background sync attempt (will never freeze or block the UI)
-  if (typeof window !== 'undefined') {
-    setTimeout(async () => {
-      try {
-        fetch(`${API_BASE}/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(localData)
-        }).catch(() => {});
-      } catch (e) {
-        // Safe offline mode
-      }
-    }, 500);
-  }
-
-  return localData;
+  return getDatabase();
 }
 
 export function saveDatabase(data: DatabaseState) {
   if (typeof window !== 'undefined') {
     localStorage.setItem(DB_KEY, JSON.stringify(data));
-  }
-
-  // Safe background sync without blocking UI
-  try {
-    fetch(`${API_BASE}/sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).catch(() => {});
-  } catch (e) {
-    // Offline mode
   }
 }
 
