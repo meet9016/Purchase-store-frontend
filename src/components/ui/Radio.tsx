@@ -17,7 +17,7 @@ interface RadioProps {
 export function Radio({ label, name, options, selectedValue, onChange, className = '' }: RadioProps) {
   return (
     <div className={`w-full ${className}`}>
-      <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
+      <label className="block text-xs font-bold text-slate-800 mb-2">
         {label}
       </label>
       <div className="flex flex-wrap gap-4">

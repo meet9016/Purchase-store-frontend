@@ -29,16 +29,27 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
   };
 
+  const formatDate = (val?: string) => {
+    if (!val) return '-';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(val);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
             <FileSpreadsheet className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Store & Purchase MIS Reports</h3>
-            <p className="text-xs text-slate-500 font-medium">Generate data logs, audit compliance & CSV exports</p>
+            <h3 className="text-lg font-bold text-[#0F172C]">Store &amp; Purchase MIS Reports</h3>
+            <p className="text-xs text-slate-500 font-medium">Generate data logs, audit compliance &amp; CSV exports</p>
           </div>
         </div>
 
@@ -58,7 +69,7 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
           </div>
 
           <Button
-            variant="primary"
+            variant="outline"
             icon={<Download className="h-4 w-4" />}
             onClick={exportCSV}
           >
@@ -73,14 +84,14 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
           data={purchaseRequests}
           itemsPerPage={10}
           renderRow={(pr) => (
-            <tr key={pr.id} className="custom-table-row">
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{pr.prNumber}</td>
-              <td className="px-5 py-4 font-semibold text-slate-800 text-sm">{pr.projectName}</td>
-              <td className="px-5 py-4 text-slate-700 font-medium text-sm">{pr.requesterName}</td>
-              <td className="px-5 py-4 text-slate-600 font-normal text-sm">{pr.requiredDate}</td>
-              <td className="px-5 py-4 font-medium text-slate-800 text-sm">{pr.items?.length || 0} Lines</td>
-              <td className="px-5 py-4 font-medium text-slate-800 text-sm">{pr.priority}</td>
-              <td className="px-5 py-4 font-semibold text-[#0F172C] text-sm">{pr.status}</td>
+            <tr key={pr.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{pr.prNumber}</td>
+              <td className="px-4 py-3 font-medium text-slate-900 text-xs">{pr.projectName}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs">{pr.requesterName}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs whitespace-nowrap">{formatDate(pr.requiredDate)}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{pr.items?.length || 0} Lines</td>
+              <td className="px-4 py-3 font-semibold text-slate-800 text-xs">{pr.priority}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{pr.status}</td>
             </tr>
           )}
         />
@@ -92,13 +103,13 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
           data={purchaseOrders}
           itemsPerPage={10}
           renderRow={(po) => (
-            <tr key={po.id} className="custom-table-row">
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{po.poNumber}</td>
-              <td className="px-5 py-4 font-semibold text-slate-800 text-sm">{po.vendorName}</td>
-              <td className="px-5 py-4 text-slate-700 font-medium text-sm">{po.projectName}</td>
-              <td className="px-5 py-4 text-slate-600 font-normal text-sm">{po.poDate}</td>
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{formatCurrency(po.totalPOAmount || po.totalAmount || 0)}</td>
-              <td className="px-5 py-4 font-semibold text-[#0F172C] text-sm">{po.status}</td>
+            <tr key={po.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{po.poNumber}</td>
+              <td className="px-4 py-3 font-medium text-slate-900 text-xs">{po.vendorName}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs">{po.projectName}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs whitespace-nowrap">{formatDate(po.poDate)}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{formatCurrency(po.totalPOAmount || po.totalAmount || 0)}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{po.status}</td>
             </tr>
           )}
         />
@@ -110,13 +121,13 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
           data={stocks}
           itemsPerPage={10}
           renderRow={(s, idx) => (
-            <tr key={s.id || `${s.projectId}-${s.itemId}-${idx}`} className="custom-table-row">
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{s.itemName}</td>
-              <td className="px-5 py-4 font-mono text-slate-800 font-semibold text-sm">{s.itemCode || '-'}</td>
-              <td className="px-5 py-4 text-slate-700 font-medium text-sm">{s.projectName}</td>
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-base">{s.quantity}</td>
-              <td className="px-5 py-4 font-medium text-slate-700 text-sm">{s.unit}</td>
-              <td className="px-5 py-4 font-normal text-slate-600 text-sm">{s.reorderLevel || 10}</td>
+            <tr key={s.id || `${s.projectId}-${s.itemId}-${idx}`} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{s.itemName}</td>
+              <td className="px-4 py-3 font-mono text-slate-800 font-semibold text-xs">{s.itemCode || '-'}</td>
+              <td className="px-4 py-3 text-slate-900 font-medium text-xs">{s.projectName}</td>
+              <td className="px-4 py-3 font-bold text-slate-900 text-xs">{s.quantity}</td>
+              <td className="px-4 py-3 font-medium text-slate-800 text-xs">{s.unit}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs">{s.reorderLevel || 10}</td>
             </tr>
           )}
         />
@@ -128,13 +139,13 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
           data={bills}
           itemsPerPage={10}
           renderRow={(b) => (
-            <tr key={b.id} className="custom-table-row">
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{b.billNumber}</td>
-              <td className="px-5 py-4 text-slate-800 font-medium text-sm">{b.vendorInvoiceNumber || b.billNumber}</td>
-              <td className="px-5 py-4 font-medium text-slate-700 text-sm">{b.vendorName}</td>
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{formatCurrency(b.billAmount)}</td>
-              <td className="px-5 py-4 font-semibold text-emerald-700 text-sm">{formatCurrency(b.paidAmount || 0)}</td>
-              <td className="px-5 py-4 font-semibold text-[#0F172C] text-sm">{b.status || b.paymentStatus}</td>
+            <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{b.billNumber}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs">{b.vendorInvoiceNumber || b.billNumber}</td>
+              <td className="px-4 py-3 text-slate-900 font-medium text-xs">{b.vendorName}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{formatCurrency(b.billAmount)}</td>
+              <td className="px-4 py-3 font-semibold text-emerald-600 text-xs">{formatCurrency(b.paidAmount || 0)}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{b.status || b.paymentStatus}</td>
             </tr>
           )}
         />
@@ -146,13 +157,13 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
           data={payments}
           itemsPerPage={10}
           renderRow={(p) => (
-            <tr key={p.id} className="custom-table-row">
-              <td className="px-5 py-4 font-bold text-[#0F172C] text-sm">{p.paymentNumber || p.paymentId || p.id}</td>
-              <td className="px-5 py-4 text-slate-800 font-semibold text-sm">{p.billNumber}</td>
-              <td className="px-5 py-4 font-medium text-slate-700 text-sm">{p.vendorName}</td>
-              <td className="px-5 py-4 font-bold text-emerald-700 text-sm">{formatCurrency(p.paymentAmount)}</td>
-              <td className="px-5 py-4 font-medium text-slate-800 text-sm">{p.paymentMode}</td>
-              <td className="px-5 py-4 font-mono text-[#0F172C] text-sm font-semibold">{p.transactionNumber || '-'}</td>
+            <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{p.paymentNumber || p.paymentId || p.id}</td>
+              <td className="px-4 py-3 text-slate-800 font-semibold text-xs">{p.billNumber}</td>
+              <td className="px-4 py-3 text-slate-900 font-medium text-xs">{p.vendorName}</td>
+              <td className="px-4 py-3 font-semibold text-emerald-600 text-xs">{formatCurrency(p.paymentAmount)}</td>
+              <td className="px-4 py-3 font-medium text-slate-800 text-xs">{p.paymentMode}</td>
+              <td className="px-4 py-3 font-mono text-slate-900 text-xs font-semibold">{p.transactionNumber || '-'}</td>
             </tr>
           )}
         />

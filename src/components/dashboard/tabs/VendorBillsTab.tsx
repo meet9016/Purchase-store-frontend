@@ -39,21 +39,35 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
     return !!rp.permissions['Vendor Invoices'].create;
   })();
 
+  const canRegisterBill = canCreateBill;
+  const onOpenRegisterBillModal = onOpenCreateBillModal;
+
+  const formatDate = (val?: string) => {
+    if (!val) return '-';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(val);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
             <Layers className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-[#0F172C]">Vendor Bills & Invoices</h3>
-            <p className="text-xs text-slate-500 font-medium">Registered vendor invoices and payment tracking</p>
+            <h3 className="text-lg font-bold text-[#0F172C]">Vendor Bills &amp; Invoices</h3>
+            <p className="text-xs text-slate-500 font-medium">Inward invoices, 3-way matching &amp; payment schedules</p>
           </div>
         </div>
-        {canCreateBill && (
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreateBillModal}>
+        {canRegisterBill && (
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenRegisterBillModal}>
             Register Bill
           </Button>
         )}
@@ -83,26 +97,26 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
         itemsPerPage={10}
         emptyMessage="No vendor bills registered yet. Click 'Register Bill' to add one."
         renderRow={(bill) => (
-          <tr key={bill.id} className="hover:bg-slate-50/80 transition-colors">
-            <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{bill.billNumber}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{bill.billDate}</td>
-            <td className="px-4 py-2.5 text-slate-800 text-xs font-medium">{bill.vendorName}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-mono font-normal">{bill.poNumber}</td>
-            <td className="px-4 py-2.5 font-medium text-slate-800 text-xs">{formatCurrency(bill.billAmount)}</td>
-            <td className="px-4 py-2.5 font-medium text-emerald-600 text-xs">{formatCurrency(bill.paidAmount || 0)}</td>
-            <td className="px-4 py-2.5 font-medium text-rose-600 text-xs">{formatCurrency(bill.outstandingAmount || 0)}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{bill.dueDate || '-'}</td>
-            <td className="px-4 py-2.5">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${statusBadge(bill.status)}`}>
+          <tr key={bill.id} className="hover:bg-slate-50 transition-colors">
+            <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{bill.billNumber}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(bill.billDate)}</td>
+            <td className="px-4 py-3 text-slate-900 font-medium text-xs">{bill.vendorName}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-semibold">{bill.poNumber}</td>
+            <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{formatCurrency(bill.billAmount)}</td>
+            <td className="px-4 py-3 font-semibold text-emerald-600 text-xs">{formatCurrency(bill.paidAmount || 0)}</td>
+            <td className="px-4 py-3 font-semibold text-rose-600 text-xs">{formatCurrency(bill.outstandingAmount || 0)}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(bill.dueDate)}</td>
+            <td className="px-4 py-3">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${statusBadge(bill.status)}`}>
                 {bill.status}
               </span>
             </td>
-            <td className="px-4 py-3.5">
+            <td className="px-4 py-3">
               <div className="flex items-center space-x-1.5">
                 <button
                   type="button"
                   onClick={() => setSelectedBill(bill)}
-                  className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                  className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                   title="View Bill"
                 >
                   <Eye className="h-4 w-4" />
@@ -149,14 +163,14 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
 
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-sm">
-                <p className="text-xs font-bold text-slate-400 uppercase">Bill Info</p>
+                <p className="text-xs font-bold text-slate-700">Bill Info</p>
                 <p><span className="text-slate-500 text-xs">Vendor:</span> <span className="font-bold">{selectedBill.vendorName}</span></p>
                 <p><span className="text-slate-500 text-xs">Invoice No:</span> <span className="font-semibold">{selectedBill.vendorInvoiceNumber || '-'}</span></p>
                 <p><span className="text-slate-500 text-xs">PO Ref:</span> <span className="font-semibold">{selectedBill.poNumber}</span></p>
                 <p><span className="text-slate-500 text-xs">GRN Ref:</span> <span className="font-semibold">{selectedBill.grnNumber || '-'}</span></p>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-sm">
-                <p className="text-xs font-bold text-slate-400 uppercase">Payment Info</p>
+                <p className="text-xs font-bold text-slate-700">Payment Info</p>
                 <p><span className="text-slate-500 text-xs">Bill Amount:</span> <span className="font-black text-slate-800">{formatCurrency(selectedBill.billAmount)}</span></p>
                 <p><span className="text-slate-500 text-xs">Paid:</span> <span className="font-bold text-emerald-600">{formatCurrency(selectedBill.paidAmount || 0)}</span></p>
                 <p><span className="text-slate-500 text-xs">Outstanding:</span> <span className="font-bold text-rose-600">{formatCurrency(selectedBill.outstandingAmount || 0)}</span></p>

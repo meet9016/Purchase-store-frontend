@@ -99,6 +99,17 @@ export function DashboardOverview({
     }
   };
 
+  const formatDate = (val?: string) => {
+    if (!val) return '-';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(val);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Header Card with subtle modern gradient */}
@@ -148,7 +159,7 @@ export function DashboardOverview({
         <Card className="p-5 bg-white hover:bg-gradient-to-br hover:from-white hover:to-blue-50/30 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Pending PRs</p>
+              <p className="text-xs font-semibold text-slate-500">Pending PRs</p>
               <h3 className="text-2xl font-black text-[#0F172C] mt-1">{pendingPrs.length}</h3>
               <p className="text-xs font-semibold text-slate-500 mt-1">Total PRs: {purchaseRequests.length}</p>
             </div>
@@ -170,7 +181,7 @@ export function DashboardOverview({
         <Card className="p-5 bg-white hover:bg-gradient-to-br hover:from-white hover:to-indigo-50/30 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Active POs</p>
+              <p className="text-xs font-semibold text-slate-500">Active POs</p>
               <h3 className="text-2xl font-black text-[#0F172C] mt-1">{activePos.length}</h3>
               <p className="text-xs font-semibold text-slate-500 mt-1">Total POs: {purchaseOrders.length}</p>
             </div>
@@ -192,7 +203,7 @@ export function DashboardOverview({
         <Card className="p-5 bg-white hover:bg-gradient-to-br hover:from-white hover:to-rose-50/30 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Low Stock Items</p>
+              <p className="text-xs font-semibold text-slate-500">Low Stock Items</p>
               <h3 className="text-2xl font-black text-rose-600 mt-1">{lowStockCount}</h3>
               <p className="text-xs font-semibold text-slate-500 mt-1">Catalog items: {stocks.length}</p>
             </div>
@@ -214,7 +225,7 @@ export function DashboardOverview({
         <Card className="p-5 bg-white hover:bg-gradient-to-br hover:from-white hover:to-amber-50/30 border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Bills to Verify</p>
+              <p className="text-xs font-semibold text-slate-500">Bills to Verify</p>
               <h3 className="text-2xl font-black text-amber-600 mt-1">{pendingBills.length}</h3>
               <p className="text-xs font-semibold text-slate-500 mt-1">Total Bills: {vendorBills.length}</p>
             </div>
@@ -256,23 +267,23 @@ export function DashboardOverview({
           data={purchaseRequests.slice(0, 5)}
           emptyMessage="No purchase requests created yet."
           renderRow={(pr) => (
-            <tr key={pr.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-5 py-3.5 font-bold text-blue-600 text-xs font-mono">{pr.prNumber}</td>
-              <td className="px-5 py-3.5 font-semibold text-[#0F172C] text-sm">{pr.projectName}</td>
-              <td className="px-5 py-3.5 text-slate-700 text-xs font-medium">{pr.requesterName}</td>
-              <td className="px-5 py-3.5 text-slate-600 text-xs">{pr.requiredDate}</td>
-              <td className="px-5 py-3.5">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+            <tr key={pr.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{pr.prNumber}</td>
+              <td className="px-4 py-3 font-medium text-slate-900 text-xs">{pr.projectName}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs">{pr.requesterName}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs whitespace-nowrap">{formatDate(pr.requiredDate)}</td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                   pr.priority === 'Urgent'
                     ? 'bg-rose-50 text-rose-700 border border-rose-200'
                     : pr.priority === 'High'
                     ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                    : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'bg-slate-100 text-slate-700 border border-slate-200'
                 }`}>
                   {pr.priority}
                 </span>
               </td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3">
                 {getStatusBadge(pr.status)}
               </td>
             </tr>

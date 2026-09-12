@@ -44,16 +44,27 @@ export function PaymentRequestsTab({
     return !!rp.permissions['Payment Requests'].create;
   })();
 
+  const formatDate = (val?: string) => {
+    if (!val) return '-';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(val);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-violet-50 text-violet-600">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
             <CreditCard className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-[#0F172C]">Payment Requests</h3>
+            <h3 className="text-lg font-bold text-[#0F172C]">Payment Requests</h3>
             <p className="text-xs text-slate-500 font-medium">Vendor payment approval workflow</p>
           </div>
         </div>
@@ -86,16 +97,16 @@ export function PaymentRequestsTab({
         itemsPerPage={10}
         emptyMessage="No payment requests yet. Click 'Raise Payment Request' to create one."
         renderRow={(req) => (
-          <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
-            <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{req.requestNumber || req.requestId}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{req.requestDate}</td>
-            <td className="px-4 py-2.5 text-slate-800 text-xs font-medium">{req.vendorName}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-mono font-normal">{req.billNumber}</td>
-            <td className="px-4 py-2.5 font-medium text-slate-800 text-xs">{formatCurrency(req.requestedAmount)}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{req.requesterName || req.createdByName || '-'}</td>
-            <td className="px-4 py-2.5 text-slate-500 text-xs font-normal max-w-[120px] truncate" title={req.remarks}>{req.remarks || '-'}</td>
-            <td className="px-4 py-2.5">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border ${statusBadge(req.status)}`}>
+          <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+            <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{req.requestNumber || req.requestId}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(req.requestDate)}</td>
+            <td className="px-4 py-3 text-slate-900 text-xs font-semibold">{req.vendorName}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium">{req.billNumber}</td>
+            <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{formatCurrency(req.requestedAmount)}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium">{req.requesterName || req.createdByName || '-'}</td>
+            <td className="px-4 py-3 text-slate-700 text-xs font-normal max-w-[120px] truncate" title={req.remarks}>{req.remarks || '-'}</td>
+            <td className="px-4 py-3">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${statusBadge(req.status)}`}>
                 {req.status}
               </span>
             </td>

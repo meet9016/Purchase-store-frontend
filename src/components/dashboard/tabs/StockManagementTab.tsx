@@ -27,22 +27,24 @@ export function StockManagementTab({ stocks, items, categories }: StockManagemen
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <Package className="h-6 w-6 text-[#0F172C]" />
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+            <Package className="h-5 w-5" />
+          </div>
           <div>
-            <h3 className="text-lg font-black text-[#0F172C]">Inventory Stock Balances</h3>
-            <p className="text-xs text-slate-500 font-bold">Real-time stock balance & min-stock alerts</p>
+            <h3 className="text-lg font-bold text-[#0F172C]">Inventory Stock Balances</h3>
+            <p className="text-xs text-slate-500 font-medium">Real-time stock balance &amp; min-stock alerts</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          <label className="flex items-center space-x-2 text-sm font-extrabold text-[#0F172C] cursor-pointer">
+          <label className="flex items-center space-x-2 text-xs font-semibold text-[#0F172C] cursor-pointer">
             <input
               type="checkbox"
               checked={onlyLowStock}
               onChange={e => setOnlyLowStock(e.target.checked)}
-              className="h-4.5 w-4.5 rounded accent-rose-600 cursor-pointer"
+              className="h-4 w-4 rounded accent-rose-600 cursor-pointer"
             />
             <span>Low Stock Alerts Only</span>
           </label>
@@ -67,20 +69,20 @@ export function StockManagementTab({ stocks, items, categories }: StockManagemen
         renderRow={(s, idx) => {
           const isLow = s.quantity <= (s.reorderLevel || 10);
           return (
-            <tr key={s.id || `${s.projectId}-${s.itemId}-${idx}`} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{s.itemName}</td>
-              <td className="px-4 py-2.5 font-mono text-slate-600 font-normal text-xs">{s.itemCode || '-'}</td>
-              <td className="px-4 py-2.5 font-normal text-slate-700 text-xs">{s.projectName}</td>
-              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{s.quantity}</td>
-              <td className="px-4 py-2.5 font-normal text-slate-600 text-xs">{s.unit}</td>
-              <td className="px-4 py-2.5 font-normal text-slate-500 text-xs">{s.reorderLevel || 10}</td>
-              <td className="px-4 py-2.5">
+            <tr key={s.id || `${s.projectId}-${s.itemId}-${idx}`} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{s.itemName}</td>
+              <td className="px-4 py-3 text-slate-800 font-semibold text-xs">{s.itemCode || '-'}</td>
+              <td className="px-4 py-3 text-slate-900 font-medium text-xs">{s.projectName}</td>
+              <td className="px-4 py-3 font-bold text-slate-900 text-xs">{s.quantity}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs">{s.unit}</td>
+              <td className="px-4 py-3 text-slate-800 font-medium text-xs">{s.reorderLevel || 10}</td>
+              <td className="px-4 py-3">
                 {isLow ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200/70">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/70">
                     <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock
                   </span>
                 ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
                     <CheckCircle2 className="w-3 h-3 mr-1" /> Optimal
                   </span>
                 )}

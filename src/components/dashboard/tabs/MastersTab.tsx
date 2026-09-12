@@ -246,14 +246,14 @@ export function MastersTab({
           itemsPerPage={10}
           emptyMessage="No master items found. Click 'Add New Item' to create one."
           renderRow={(item) => (
-            <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-4 py-2.5 font-mono text-slate-600 text-xs font-normal">{item.itemCode || '-'}</td>
-              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{item.name}</td>
-              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{item.categoryName || 'General'}</td>
-              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{item.unit}</td>
-              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{item.minStock || 0}</td>
-              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{item.reorderLevel || 0}</td>
-              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+            <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{item.itemCode || '-'}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{item.name}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.categoryName || 'General'}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.unit}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.minStock || 0}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.reorderLevel || 0}</td>
+              <td className="px-4 py-3 text-right whitespace-nowrap">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
@@ -285,10 +285,10 @@ export function MastersTab({
           itemsPerPage={10}
           emptyMessage="No categories created yet. Click 'Add New Category' to create one."
           renderRow={(cat) => (
-            <tr key={cat.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{cat.name}</td>
-              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{cat.description || '-'}</td>
-              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+            <tr key={cat.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{cat.name}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{cat.description || '-'}</td>
+              <td className="px-4 py-3 text-right whitespace-nowrap">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
@@ -320,19 +320,19 @@ export function MastersTab({
           itemsPerPage={10}
           emptyMessage="No vendors registered yet. Click 'Add New Vendor' to create one."
           renderRow={(ven) => (
-            <tr key={ven.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{ven.name}</td>
-              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{ven.contactPerson}</td>
-              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">
-                <div className="font-medium text-slate-800">{ven.phone}</div>
-                <div className="text-slate-500 text-[11px]">{ven.email}</div>
+            <tr key={ven.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{ven.name}</td>
+              <td className="px-4 py-3 text-slate-900 text-xs font-medium">{ven.contactPerson}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">
+                <div className="font-semibold text-slate-900">{ven.phone}</div>
+                <div className="text-slate-600 text-[11px]">{ven.email}</div>
               </td>
-              <td className="px-4 py-2.5 text-slate-600 text-xs font-mono font-normal">
-                <div>GST: {ven.gstNo || '-'}</div>
-                <div>PAN: {ven.panNo || '-'}</div>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">
+                <div>GST: <span className="font-semibold">{ven.gstNo || '-'}</span></div>
+                <div>PAN: <span className="font-semibold">{ven.panNo || '-'}</span></div>
               </td>
-              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{ven.creditPeriod} Days</td>
-              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+              <td className="px-4 py-3 text-slate-900 text-xs font-semibold">{ven.creditPeriod} Days</td>
+              <td className="px-4 py-3 text-right whitespace-nowrap">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
@@ -364,17 +364,17 @@ export function MastersTab({
           itemsPerPage={10}
           emptyMessage="No project sites configured yet. Click 'Add New Project' to create one."
           renderRow={(prj) => (
-            <tr key={prj.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{prj.name}</td>
-              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{prj.location}</td>
-              <td className="px-4 py-2.5">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+            <tr key={prj.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{prj.name}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{prj.location}</td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                   prj.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-slate-100 text-slate-700 border border-slate-200'
                 }`}>
                   {prj.status}
                 </span>
               </td>
-              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+              <td className="px-4 py-3 text-right whitespace-nowrap">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
@@ -406,23 +406,23 @@ export function MastersTab({
           itemsPerPage={10}
           emptyMessage="No users registered yet."
           renderRow={(usr) => (
-            <tr key={usr.id} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{usr.name}</td>
-              <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{usr.email}</td>
-              <td className="px-4 py-2.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/70 text-[11px] font-medium">
+            <tr key={usr.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{usr.name}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{usr.email}</td>
+              <td className="px-4 py-3">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/70 text-[11px] font-semibold">
                   {usr.role}
                 </span>
               </td>
-              <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{usr.department || '-'}</td>
-              <td className="px-4 py-2.5">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{usr.department || '-'}</td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
                   usr.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
                 }`}>
                   {usr.active ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td className="px-4 py-2.5 text-right whitespace-nowrap">
+              <td className="px-4 py-3 text-right whitespace-nowrap">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
