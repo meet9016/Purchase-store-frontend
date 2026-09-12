@@ -68,16 +68,16 @@ export function Table<T>({
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden flex flex-col">
       {/* Scrollable table body wrapper with max height for 10 rows */}
-      <div className="overflow-x-auto w-full max-h-[520px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs shadow-xs">
-            <tr className="text-slate-600 font-semibold text-xs border-b border-slate-200">
+      <div className="overflow-x-auto w-full max-h-[560px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+        <table className="w-full text-left text-[13px] border-collapse">
+          <thead className="sticky top-0 z-10 bg-slate-100/95 backdrop-blur-xs shadow-xs border-b border-slate-200">
+            <tr className="text-slate-900 font-bold text-xs tracking-normal">
               {headers.map((h, i) => {
                 const isAction = h.toLowerCase().includes('action');
                 return (
                   <th
                     key={i}
-                    className={`px-4 py-3 whitespace-nowrap text-slate-700 font-semibold text-xs ${
+                    className={`px-4 py-3 whitespace-nowrap text-slate-900 font-bold text-xs capitalize ${
                       isAction ? 'text-right pr-5' : 'text-left'
                     }`}
                   >
@@ -87,15 +87,15 @@ export function Table<T>({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700 text-xs font-normal">
+          <tbody className="divide-y divide-slate-200/90 text-slate-800 text-[13px] font-medium">
             {paginatedData.length === 0 ? (
               <tr>
                 <td colSpan={headers.length} className="px-6 py-12 text-center bg-white">
                   <div className="flex flex-col items-center justify-center space-y-1.5">
-                    <span className="text-xs font-medium text-slate-600">
+                    <span className="text-sm font-semibold text-slate-700">
                       {emptyMessage || 'No records found'}
                     </span>
-                    <span className="text-[11px] text-slate-400">Try adjusting your search or filters</span>
+                    <span className="text-xs text-slate-500">Try adjusting your search or filters</span>
                   </div>
                 </td>
               </tr>
@@ -111,7 +111,7 @@ export function Table<T>({
         <div className="flex items-center space-x-3 text-xs">
           {/* Custom Styled Rows Dropdown */}
           <div className="flex items-center space-x-2">
-            <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">ROWS</span>
+            <span className="text-slate-500 font-semibold text-xs">Rows</span>
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"

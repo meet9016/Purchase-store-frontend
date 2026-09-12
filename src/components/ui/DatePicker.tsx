@@ -179,7 +179,7 @@ export function DatePicker({
           </div>
 
           {/* Days of Week Header */}
-          <div className="grid grid-cols-7 gap-1 text-center py-2 text-[11px] font-bold text-slate-500 uppercase">
+          <div className="grid grid-cols-7 gap-1 text-center py-2 text-[11px] font-semibold text-slate-500">
             {daysOfWeek.map((day) => (
               <div key={day} className="py-1">{day}</div>
             ))}

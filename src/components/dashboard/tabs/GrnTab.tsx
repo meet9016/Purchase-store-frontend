@@ -22,6 +22,17 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
     return !!rp.permissions['Goods Receipt (GRN)'].create;
   })();
 
+  const formatDate = (val?: string) => {
+    if (!val) return '-';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(val);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -49,23 +60,23 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
         itemsPerPage={10}
         emptyMessage="No GRNs created yet. Click 'Create GRN' to record material inward."
         renderRow={(grn) => (
-          <tr key={grn.id} className="hover:bg-slate-50/80 transition-colors">
-            <td className="px-4 py-2.5 font-medium text-slate-900 text-xs">{grn.grnNumber}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{grn.grnDate || grn.receivedDate}</td>
-            <td className="px-4 py-2.5 text-slate-700 text-xs font-medium">{grn.poNumber}</td>
-            <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{grn.vendorName}</td>
-            <td className="px-4 py-2.5 text-slate-600 text-xs font-normal">{grn.projectName || '-'}</td>
-            <td className="px-4 py-2.5">
-              <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-normal">
+          <tr key={grn.id} className="hover:bg-slate-50 transition-colors">
+            <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{grn.grnNumber}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(grn.grnDate || grn.receivedDate)}</td>
+            <td className="px-4 py-3 text-slate-900 text-xs font-semibold">{grn.poNumber}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium">{grn.vendorName}</td>
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium">{grn.projectName || '-'}</td>
+            <td className="px-4 py-3">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-800 text-[11px] font-semibold">
                 {grn.items?.length || 0} Items
               </span>
             </td>
-            <td className="px-4 py-2.5 text-slate-700 text-xs font-normal">{grn.receiverName}</td>
-            <td className="px-5 py-3.5 text-right">
+            <td className="px-4 py-3 text-slate-800 text-xs font-medium">{grn.receiverName}</td>
+            <td className="px-5 py-3 text-right">
               <button
                 type="button"
                 onClick={() => setSelectedGrn(grn)}
-                className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                 title="View GRN Detail"
               >
                 <Eye className="h-4 w-4" />
@@ -91,14 +102,14 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Reference Info</p>
+                <p className="text-xs font-bold text-slate-700">Reference Info</p>
                 <p><span className="text-slate-500">PO Number:</span> <span className="font-bold text-slate-800">{selectedGrn.poNumber}</span></p>
                 <p><span className="text-slate-500">Vendor Invoice:</span> <span className="font-semibold text-slate-700">{selectedGrn.vendorInvoiceNumber || '-'}</span></p>
                 <p><span className="text-slate-500">Challan No:</span> <span className="font-semibold text-slate-700">{selectedGrn.challanNumber || '-'}</span></p>
                 <p><span className="text-slate-500">Vehicle No:</span> <span className="font-semibold text-slate-700">{selectedGrn.vehicleNumber || '-'}</span></p>
               </div>
               <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Receipt Info</p>
+                <p className="text-xs font-bold text-slate-700">Receipt Info</p>
                 <p><span className="text-slate-500">Vendor:</span> <span className="font-bold text-slate-800">{selectedGrn.vendorName}</span></p>
                 <p><span className="text-slate-500">Project:</span> <span className="font-semibold text-slate-700">{selectedGrn.projectName || '-'}</span></p>
                 <p><span className="text-slate-500">Received By:</span> <span className="font-semibold text-slate-700">{selectedGrn.receiverName}</span></p>

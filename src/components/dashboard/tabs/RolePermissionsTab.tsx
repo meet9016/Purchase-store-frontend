@@ -135,13 +135,13 @@ export function RolePermissionsTab({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Header Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-5 py-4 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
             <Shield className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-[#0F172C]">System Roles &amp; Capability Matrix</h2>
+            <h2 className="text-lg font-bold text-[#0F172C]">System Roles &amp; Capability Matrix</h2>
             <p className="text-xs text-slate-500 font-medium">Configure granular feature permissions (View, Create, Update, Delete) for system roles</p>
           </div>
         </div>
@@ -162,7 +162,7 @@ export function RolePermissionsTab({
 
       {/* Roles Table */}
       <Table
-        headers={['ROLE NAME', 'DESCRIPTION', 'CAPABILITY STATUS', 'ACTIONS']}
+        headers={['Role Name', 'Description', 'Capability Status', 'Actions']}
         data={displayRoles}
         itemsPerPage={10}
         emptyMessage="No system roles found."
@@ -172,8 +172,8 @@ export function RolePermissionsTab({
           }, 0);
 
           return (
-            <tr key={rp.role} className="hover:bg-slate-50/80 transition-colors">
-              <td className="px-5 py-3 text-xs font-semibold text-slate-900">
+            <tr key={rp.role} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 text-xs font-semibold text-slate-900">
                 <div className="flex items-center space-x-2.5">
                   <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
                     <Shield className="h-3.5 w-3.5" />
@@ -186,10 +186,10 @@ export function RolePermissionsTab({
                   )}
                 </div>
               </td>
-              <td className="px-5 py-3 text-xs font-normal text-slate-600 max-w-xs">
+              <td className="px-4 py-3 text-xs font-medium text-slate-800 max-w-xs">
                 {rp.description}
               </td>
-              <td className="px-5 py-3 text-xs">
+              <td className="px-4 py-3 text-xs">
                 <div className="flex items-center space-x-2">
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5" />
@@ -197,7 +197,7 @@ export function RolePermissionsTab({
                   </span>
                 </div>
               </td>
-              <td className="px-5 py-3 text-right">
+              <td className="px-4 py-3 text-right">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
@@ -247,7 +247,7 @@ export function RolePermissionsTab({
                 {/* Role Header Info */}
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400">Target Role</span>
+                    <span className="text-xs font-semibold text-slate-500">Target Role</span>
                     <h4 className="text-sm font-bold text-[#0F172C]">{editModalRole.role}</h4>
                   </div>
                   <div className="flex items-center space-x-2">

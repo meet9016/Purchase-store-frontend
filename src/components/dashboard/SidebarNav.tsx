@@ -123,7 +123,7 @@ export function SidebarNav({
 
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        <p className="px-3 pb-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+        <p className="px-3 pb-2 text-xs font-bold text-slate-500">
           Main Modules
         </p>
 
@@ -169,7 +169,7 @@ export function SidebarNav({
               <p className="text-xs font-bold text-[#0F172C] truncate leading-tight">
                 {currentUser?.name || 'Alok Sharma'}
               </p>
-              <span className="inline-block text-[10px] font-bold text-blue-600 uppercase tracking-wide leading-none mt-0.5">
+              <span className="inline-block text-xs font-semibold text-blue-600 leading-none mt-0.5 capitalize">
                 {currentRole}
               </span>
             </div>

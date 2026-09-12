@@ -6,7 +6,20 @@
     color: #0F172C;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
-    font-size: 15px;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #0F172C;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  p, span, label {
+    color: inherit;
   }
 
   /* Date Picker Theme Styling */

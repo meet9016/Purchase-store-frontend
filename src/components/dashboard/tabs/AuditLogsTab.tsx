@@ -12,8 +12,8 @@ interface AuditLogsTabProps {
 export function AuditLogsTab({ auditLogs }: AuditLogsTabProps) {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center space-x-3 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center space-x-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+        <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
           <History className="h-5 w-5" />
         </div>
         <div>
@@ -28,21 +28,21 @@ export function AuditLogsTab({ auditLogs }: AuditLogsTabProps) {
         itemsPerPage={15}
         emptyMessage="No audit logs recorded yet."
         renderRow={(log) => (
-          <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-            <td className="px-4 py-2.5 text-xs font-mono text-slate-500 whitespace-nowrap">
+          <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+            <td className="px-4 py-3 text-xs font-mono text-slate-800 font-medium whitespace-nowrap">
               {new Date(log.timestamp).toLocaleString('en-IN', {
                 day: '2-digit', month: 'short', year: 'numeric',
                 hour: '2-digit', minute: '2-digit', second: '2-digit'
               })}
             </td>
-            <td className="px-4 py-2.5 text-xs font-medium text-slate-800">{log.userName || log.userId}</td>
-            <td className="px-4 py-2.5">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60">
+            <td className="px-4 py-3 text-xs font-semibold text-slate-900">{log.userName || log.userId}</td>
+            <td className="px-4 py-3">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
                 {log.action}
               </span>
             </td>
-            <td className="px-4 py-2.5 text-xs font-normal text-slate-600">{log.module}</td>
-            <td className="px-4 py-2.5 text-xs font-normal text-slate-700">{log.newValue || log.oldValue || '-'}</td>
+            <td className="px-4 py-3 text-xs font-medium text-slate-800">{log.module}</td>
+            <td className="px-4 py-3 text-xs font-medium text-slate-800">{log.newValue || log.oldValue || '-'}</td>
           </tr>
         )}
       />
