@@ -20,7 +20,8 @@ import {
   PaymentRequest,
   PaymentEntry,
   StockTransaction,
-  DatabaseState
+  DatabaseState,
+  deduplicateById
 } from '@/lib/storeData';
 import {
   api,
@@ -40,6 +41,7 @@ import {
   projectsApi,
   vendorsApi,
   categoriesApi,
+  unitsApi,
   itemsApi,
   usersApi
 } from '@/lib/api';
@@ -126,7 +128,7 @@ export default function DashboardPage() {
         const res = await purchaseRequestsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, purchaseRequests: res.data };
+            const next = { ...prev, purchaseRequests: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -135,7 +137,7 @@ export default function DashboardPage() {
         const res = await purchaseOrdersApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, purchaseOrders: res.data };
+            const next = { ...prev, purchaseOrders: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -144,7 +146,7 @@ export default function DashboardPage() {
         const res = await grnsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, grns: res.data };
+            const next = { ...prev, grns: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -153,7 +155,7 @@ export default function DashboardPage() {
         const res = await stockApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, stock: res.data };
+            const next = { ...prev, stock: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -162,7 +164,7 @@ export default function DashboardPage() {
         const res = await outwardsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, storeOutwards: res.data };
+            const next = { ...prev, storeOutwards: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -171,7 +173,7 @@ export default function DashboardPage() {
         const res = await vendorBillsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, vendorBills: res.data };
+            const next = { ...prev, vendorBills: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -180,7 +182,7 @@ export default function DashboardPage() {
         const res = await paymentRequestsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, paymentRequests: res.data };
+            const next = { ...prev, paymentRequests: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -189,29 +191,31 @@ export default function DashboardPage() {
         const res = await paymentEntriesApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, paymentEntries: res.data };
+            const next = { ...prev, paymentEntries: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
         }
       } else if (tab === 'masters') {
-        const [u, p, v, c, it, r] = await Promise.allSettled([
+        const [u, p, v, c, un, it, r] = await Promise.allSettled([
           usersApi.getAll(),
           projectsApi.getAll(),
           vendorsApi.getAll(),
           categoriesApi.getAll(),
+          unitsApi.getAll(),
           itemsApi.getAll(),
           rolesApi.getAll()
         ]);
         setDb(prev => {
           const next = {
             ...prev,
-            users: u.status === 'fulfilled' && u.value?.data ? u.value.data : prev.users,
-            projects: p.status === 'fulfilled' && p.value?.data ? p.value.data : prev.projects,
-            vendors: v.status === 'fulfilled' && v.value?.data ? v.value.data : prev.vendors,
-            categories: c.status === 'fulfilled' && c.value?.data ? c.value.data : prev.categories,
-            items: it.status === 'fulfilled' && it.value?.data ? it.value.data : prev.items,
-            rolePermissions: r.status === 'fulfilled' && r.value?.data ? r.value.data : prev.rolePermissions,
+            users: u.status === 'fulfilled' && u.value?.data ? deduplicateById(u.value.data) : prev.users,
+            projects: p.status === 'fulfilled' && p.value?.data ? deduplicateById(p.value.data) : prev.projects,
+            vendors: v.status === 'fulfilled' && v.value?.data ? deduplicateById(v.value.data) : prev.vendors,
+            categories: c.status === 'fulfilled' && c.value?.data ? deduplicateById(c.value.data) : prev.categories,
+            units: un.status === 'fulfilled' && un.value?.data ? deduplicateById(un.value.data) : prev.units,
+            items: it.status === 'fulfilled' && it.value?.data ? deduplicateById(it.value.data) : prev.items,
+            rolePermissions: r.status === 'fulfilled' && r.value?.data ? deduplicateById(r.value.data) : prev.rolePermissions,
           };
           saveDatabase(next);
           return next;
@@ -220,7 +224,7 @@ export default function DashboardPage() {
         const res = await rolePermissionsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, rolePermissions: res.data };
+            const next = { ...prev, rolePermissions: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -229,7 +233,7 @@ export default function DashboardPage() {
         const res = await auditLogsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, auditLogs: res.data };
+            const next = { ...prev, auditLogs: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -238,7 +242,7 @@ export default function DashboardPage() {
         const res = await notificationsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
-            const next = { ...prev, notifications: res.data };
+            const next = { ...prev, notifications: deduplicateById(res.data) };
             saveDatabase(next);
             return next;
           });
@@ -285,9 +289,9 @@ export default function DashboardPage() {
     }
 
     // Initial data fetch via active tab REST API
-    fetchTabData(activeTab);
+    fetchTabData('dashboard');
     setBackendOnline(true);
-  }, [fetchTabData, activeTab]);
+  }, []);
 
   const simulateRole = (role: string) => {
     if (!db) return;
@@ -761,6 +765,7 @@ export default function DashboardPage() {
               projects={db.projects}
               vendors={db.vendors}
               categories={db.categories}
+              units={db.units || []}
               items={db.items}
               currentUser={currentUser}
               rolePermissions={db.rolePermissions}
@@ -850,6 +855,56 @@ export default function DashboardPage() {
                 apiCall(() => categoriesApi.delete(id));
                 addAuditLog(currentUser.id, 'Delete Category', '', `Deleted category ${c?.name || id}`, 'Category', id);
                 toast.success('Category deleted!');
+              }}
+              onAddUnit={async (u) => {
+                const newUnt = { id: `unt-${Date.now()}`, ...u };
+                const existingIdx = (db.units || []).findIndex(item => item.code?.toLowerCase().trim() === u.code?.toLowerCase().trim());
+                let updatedUnits;
+                if (existingIdx !== -1) {
+                  updatedUnits = [...(db.units || [])];
+                  updatedUnits[existingIdx] = { ...updatedUnits[existingIdx], ...u };
+                } else {
+                  updatedUnits = [newUnt, ...(db.units || [])];
+                }
+                updateDB({ ...db, units: updatedUnits });
+
+                try {
+                  const res = await unitsApi.create(u);
+                  const createdData = (res?.data || res) as any;
+                  if (createdData?.id || createdData?._id) {
+                    const finalId = createdData.id || createdData._id;
+                    setDb(prev => {
+                      const next = {
+                        ...prev,
+                        units: (prev.units || []).map(item => item.id === newUnt.id ? { ...item, id: finalId } : item)
+                      };
+                      saveDatabase(next);
+                      return next;
+                    });
+                  }
+                } catch (e: any) {
+                  console.warn('[API Unit Create Warning]', e?.message || e);
+                }
+
+                addAuditLog(currentUser.id, 'Create Unit', '', `Added unit ${u.code} (${u.name})`, 'Unit', newUnt.id);
+                toast.success(`Unit '${u.code}' saved successfully!`);
+              }}
+              onEditUnit={(id, updated) => {
+                const untIndex = (db.units || []).findIndex(u => u.id === id);
+                if (untIndex !== -1) {
+                  const updatedList = [...(db.units || [])];
+                  updatedList[untIndex] = { ...updatedList[untIndex], ...updated };
+                  updateDB({ ...db, units: updatedList });
+                  apiCall(() => unitsApi.update(id, updated));
+                  toast.success('Unit updated!');
+                }
+              }}
+              onDeleteUnit={(id) => {
+                const u = (db.units || []).find(item => item.id === id);
+                updateDB({ ...db, units: (db.units || []).filter(item => item.id !== id) });
+                apiCall(() => unitsApi.delete(id));
+                addAuditLog(currentUser.id, 'Delete Unit', '', `Deleted unit ${u?.code || id}`, 'Unit', id);
+                toast.success('Unit deleted!');
               }}
               onAddItem={(i) => {
                 const newItm = { id: `itm-${Date.now()}`, ...i };

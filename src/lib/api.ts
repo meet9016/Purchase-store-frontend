@@ -8,6 +8,7 @@ import {
   Project,
   Vendor,
   Category,
+  Unit,
   Item,
   PurchaseRequest,
   PurchaseOrder,
@@ -180,6 +181,30 @@ export const categoriesApi = {
   },
   delete: async (id: string) => {
     const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/categories/${id}`);
+    return res.data;
+  },
+};
+
+// ─── UNITS ────────────────────────────────────────────────────────────────────
+export const unitsApi = {
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Unit[]>>('/units', { params });
+    return res.data;
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<Unit>>(`/units/${id}`);
+    return res.data;
+  },
+  create: async (data: Omit<Unit, 'id'>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<Unit>>('/units', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<Unit>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<Unit>>(`/units/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/units/${id}`);
     return res.data;
   },
 };

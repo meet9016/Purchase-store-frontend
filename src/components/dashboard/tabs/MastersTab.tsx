@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import { User, Project, Vendor, Category, Item, RolePermission } from '@/lib/storeData';
+import { User, Project, Vendor, Category, Unit, Item, RolePermission } from '@/lib/storeData';
 import { Table } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
-import { Plus, Users, Building, Truck, Tags, Package, Edit2, Trash2, Shield, Lock, ShieldCheck } from 'lucide-react';
+import { Plus, Users, Building, Truck, Tags, Package, Scale, Edit2, Trash2, Shield, Lock, ShieldCheck } from 'lucide-react';
 import { isValidEmail, isValidPhone, formatPhone, isValidGST, formatGST, formatPAN, isValidPAN } from '@/lib/validation';
 
 interface MastersTabProps {
@@ -15,6 +15,7 @@ interface MastersTabProps {
   projects: Project[];
   vendors: Vendor[];
   categories: Category[];
+  units?: Unit[];
   items: Item[];
   roles?: RolePermission[];
   currentUser?: any;
@@ -35,6 +36,10 @@ interface MastersTabProps {
   onAddCategory: (category: Omit<Category, 'id'>) => void;
   onEditCategory?: (id: string, category: Partial<Category>) => void;
   onDeleteCategory?: (id: string) => void;
+
+  onAddUnit?: (unit: Omit<Unit, 'id'>) => void;
+  onEditUnit?: (id: string, unit: Partial<Unit>) => void;
+  onDeleteUnit?: (id: string) => void;
 
   onAddItem: (item: Omit<Item, 'id'>) => void;
   onEditItem?: (id: string, item: Partial<Item>) => void;
@@ -61,6 +66,7 @@ export function MastersTab({
   projects = [],
   vendors = [],
   categories = [],
+  units = [],
   items = [],
   roles = [],
   currentUser,
@@ -77,6 +83,9 @@ export function MastersTab({
   onAddCategory,
   onEditCategory,
   onDeleteCategory,
+  onAddUnit,
+  onEditUnit,
+  onDeleteUnit,
   onAddItem,
   onEditItem,
   onDeleteItem,
@@ -84,7 +93,7 @@ export function MastersTab({
   onEditRole,
   onDeleteRole
 }: MastersTabProps) {
-  const [subTab, setSubTab] = useState<'items' | 'categories' | 'vendors' | 'projects' | 'users' | 'roles'>('items');
+  const [subTab, setSubTab] = useState<'items' | 'categories' | 'units' | 'vendors' | 'projects' | 'users' | 'roles'>('items');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -98,6 +107,7 @@ export function MastersTab({
     const featureMap: Record<string, string> = {
       items: 'Product',
       categories: 'Category',
+      units: 'Category',
       vendors: 'Leads',
       projects: 'Department Management',
       users: 'User',
@@ -115,7 +125,7 @@ export function MastersTab({
     isOpen: boolean;
     id: string;
     name: string;
-    type: 'item' | 'category' | 'vendor' | 'project' | 'user' | 'role';
+    type: 'item' | 'category' | 'unit' | 'vendor' | 'project' | 'user' | 'role';
   }>({
     isOpen: false,
     id: '',
@@ -131,6 +141,11 @@ export function MastersTab({
     bankName: '', accountNo: '', ifscCode: '', creditPeriod: 30, address: ''
   });
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
+  const [unitForm, setUnitForm] = useState({
+    code: '',
+    name: '',
+    status: 'Active' as 'Active' | 'Inactive'
+  });
   const [itemForm, setItemForm] = useState({
     itemCode: '', name: '', categoryId: '', subCategory: '', unit: 'Pcs',
     description: '', minStock: 0, reorderLevel: 0
@@ -146,6 +161,7 @@ export function MastersTab({
     switch (tab) {
       case 'items': return 'Item';
       case 'categories': return 'Category';
+      case 'units': return 'Unit';
       case 'vendors': return 'Vendor';
       case 'projects': return 'Project';
       case 'users': return 'User';
@@ -161,13 +177,14 @@ export function MastersTab({
     setProjectForm({ name: '', location: '', status: 'Active' });
     setVendorForm({ name: '', contactPerson: '', email: '', phone: '', gstNo: '', panNo: '', bankName: '', accountNo: '', ifscCode: '', creditPeriod: 30, address: '' });
     setCategoryForm({ name: '', description: '' });
-    setItemForm({ itemCode: '', name: '', categoryId: '', subCategory: '', unit: 'Pcs', description: '', minStock: 0, reorderLevel: 0 });
+    setUnitForm({ code: '', name: '', status: 'Active' });
+    setItemForm({ itemCode: '', name: '', categoryId: '', subCategory: '', unit: units?.[0]?.code || 'Pcs', description: '', minStock: 0, reorderLevel: 0 });
     setRoleForm({ role: '', name: '', description: '', status: 'Active' });
     setShowModal(true);
   };
 
   const handleOpenEdit = (item: any) => {
-    setEditingId(item.id || item._id || item.role);
+    setEditingId(item.id || item._id || item.role || item.code);
     setFormErrors({});
     if (subTab === 'items') {
       setItemForm({
@@ -184,6 +201,12 @@ export function MastersTab({
       setCategoryForm({
         name: item.name || '',
         description: item.description || ''
+      });
+    } else if (subTab === 'units') {
+      setUnitForm({
+        code: item.code || '',
+        name: item.name || '',
+        status: item.status || 'Active'
       });
     } else if (subTab === 'vendors') {
       setVendorForm({
@@ -225,7 +248,7 @@ export function MastersTab({
     setShowModal(true);
   };
 
-  const handleTriggerDelete = (id: string, name: string, type: 'item' | 'category' | 'vendor' | 'project' | 'user' | 'role') => {
+  const handleTriggerDelete = (id: string, name: string, type: 'item' | 'category' | 'unit' | 'vendor' | 'project' | 'user' | 'role') => {
     setDeleteModalState({
       isOpen: true,
       id,
@@ -238,13 +261,14 @@ export function MastersTab({
     const { id, type } = deleteModalState;
     if (type === 'item' && onDeleteItem) onDeleteItem(id);
     else if (type === 'category' && onDeleteCategory) onDeleteCategory(id);
+    else if (type === 'unit' && onDeleteUnit) onDeleteUnit(id);
     else if (type === 'vendor' && onDeleteVendor) onDeleteVendor(id);
     else if (type === 'project' && onDeleteProject) onDeleteProject(id);
     else if (type === 'user' && onDeleteUser) onDeleteUser(id);
     else if (type === 'role' && onDeleteRole) onDeleteRole(id);
+    setDeleteModalState(prev => ({ ...prev, isOpen: false }));
   };
 
-  // Build combined roles list for UI
   const availableRolesList = (roles && roles.length > 0)
     ? roles
     : DEFAULT_SYSTEM_ROLES.map(r => ({
@@ -265,6 +289,7 @@ export function MastersTab({
           {[
             { id: 'items', label: 'Item Master', icon: <Package className="w-4 h-4" /> },
             { id: 'categories', label: 'Categories', icon: <Tags className="w-4 h-4" /> },
+            { id: 'units', label: 'Unit Master', icon: <Scale className="w-4 h-4" /> },
             { id: 'vendors', label: 'Vendors', icon: <Truck className="w-4 h-4" /> },
             { id: 'projects', label: 'Projects', icon: <Building className="w-4 h-4" /> },
             { id: 'users', label: 'Users & Staff', icon: <Users className="w-4 h-4" /> },
@@ -276,7 +301,7 @@ export function MastersTab({
               onClick={() => setSubTab(tab.id as any)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                 subTab === tab.id
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-600/20'
+                  ? 'bg-blue-600 text-white shadow-xs font-bold'
                   : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80 hover:text-slate-900'
               }`}
             >
@@ -312,7 +337,11 @@ export function MastersTab({
               <td className="px-4 py-3 text-slate-800 text-xs font-medium">
                 {categories.find(c => c.id === itm.categoryId)?.name || itm.categoryName || '-'}
               </td>
-              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{itm.unit}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-200/60">
+                  {itm.unit}
+                </span>
+              </td>
               <td className="px-4 py-3 text-slate-800 text-xs font-medium">{itm.minStock}</td>
               <td className="px-4 py-3 text-slate-800 text-xs font-medium">{itm.reorderLevel}</td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -372,6 +401,55 @@ export function MastersTab({
               </td>
             </tr>
           )}
+        />
+      )}
+
+      {subTab === 'units' && (
+        <Table
+          headers={['Unit Code / Symbol', 'Unit Full Name', 'Status', 'Actions']}
+          data={units}
+          itemsPerPage={10}
+          emptyMessage="No units of measurement created yet."
+          renderRow={(unt) => {
+            const untKey = unt.id || (unt as any)._id || unt.code;
+            return (
+              <tr key={untKey} className="hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 font-bold text-blue-700 text-xs">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200/80 text-blue-700 font-bold">
+                    {unt.code}
+                  </span>
+                </td>
+                <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{unt.name}</td>
+                <td className="px-4 py-3 text-xs">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[11px] ${
+                    unt.status === 'Inactive' ? 'bg-slate-100 text-slate-600 border border-slate-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
+                  }`}>
+                    {unt.status || 'Active'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  <div className="inline-flex items-center space-x-1.5 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(unt)}
+                      className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                      title="Edit Unit"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTriggerDelete(untKey, unt.name || unt.code, 'unit')}
+                      className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                      title="Delete Unit"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          }}
         />
       )}
 
@@ -509,14 +587,14 @@ export function MastersTab({
 
       {subTab === 'roles' && (
         <Table
-          headers={['Role Name', 'Description', 'Role Type', 'Status', 'Actions']}
+          headers={['Role Name', 'Role Type', 'Status', 'Actions']}
           data={availableRolesList}
           itemsPerPage={10}
           emptyMessage="No roles created yet."
-          renderRow={(r) => {
+          renderRow={(r, idx) => {
             const isSystem = r.isSystemRole || ['admin', 'requester', 'approver', 'purchase', 'store', 'accounts', 'management'].includes(r.role?.toLowerCase());
             const isAdmin = r.role?.toLowerCase() === 'admin';
-            const roleKey = r.id || r._id || r.role;
+            const roleKey = r.id || r._id || `${r.role}-${idx}`;
 
             return (
               <tr key={roleKey} className="hover:bg-slate-50 transition-colors">
@@ -527,9 +605,6 @@ export function MastersTab({
                     </span>
                     <span className="font-bold text-slate-900">{r.name || r.role}</span>
                   </div>
-                </td>
-                <td className="px-4 py-3 text-slate-700 text-xs font-medium max-w-md">
-                  {r.description || 'No description provided'}
                 </td>
                 <td className="px-4 py-3">
                   {isSystem ? (
@@ -632,8 +707,25 @@ export function MastersTab({
                   error={formErrors.categoryId}
                   required
                 />
-                <Input
-                  label="Unit (e.g. MT, Pcs, Bag, Kg)"
+                <Select
+                  label="Unit of Measurement (UOM)"
+                  options={
+                    (units && units.length > 0
+                      ? units.filter(u => u.status !== 'Inactive').map(u => ({ value: u.code, label: `${u.code} - ${u.name}` }))
+                      : [
+                          { value: 'Pcs', label: 'Pcs - Pieces' },
+                          { value: 'MT', label: 'MT - Metric Ton' },
+                          { value: 'Bag', label: 'Bag - Bags' },
+                          { value: 'Kg', label: 'Kg - Kilograms' },
+                          { value: 'Mtrs', label: 'Mtrs - Meters' },
+                          { value: 'Cu.M', label: 'Cu.M - Cubic Meters' },
+                          { value: 'Ltr', label: 'Ltr - Liters' },
+                          { value: 'Box', label: 'Box - Boxes' },
+                          { value: 'Nos', label: 'Nos - Numbers' },
+                          { value: 'SqFt', label: 'SqFt - Square Feet' },
+                          { value: 'Bundle', label: 'Bundle - Bundles' },
+                        ])
+                  }
                   value={itemForm.unit}
                   onChange={e => { setItemForm({...itemForm, unit: e.target.value}); clearError('unit'); }}
                   error={formErrors.unit}
@@ -646,6 +738,63 @@ export function MastersTab({
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
                   <Button variant="primary" type="submit">{editingId ? 'Update Item' : 'Save Item'}</Button>
+                </div>
+              </form>
+            )}
+
+            {subTab === 'units' && (
+              <form noValidate onSubmit={(e) => {
+                e.preventDefault();
+                const errors: Record<string, string> = {};
+                if (!unitForm.code?.trim()) errors.code = 'Unit code / symbol is required (e.g. MT, Pcs, Bag, Kg)';
+                if (!unitForm.name?.trim()) errors.name = 'Unit name is required (e.g. Metric Ton, Pieces, Bags)';
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  return;
+                }
+
+                const payload = {
+                  code: unitForm.code.trim(),
+                  name: unitForm.name.trim(),
+                  status: unitForm.status
+                };
+
+                if (editingId && onEditUnit) {
+                  onEditUnit(editingId, payload);
+                } else if (onAddUnit) {
+                  onAddUnit(payload);
+                }
+                setShowModal(false);
+              }} className="space-y-3">
+                <Input
+                  label="Unit Code / Symbol (e.g. MT, Pcs, Bag, Kg)"
+                  value={unitForm.code}
+                  onChange={e => { setUnitForm({...unitForm, code: e.target.value}); clearError('code'); }}
+                  placeholder="e.g. Pcs, MT, Bag, Kg, Mtrs, Cu.M"
+                  error={formErrors.code}
+                  required
+                />
+                <Input
+                  label="Unit Full Name"
+                  value={unitForm.name}
+                  onChange={e => { setUnitForm({...unitForm, name: e.target.value}); clearError('name'); }}
+                  placeholder="e.g. Pieces, Metric Ton, Bags, Kilograms"
+                  error={formErrors.name}
+                  required
+                />
+                <Select
+                  label="Status"
+                  options={[
+                    { value: 'Active', label: 'Active' },
+                    { value: 'Inactive', label: 'Inactive' }
+                  ]}
+                  value={unitForm.status}
+                  onChange={e => setUnitForm({...unitForm, status: e.target.value as any})}
+                />
+                <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                  <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                  <Button variant="primary" type="submit">{editingId ? 'Update Unit' : 'Save Unit'}</Button>
                 </div>
               </form>
             )}
@@ -903,7 +1052,6 @@ export function MastersTab({
                 const payload = {
                   role: roleForm.role.trim(),
                   name: roleForm.name.trim() || roleForm.role.trim(),
-                  description: roleForm.description.trim(),
                   status: roleForm.status
                 };
 
@@ -937,12 +1085,6 @@ export function MastersTab({
                   placeholder="e.g. Quality Inspector"
                   error={formErrors.name}
                   required
-                />
-                <Input
-                  label="Role Description"
-                  value={roleForm.description}
-                  onChange={e => { setRoleForm({...roleForm, description: e.target.value}); clearError('description'); }}
-                  placeholder="Briefly describe what this role does"
                 />
                 <Select
                   label="Status"

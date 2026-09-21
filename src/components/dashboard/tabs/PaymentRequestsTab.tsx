@@ -96,8 +96,8 @@ export function PaymentRequestsTab({
         data={paymentRequests}
         itemsPerPage={10}
         emptyMessage="No payment requests yet. Click 'Raise Payment Request' to create one."
-        renderRow={(req) => (
-          <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+        renderRow={(req, idx) => (
+          <tr key={`${req.id || req.requestNumber || (req as any).reqNumber}-${idx}`} className="hover:bg-slate-50 transition-colors">
             <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{req.requestNumber || req.requestId}</td>
             <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(req.requestDate)}</td>
             <td className="px-4 py-3 text-slate-900 text-xs font-semibold">{req.vendorName}</td>

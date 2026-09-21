@@ -40,6 +40,13 @@ export interface Category {
   description: string;
 }
 
+export interface Unit {
+  id: string;
+  code: string;
+  name: string;
+  status: 'Active' | 'Inactive';
+}
+
 export interface Item {
   id: string;
   itemCode: string;
@@ -346,6 +353,21 @@ const INITIAL_CATEGORIES: Category[] = [
   { id: 'cat-3', name: 'Electrical & Fixtures', description: 'Cables, Conduits, Switches & Distribution Panels' },
   { id: 'cat-4', name: 'Plumbing & Drainage', description: 'CPVC, UPVC pipes, valves and sanitary fittings' },
   { id: 'cat-5', name: 'Safety Equipment & PPE', description: 'Helmets, safety boots, vests & harnesses' }
+];
+
+export const INITIAL_UNITS: Unit[] = [
+  { id: 'unt-1', code: 'MT', name: 'Metric Ton', status: 'Active' },
+  { id: 'unt-2', code: 'Pcs', name: 'Pieces', status: 'Active' },
+  { id: 'unt-3', code: 'Bag', name: 'Bags', status: 'Active' },
+  { id: 'unt-4', code: 'Kg', name: 'Kilograms', status: 'Active' },
+  { id: 'unt-5', code: 'Mtrs', name: 'Meters', status: 'Active' },
+  { id: 'unt-6', code: 'Cu.M', name: 'Cubic Meters', status: 'Active' },
+  { id: 'unt-7', code: 'Brass', name: 'Brass', status: 'Active' },
+  { id: 'unt-8', code: 'Ltr', name: 'Liters', status: 'Active' },
+  { id: 'unt-9', code: 'Box', name: 'Boxes', status: 'Active' },
+  { id: 'unt-10', code: 'Nos', name: 'Numbers', status: 'Active' },
+  { id: 'unt-11', code: 'SqFt', name: 'Square Feet', status: 'Active' },
+  { id: 'unt-12', code: 'Bundle', name: 'Bundles', status: 'Active' },
 ];
 
 const INITIAL_ITEMS: Item[] = [
@@ -768,6 +790,7 @@ export interface DatabaseState {
   projects: Project[];
   vendors: Vendor[];
   categories: Category[];
+  units: Unit[];
   items: Item[];
   purchaseRequests: PurchaseRequest[];
   purchaseOrders: PurchaseOrder[];
@@ -783,15 +806,30 @@ export interface DatabaseState {
   rolePermissions: RolePermission[];
 }
 
-function deduplicateById<T extends { id?: string }>(arr: T[]): T[] {
-  if (!arr) return [];
+export function deduplicateById<T extends { id?: string }>(arr: T[]): T[] {
+  if (!arr || !Array.isArray(arr)) return [];
   const seen = new Set<string>();
-  return arr.filter((item, idx) => {
-    const key = item.id || (item as any).projectId ? `${(item as any).projectId}-${(item as any).itemId}` : `idx-${idx}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const result: T[] = [];
+
+  for (let i = 0; i < arr.length; i++) {
+    const item = arr[i];
+    if (!item) continue;
+    const rawId = item.id || (item as any)._id || (item as any).code || (item as any).role ||
+      (item as any).prNumber || (item as any).poNumber || (item as any).grnNumber ||
+      (item as any).billNumber || (item as any).outwardNumber || (item as any).reqNumber;
+
+    const stockKey = ((item as any).projectId && (item as any).itemId) ? `${(item as any).projectId}-${(item as any).itemId}` : undefined;
+    const key = String(rawId || stockKey || `idx-${i}`);
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push({
+        ...item,
+        id: key
+      });
+    }
+  }
+  return result;
 }
 
 export function getDatabase(): DatabaseState {
@@ -810,6 +848,7 @@ export function getDatabase(): DatabaseState {
           projects: deduplicateById(parsed.projects || INITIAL_PROJECTS),
           vendors: deduplicateById(parsed.vendors || INITIAL_VENDORS),
           categories: deduplicateById(parsed.categories || INITIAL_CATEGORIES),
+          units: deduplicateById(parsed.units?.length ? parsed.units : INITIAL_UNITS),
           items: deduplicateById(parsed.items || INITIAL_ITEMS),
           purchaseRequests: deduplicateById(parsed.purchaseRequests || INITIAL_PRS),
           purchaseOrders: deduplicateById(parsed.purchaseOrders || INITIAL_POS),
@@ -841,6 +880,7 @@ function getInitialSeed(): DatabaseState {
     projects: [...INITIAL_PROJECTS],
     vendors: [...INITIAL_VENDORS],
     categories: [...INITIAL_CATEGORIES],
+    units: [...INITIAL_UNITS],
     items: [...INITIAL_ITEMS],
     purchaseRequests: [...INITIAL_PRS],
     purchaseOrders: [...INITIAL_POS],
