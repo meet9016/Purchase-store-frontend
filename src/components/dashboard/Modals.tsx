@@ -107,6 +107,15 @@ export function Modals({
   selectedPo,
   setSelectedPo
 }: ModalsProps) {
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    setErrors({});
+  }, [openModal]);
+
+  const clearError = (field: string) => {
+    setErrors((prev) => ({ ...prev, [field]: '' }));
+  };
 
   const formatCurrency = (num: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
@@ -123,19 +132,38 @@ export function Modals({
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleCreatePR} className="space-y-4">
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                const errs: Record<string, string> = {};
+                if (!prForm.projectId) errs.projectId = 'Please select a project location';
+                if (!prForm.requiredDate) errs.requiredDate = 'Please select required by date';
+                if (!prForm.items || prForm.items.length === 0) {
+                  errs.items = 'Please add at least one line item';
+                }
+                if (Object.keys(errs).length > 0) {
+                  setErrors(errs);
+                  return;
+                }
+                handleCreatePR(e);
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Select
                   label="Project Location"
                   options={projects.map(p => ({ value: p.id, label: p.name }))}
                   value={prForm.projectId}
-                  onChange={e => setPrForm({...prForm, projectId: e.target.value})}
+                  onChange={e => { setPrForm({...prForm, projectId: e.target.value}); clearError('projectId'); }}
+                  error={errors.projectId}
                   required
                 />
                 <DatePicker
                   label="Required by Date"
                   value={prForm.requiredDate}
-                  onChange={val => setPrForm({...prForm, requiredDate: val})}
+                  onChange={val => { setPrForm({...prForm, requiredDate: val}); clearError('requiredDate'); }}
+                  error={errors.requiredDate}
                   required
                 />
                 <Select
@@ -154,7 +182,8 @@ export function Modals({
                     label="Select Master Item"
                     options={items.map(i => ({ value: i.id, label: `${i.name} (${i.itemCode || 'No Code'})` }))}
                     value={prItemInput.itemId}
-                    onChange={e => setPrItemInput({...prItemInput, itemId: e.target.value})}
+                    onChange={e => { setPrItemInput({...prItemInput, itemId: e.target.value}); clearError('itemInput'); }}
+                    error={errors.itemInput}
                   />
                   <Input
                     label="Quantity"
@@ -177,9 +206,14 @@ export function Modals({
                   size="sm"
                   icon={<Plus className="h-4 w-4" />}
                   onClick={() => {
-                    if (!prItemInput.itemId) return;
+                    if (!prItemInput.itemId) {
+                      setErrors(prev => ({ ...prev, itemInput: 'Please select an item first' }));
+                      return;
+                    }
                     setPrForm({ ...prForm, items: [...prForm.items, prItemInput] });
                     setPrItemInput({ itemId: '', quantity: 1, remarks: '' });
+                    clearError('items');
+                    clearError('itemInput');
                   }}
                 >
                   Add Line Item
@@ -188,8 +222,13 @@ export function Modals({
 
               {/* Added Line Items Table */}
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-[#0F172C]">Line Items ({prForm.items.length})</h4>
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[#0F172C]">Line Items ({prForm.items.length})</h4>
+                  {errors.items && (
+                    <span className="text-xs text-red-500 font-medium">{errors.items}</span>
+                  )}
+                </div>
+                <div className={`border rounded-xl overflow-hidden shadow-xs ${errors.items ? 'border-red-400' : 'border-slate-200'}`}>
                   <table className="w-full text-sm text-left">
                     <thead className="bg-slate-50 text-slate-700 font-semibold text-xs border-b border-slate-200">
                       <tr>
@@ -249,7 +288,23 @@ export function Modals({
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleCreatePO} className="space-y-4">
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                const errs: Record<string, string> = {};
+                if (!poForm.prId) errs.prId = 'Please select an approved requisition';
+                if (!poForm.vendorId) errs.vendorId = 'Please select a vendor';
+                if (!poForm.expectedDeliveryDate) errs.expectedDeliveryDate = 'Please select expected delivery date';
+                if (!poForm.deliveryLocation?.trim()) errs.deliveryLocation = 'Please enter delivery location';
+                if (Object.keys(errs).length > 0) {
+                  setErrors(errs);
+                  return;
+                }
+                handleCreatePO(e);
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select
                   label="Select Approved Requisition"
@@ -267,14 +322,17 @@ export function Modals({
                       }));
                       setPoForm({ ...poForm, prId: e.target.value, items: poItems });
                     }
+                    clearError('prId');
                   }}
+                  error={errors.prId}
                   required
                 />
                 <Select
                   label="Select Vendor"
                   options={vendors.map(v => ({ value: v.id, label: v.name }))}
                   value={poForm.vendorId}
-                  onChange={e => setPoForm({...poForm, vendorId: e.target.value})}
+                  onChange={e => { setPoForm({...poForm, vendorId: e.target.value}); clearError('vendorId'); }}
+                  error={errors.vendorId}
                   required
                 />
               </div>
@@ -283,7 +341,8 @@ export function Modals({
                 <DatePicker
                   label="Expected Delivery Date"
                   value={poForm.expectedDeliveryDate}
-                  onChange={val => setPoForm({...poForm, expectedDeliveryDate: val})}
+                  onChange={val => { setPoForm({...poForm, expectedDeliveryDate: val}); clearError('expectedDeliveryDate'); }}
+                  error={errors.expectedDeliveryDate}
                   required
                 />
                 <Input
@@ -297,8 +356,9 @@ export function Modals({
               <Input
                 label="Delivery Location"
                 value={poForm.deliveryLocation}
-                onChange={e => setPoForm({...poForm, deliveryLocation: e.target.value})}
+                onChange={e => { setPoForm({...poForm, deliveryLocation: e.target.value}); clearError('deliveryLocation'); }}
                 placeholder="Site location / Main Warehouse"
+                error={errors.deliveryLocation}
                 required
               />
 
@@ -325,12 +385,28 @@ export function Modals({
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleCreateGRN} className="space-y-4">
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                const errs: Record<string, string> = {};
+                if (!grnForm.poId) errs.poId = 'Please select a purchase order';
+                if (!grnForm.challanNumber?.trim()) errs.challanNumber = 'Please enter challan number';
+                if (!grnForm.vehicleNumber?.trim()) errs.vehicleNumber = 'Please enter vehicle / transporter number';
+                if (Object.keys(errs).length > 0) {
+                  setErrors(errs);
+                  return;
+                }
+                handleCreateGRN(e);
+              }}
+              className="space-y-4"
+            >
               <Select
                 label="Select Purchase Order"
                 options={purchaseOrders.map(p => ({ value: p.id, label: `${p.poNumber} - ${p.vendorName} (${p.projectName})` }))}
                 value={grnForm.poId}
-                onChange={e => setGrnForm({ ...grnForm, poId: e.target.value })}
+                onChange={e => { setGrnForm({ ...grnForm, poId: e.target.value }); clearError('poId'); }}
+                error={errors.poId}
                 required
               />
 
@@ -338,15 +414,17 @@ export function Modals({
                 <Input
                   label="Challan Number"
                   value={grnForm.challanNumber}
-                  onChange={e => setGrnForm({ ...grnForm, challanNumber: e.target.value })}
+                  onChange={e => { setGrnForm({ ...grnForm, challanNumber: e.target.value }); clearError('challanNumber'); }}
                   placeholder="CH-98765"
+                  error={errors.challanNumber}
                   required
                 />
                 <Input
                   label="Vehicle / Transporter Number"
                   value={grnForm.vehicleNumber}
-                  onChange={e => setGrnForm({ ...grnForm, vehicleNumber: e.target.value })}
+                  onChange={e => { setGrnForm({ ...grnForm, vehicleNumber: e.target.value }); clearError('vehicleNumber'); }}
                   placeholder="MH-04-AB-1234"
+                  error={errors.vehicleNumber}
                   required
                 />
               </div>
@@ -388,20 +466,40 @@ export function Modals({
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleCreateOutward} className="space-y-4">
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                const errs: Record<string, string> = {};
+                if (!outwardForm.projectId) errs.projectId = 'Please select a project site';
+                if (!outwardForm.issuedTo?.trim()) errs.issuedTo = 'Please enter recipient name';
+                if (!outwardForm.department?.trim()) errs.department = 'Please enter department / contractor';
+                if (!outwardForm.purpose?.trim()) errs.purpose = 'Please enter purpose / work package';
+                if (!outwardItemInput.itemId) errs.item = 'Please select material to issue';
+                if (!outwardItemInput.quantity || outwardItemInput.quantity <= 0) errs.quantity = 'Please enter valid quantity';
+                if (Object.keys(errs).length > 0) {
+                  setErrors(errs);
+                  return;
+                }
+                handleCreateOutward(e);
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select
                   label="Project Site"
                   options={projects.map(p => ({ value: p.id, label: p.name }))}
                   value={outwardForm.projectId}
-                  onChange={e => setOutwardForm({ ...outwardForm, projectId: e.target.value })}
+                  onChange={e => { setOutwardForm({ ...outwardForm, projectId: e.target.value }); clearError('projectId'); }}
+                  error={errors.projectId}
                   required
                 />
                 <Input
                   label="Issued to (Person Name)"
                   value={outwardForm.issuedTo}
-                  onChange={e => setOutwardForm({ ...outwardForm, issuedTo: e.target.value })}
+                  onChange={e => { setOutwardForm({ ...outwardForm, issuedTo: e.target.value }); clearError('issuedTo'); }}
                   placeholder="Contractor / Engineer Name"
+                  error={errors.issuedTo}
                   required
                 />
               </div>
@@ -410,15 +508,17 @@ export function Modals({
                 <Input
                   label="Department / Contractor"
                   value={outwardForm.department}
-                  onChange={e => setOutwardForm({ ...outwardForm, department: e.target.value })}
+                  onChange={e => { setOutwardForm({ ...outwardForm, department: e.target.value }); clearError('department'); }}
                   placeholder="Civil / Electrical / Structural"
+                  error={errors.department}
                   required
                 />
                 <Input
                   label="Purpose / Work Package"
                   value={outwardForm.purpose}
-                  onChange={e => setOutwardForm({ ...outwardForm, purpose: e.target.value })}
+                  onChange={e => { setOutwardForm({ ...outwardForm, purpose: e.target.value }); clearError('purpose'); }}
                   placeholder="Phase 1 Slab casting"
+                  error={errors.purpose}
                   required
                 />
               </div>
@@ -431,14 +531,18 @@ export function Modals({
                     label="Item Name"
                     options={items.map(i => ({ value: i.id, label: `${i.name} (${i.unit})` }))}
                     value={outwardItemInput.itemId}
-                    onChange={e => setOutwardItemInput({ ...outwardItemInput, itemId: e.target.value })}
+                    onChange={e => { setOutwardItemInput({ ...outwardItemInput, itemId: e.target.value }); clearError('item'); }}
+                    error={errors.item}
+                    required
                   />
                   <Input
                     label="Quantity to Issue"
                     type="number"
                     min={1}
                     value={outwardItemInput.quantity}
-                    onChange={e => setOutwardItemInput({ ...outwardItemInput, quantity: Number(e.target.value) })}
+                    onChange={e => { setOutwardItemInput({ ...outwardItemInput, quantity: Number(e.target.value) }); clearError('quantity'); }}
+                    error={errors.quantity}
+                    required
                   />
                 </div>
               </div>
@@ -466,7 +570,23 @@ export function Modals({
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleCreateBill || (() => {})} className="space-y-4">
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                const errs: Record<string, string> = {};
+                if (!billForm?.poId) errs.poId = 'Please select a purchase order';
+                if (!billForm?.vendorInvoiceNumber?.trim()) errs.vendorInvoiceNumber = 'Please enter invoice number';
+                if (!billForm?.billAmount || billForm.billAmount <= 0) errs.billAmount = 'Please enter valid invoice amount';
+                if (!billForm?.billDate) errs.billDate = 'Please select invoice date';
+                if (Object.keys(errs).length > 0) {
+                  setErrors(errs);
+                  return;
+                }
+                if (handleCreateBill) handleCreateBill(e);
+              }}
+              className="space-y-4"
+            >
               <Select
                 label="Select Purchase Order"
                 options={purchaseOrders.map(p => ({ value: p.id, label: `${p.poNumber} - ${p.vendorName} (${formatCurrency(p.totalPOAmount || 0)})` }))}
@@ -481,7 +601,9 @@ export function Modals({
                       creditPeriod: selPo?.creditPeriod || 30
                     });
                   }
+                  clearError('poId');
                 }}
+                error={errors.poId}
                 required
               />
 
@@ -489,15 +611,23 @@ export function Modals({
                 <Input
                   label="Vendor Invoice Number"
                   value={billForm?.vendorInvoiceNumber || ''}
-                  onChange={e => setBillForm && setBillForm({ ...billForm, vendorInvoiceNumber: e.target.value })}
+                  onChange={e => {
+                    if (setBillForm) setBillForm({ ...billForm, vendorInvoiceNumber: e.target.value });
+                    clearError('vendorInvoiceNumber');
+                  }}
                   placeholder="INV-998877"
+                  error={errors.vendorInvoiceNumber}
                   required
                 />
                 <Input
                   label="Invoice Amount (INR)"
                   type="number"
                   value={billForm?.billAmount || 0}
-                  onChange={e => setBillForm && setBillForm({ ...billForm, billAmount: Number(e.target.value) })}
+                  onChange={e => {
+                    if (setBillForm) setBillForm({ ...billForm, billAmount: Number(e.target.value) });
+                    clearError('billAmount');
+                  }}
+                  error={errors.billAmount}
                   required
                 />
               </div>
@@ -506,7 +636,11 @@ export function Modals({
                 <DatePicker
                   label="Invoice Bill Date"
                   value={billForm?.billDate || ''}
-                  onChange={val => setBillForm && setBillForm({ ...billForm, billDate: val })}
+                  onChange={val => {
+                    if (setBillForm) setBillForm({ ...billForm, billDate: val });
+                    clearError('billDate');
+                  }}
+                  error={errors.billDate}
                   required
                 />
                 <Input
@@ -540,7 +674,21 @@ export function Modals({
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleCreatePaymentReq} className="space-y-4">
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                const errs: Record<string, string> = {};
+                if (!paymentReqForm.billId) errs.billId = 'Please select a vendor bill';
+                if (!paymentReqForm.requestedAmount || paymentReqForm.requestedAmount <= 0) errs.requestedAmount = 'Please enter valid requested amount';
+                if (Object.keys(errs).length > 0) {
+                  setErrors(errs);
+                  return;
+                }
+                handleCreatePaymentReq(e);
+              }}
+              className="space-y-4"
+            >
               <Select
                 label="Select Vendor Bill"
                 options={vendorBills.filter(b => (b.outstandingAmount || b.billAmount) > 0).map(b => ({
@@ -555,7 +703,10 @@ export function Modals({
                     billId: e.target.value,
                     requestedAmount: sel?.outstandingAmount || sel?.billAmount || 0
                   });
+                  clearError('billId');
+                  clearError('requestedAmount');
                 }}
+                error={errors.billId}
                 required
               />
 
@@ -563,7 +714,11 @@ export function Modals({
                 label="Requested Payment Amount (INR)"
                 type="number"
                 value={paymentReqForm.requestedAmount}
-                onChange={e => setPaymentReqForm({ ...paymentReqForm, requestedAmount: Number(e.target.value) })}
+                onChange={e => {
+                  setPaymentReqForm({ ...paymentReqForm, requestedAmount: Number(e.target.value) });
+                  clearError('requestedAmount');
+                }}
+                error={errors.requestedAmount}
                 required
               />
 
@@ -597,7 +752,22 @@ export function Modals({
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
             </div>
 
-            <form onSubmit={handleCreatePaymentEntry} className="space-y-4">
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                const errs: Record<string, string> = {};
+                if (!paymentEntryForm.billId) errs.billId = 'Please select a verified bill';
+                if (!paymentEntryForm.paymentAmount || paymentEntryForm.paymentAmount <= 0) errs.paymentAmount = 'Please enter valid disbursement amount';
+                if (!paymentEntryForm.transactionNumber?.trim()) errs.transactionNumber = 'Please enter transaction / UTR reference number';
+                if (Object.keys(errs).length > 0) {
+                  setErrors(errs);
+                  return;
+                }
+                handleCreatePaymentEntry(e);
+              }}
+              className="space-y-4"
+            >
               <Select
                 label="Select Verified Bill"
                 options={vendorBills.map(b => ({
@@ -612,7 +782,10 @@ export function Modals({
                     billId: e.target.value,
                     paymentAmount: sel?.outstandingAmount || sel?.billAmount || 0
                   });
+                  clearError('billId');
+                  clearError('paymentAmount');
                 }}
+                error={errors.billId}
                 required
               />
 
@@ -621,7 +794,11 @@ export function Modals({
                   label="Disbursed Amount (INR)"
                   type="number"
                   value={paymentEntryForm.paymentAmount}
-                  onChange={e => setPaymentEntryForm({ ...paymentEntryForm, paymentAmount: Number(e.target.value) })}
+                  onChange={e => {
+                    setPaymentEntryForm({ ...paymentEntryForm, paymentAmount: Number(e.target.value) });
+                    clearError('paymentAmount');
+                  }}
+                  error={errors.paymentAmount}
                   required
                 />
                 <Select
@@ -640,8 +817,12 @@ export function Modals({
               <Input
                 label="Transaction / UTR Reference Number"
                 value={paymentEntryForm.transactionNumber}
-                onChange={e => setPaymentEntryForm({ ...paymentEntryForm, transactionNumber: e.target.value })}
+                onChange={e => {
+                  setPaymentEntryForm({ ...paymentEntryForm, transactionNumber: e.target.value });
+                  clearError('transactionNumber');
+                }}
                 placeholder="UTR-2026-987654321"
+                error={errors.transactionNumber}
                 required
               />
 

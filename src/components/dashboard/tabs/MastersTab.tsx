@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from 'react';
-import { User, Project, Vendor, Category, Item } from '@/lib/storeData';
+import { User, Project, Vendor, Category, Item, RolePermission } from '@/lib/storeData';
 import { Table } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
-import { Plus, Users, Building, Truck, Tags, Package, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Users, Building, Truck, Tags, Package, Edit2, Trash2, Shield, Lock, ShieldCheck } from 'lucide-react';
+import { isValidEmail, isValidPhone, formatPhone, isValidGST, formatGST, formatPAN, isValidPAN } from '@/lib/validation';
 
 interface MastersTabProps {
   users: User[];
@@ -15,6 +16,7 @@ interface MastersTabProps {
   vendors: Vendor[];
   categories: Category[];
   items: Item[];
+  roles?: RolePermission[];
   currentUser?: any;
   rolePermissions?: any[];
   
@@ -37,14 +39,30 @@ interface MastersTabProps {
   onAddItem: (item: Omit<Item, 'id'>) => void;
   onEditItem?: (id: string, item: Partial<Item>) => void;
   onDeleteItem?: (id: string) => void;
+
+  onAddRole?: (role: Partial<RolePermission>) => void;
+  onEditRole?: (id: string, role: Partial<RolePermission>) => void;
+  onDeleteRole?: (id: string) => void;
 }
 
+const DEFAULT_SYSTEM_ROLES = [
+  { role: 'Admin', description: 'System Administrator with full system control' },
+  { role: 'Requester', description: 'Site Engineer / Requisitioner' },
+  { role: 'Approver', description: 'Project Manager / Authorizer' },
+  { role: 'PurchaseManager', description: 'Procurement Officer' },
+  { role: 'StoreKeeper', description: 'Inventory & Store Controller' },
+  { role: 'Accounts', description: 'Finance & Invoice Settlement' },
+  { role: 'Auditor', description: 'Read-only compliance & log reviewer' },
+  { role: 'Viewer', description: 'General read-only viewer' }
+];
+
 export function MastersTab({
-  users,
-  projects,
-  vendors,
-  categories,
-  items,
+  users = [],
+  projects = [],
+  vendors = [],
+  categories = [],
+  items = [],
+  roles = [],
   currentUser,
   rolePermissions = [],
   onAddUser,
@@ -61,11 +79,19 @@ export function MastersTab({
   onDeleteCategory,
   onAddItem,
   onEditItem,
-  onDeleteItem
+  onDeleteItem,
+  onAddRole,
+  onEditRole,
+  onDeleteRole
 }: MastersTabProps) {
-  const [subTab, setSubTab] = useState<'items' | 'categories' | 'vendors' | 'projects' | 'users'>('items');
+  const [subTab, setSubTab] = useState<'items' | 'categories' | 'vendors' | 'projects' | 'users' | 'roles'>('items');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) => {
+    setFormErrors((prev) => ({ ...prev, [field]: '' }));
+  };
 
   // Check create permission based on current sub-tab
   const canCreateCurrentSubTab = currentUser?.role === 'Admin' || (() => {
@@ -75,6 +101,7 @@ export function MastersTab({
       vendors: 'Leads',
       projects: 'Department Management',
       users: 'User',
+      roles: 'User',
     };
     const featureName = featureMap[subTab];
     if (!featureName) return true;
@@ -88,7 +115,7 @@ export function MastersTab({
     isOpen: boolean;
     id: string;
     name: string;
-    type: 'item' | 'category' | 'vendor' | 'project' | 'user';
+    type: 'item' | 'category' | 'vendor' | 'project' | 'user' | 'role';
   }>({
     isOpen: false,
     id: '',
@@ -108,6 +135,12 @@ export function MastersTab({
     itemCode: '', name: '', categoryId: '', subCategory: '', unit: 'Pcs',
     description: '', minStock: 0, reorderLevel: 0
   });
+  const [roleForm, setRoleForm] = useState({
+    role: '',
+    name: '',
+    description: '',
+    status: 'Active' as 'Active' | 'Inactive'
+  });
 
   const getSubTabLabel = (tab: string) => {
     switch (tab) {
@@ -116,22 +149,26 @@ export function MastersTab({
       case 'vendors': return 'Vendor';
       case 'projects': return 'Project';
       case 'users': return 'User';
+      case 'roles': return 'Role';
       default: return 'Record';
     }
   };
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setUserForm({ name: '', email: '', role: 'Requester', department: '', active: true, password: '' });
+    setFormErrors({});
+    setUserForm({ name: '', email: '', role: roles?.[0]?.role || 'Requester', department: '', active: true, password: '' });
     setProjectForm({ name: '', location: '', status: 'Active' });
     setVendorForm({ name: '', contactPerson: '', email: '', phone: '', gstNo: '', panNo: '', bankName: '', accountNo: '', ifscCode: '', creditPeriod: 30, address: '' });
     setCategoryForm({ name: '', description: '' });
     setItemForm({ itemCode: '', name: '', categoryId: '', subCategory: '', unit: 'Pcs', description: '', minStock: 0, reorderLevel: 0 });
+    setRoleForm({ role: '', name: '', description: '', status: 'Active' });
     setShowModal(true);
   };
 
   const handleOpenEdit = (item: any) => {
-    setEditingId(item.id);
+    setEditingId(item.id || item._id || item.role);
+    setFormErrors({});
     if (subTab === 'items') {
       setItemForm({
         itemCode: item.itemCode || '',
@@ -177,11 +214,18 @@ export function MastersTab({
         active: item.active !== false,
         password: ''
       });
+    } else if (subTab === 'roles') {
+      setRoleForm({
+        role: item.role || '',
+        name: item.name || item.role || '',
+        description: item.description || '',
+        status: item.status || 'Active'
+      });
     }
     setShowModal(true);
   };
 
-  const handleTriggerDelete = (id: string, name: string, type: 'item' | 'category' | 'vendor' | 'project' | 'user') => {
+  const handleTriggerDelete = (id: string, name: string, type: 'item' | 'category' | 'vendor' | 'project' | 'user' | 'role') => {
     setDeleteModalState({
       isOpen: true,
       id,
@@ -197,7 +241,21 @@ export function MastersTab({
     else if (type === 'vendor' && onDeleteVendor) onDeleteVendor(id);
     else if (type === 'project' && onDeleteProject) onDeleteProject(id);
     else if (type === 'user' && onDeleteUser) onDeleteUser(id);
+    else if (type === 'role' && onDeleteRole) onDeleteRole(id);
   };
+
+  // Build combined roles list for UI
+  const availableRolesList = (roles && roles.length > 0)
+    ? roles
+    : DEFAULT_SYSTEM_ROLES.map(r => ({
+        id: r.role,
+        role: r.role,
+        name: r.role,
+        description: r.description,
+        isSystemRole: true,
+        status: 'Active' as const,
+        modules: []
+      }));
 
   return (
     <div className="space-y-6">
@@ -210,6 +268,7 @@ export function MastersTab({
             { id: 'vendors', label: 'Vendors', icon: <Truck className="w-4 h-4" /> },
             { id: 'projects', label: 'Projects', icon: <Building className="w-4 h-4" /> },
             { id: 'users', label: 'Users & Staff', icon: <Users className="w-4 h-4" /> },
+            { id: 'roles', label: 'Role Master', icon: <Shield className="w-4 h-4" /> },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -218,7 +277,7 @@ export function MastersTab({
               className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                 subTab === tab.id
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-600/20'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80 hover:text-slate-900'
               }`}
             >
               {tab.icon}
@@ -232,32 +291,35 @@ export function MastersTab({
             variant="primary"
             icon={<Plus className="w-4 h-4" />}
             onClick={handleOpenAdd}
+            className="whitespace-nowrap shrink-0 shadow-sm"
           >
             Add New {getSubTabLabel(subTab)}
           </Button>
         )}
       </div>
 
-      {/* SubTab Views with Polished Action Icon Buttons */}
+      {/* Tables Content */}
       {subTab === 'items' && (
         <Table
-          headers={['Code', 'Item Name', 'Category', 'Unit', 'Min Stock', 'Reorder Level', 'Actions']}
+          headers={['Item Code', 'Item Name', 'Category', 'Unit', 'Min Stock', 'Reorder Level', 'Actions']}
           data={items}
           itemsPerPage={10}
-          emptyMessage="No master items found. Click 'Add New Item' to create one."
-          renderRow={(item) => (
-            <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{item.itemCode || '-'}</td>
-              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{item.name}</td>
-              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.categoryName || 'General'}</td>
-              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.unit}</td>
-              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.minStock || 0}</td>
-              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{item.reorderLevel || 0}</td>
+          emptyMessage="No items registered yet."
+          renderRow={(itm) => (
+            <tr key={itm.id} className="hover:bg-slate-50 transition-colors">
+              <td className="px-4 py-3 font-semibold text-slate-800 text-xs">{itm.itemCode}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{itm.name}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">
+                {categories.find(c => c.id === itm.categoryId)?.name || itm.categoryName || '-'}
+              </td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{itm.unit}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{itm.minStock}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{itm.reorderLevel}</td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
                     type="button"
-                    onClick={() => handleOpenEdit(item)}
+                    onClick={() => handleOpenEdit(itm)}
                     className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Edit Item"
                   >
@@ -265,7 +327,7 @@ export function MastersTab({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleTriggerDelete(item.id, item.name, 'item')}
+                    onClick={() => handleTriggerDelete(itm.id, itm.name, 'item')}
                     className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Delete Item"
                   >
@@ -283,7 +345,7 @@ export function MastersTab({
           headers={['Category Name', 'Description', 'Actions']}
           data={categories}
           itemsPerPage={10}
-          emptyMessage="No categories created yet. Click 'Add New Category' to create one."
+          emptyMessage="No categories created yet."
           renderRow={(cat) => (
             <tr key={cat.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{cat.name}</td>
@@ -315,23 +377,18 @@ export function MastersTab({
 
       {subTab === 'vendors' && (
         <Table
-          headers={['Vendor Name', 'Contact Person', 'Phone / Email', 'GST / PAN', 'Credit Period', 'Actions']}
+          headers={['Vendor Name', 'Contact Person', 'Phone', 'Email', 'GST No', 'Credit Days', 'Actions']}
           data={vendors}
           itemsPerPage={10}
-          emptyMessage="No vendors registered yet. Click 'Add New Vendor' to create one."
+          emptyMessage="No vendors registered yet."
           renderRow={(ven) => (
             <tr key={ven.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{ven.name}</td>
-              <td className="px-4 py-3 text-slate-900 text-xs font-medium">{ven.contactPerson}</td>
-              <td className="px-4 py-3 text-slate-800 text-xs font-medium">
-                <div className="font-semibold text-slate-900">{ven.phone}</div>
-                <div className="text-slate-600 text-[11px]">{ven.email}</div>
-              </td>
-              <td className="px-4 py-3 text-slate-800 text-xs font-medium">
-                <div>GST: <span className="font-semibold">{ven.gstNo || '-'}</span></div>
-                <div>PAN: <span className="font-semibold">{ven.panNo || '-'}</span></div>
-              </td>
-              <td className="px-4 py-3 text-slate-900 text-xs font-semibold">{ven.creditPeriod} Days</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{ven.contactPerson}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{ven.phone}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{ven.email}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{ven.gstNo || '-'}</td>
+              <td className="px-4 py-3 text-slate-800 text-xs font-medium">{ven.creditPeriod || 30} Days</td>
               <td className="px-4 py-3 text-right whitespace-nowrap">
                 <div className="inline-flex items-center space-x-1.5 justify-end">
                   <button
@@ -362,14 +419,16 @@ export function MastersTab({
           headers={['Project Name', 'Location', 'Status', 'Actions']}
           data={projects}
           itemsPerPage={10}
-          emptyMessage="No project sites configured yet. Click 'Add New Project' to create one."
+          emptyMessage="No projects recorded yet."
           renderRow={(prj) => (
             <tr key={prj.id} className="hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{prj.name}</td>
               <td className="px-4 py-3 text-slate-800 text-xs font-medium">{prj.location}</td>
               <td className="px-4 py-3">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                  prj.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                  prj.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' :
+                  prj.status === 'Completed' ? 'bg-blue-50 text-blue-700 border border-blue-200/70' :
+                  'bg-amber-50 text-amber-700 border border-amber-200/70'
                 }`}>
                   {prj.status}
                 </span>
@@ -411,6 +470,7 @@ export function MastersTab({
               <td className="px-4 py-3 text-slate-800 text-xs font-medium">{usr.email}</td>
               <td className="px-4 py-3">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/70 text-[11px] font-semibold">
+                  <ShieldCheck className="w-3 h-3 mr-1 text-blue-500" />
                   {usr.role}
                 </span>
               </td>
@@ -446,6 +506,77 @@ export function MastersTab({
           )}
         />
       )}
+
+      {subTab === 'roles' && (
+        <Table
+          headers={['Role Name', 'Description', 'Role Type', 'Status', 'Actions']}
+          data={availableRolesList}
+          itemsPerPage={10}
+          emptyMessage="No roles created yet."
+          renderRow={(r) => {
+            const isSystem = r.isSystemRole || ['admin', 'requester', 'approver', 'purchase', 'store', 'accounts', 'management'].includes(r.role?.toLowerCase());
+            const isAdmin = r.role?.toLowerCase() === 'admin';
+            const roleKey = r.id || r._id || r.role;
+
+            return (
+              <tr key={roleKey} className="hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 font-semibold text-slate-900 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="p-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100">
+                      <Shield className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="font-bold text-slate-900">{r.name || r.role}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-slate-700 text-xs font-medium max-w-md">
+                  {r.description || 'No description provided'}
+                </td>
+                <td className="px-4 py-3">
+                  {isSystem ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-semibold">
+                      <Lock className="w-2.5 h-2.5 mr-1 text-slate-500" /> System Default
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/70 text-[11px] font-semibold">
+                      Custom Role
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                    r.status !== 'Inactive' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
+                  }`}>
+                    {r.status || 'Active'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  <div className="inline-flex items-center space-x-1.5 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(r)}
+                      className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
+                      title="Edit Role"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    {!isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleTriggerDelete(roleKey, r.name || r.role, 'role')}
+                        className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                        title="Delete Role"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          }}
+        />
+      )}
+
       {/* Modal Dialog for Add / Edit */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
@@ -458,8 +589,19 @@ export function MastersTab({
             </div>
 
             {subTab === 'items' && (
-              <form onSubmit={(e) => {
+              <form noValidate onSubmit={(e) => {
                 e.preventDefault();
+                const errors: Record<string, string> = {};
+                if (!itemForm.itemCode?.trim()) errors.itemCode = 'Item code is required';
+                if (!itemForm.name?.trim()) errors.name = 'Item name is required';
+                if (!itemForm.categoryId) errors.categoryId = 'Please select a category';
+                if (!itemForm.unit?.trim()) errors.unit = 'Unit is required';
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  return;
+                }
+
                 const selectedCat = categories.find(c => c.id === itemForm.categoryId);
                 if (editingId && onEditItem) {
                   onEditItem(editingId, { ...itemForm, categoryName: selectedCat?.name || '' });
@@ -468,10 +610,35 @@ export function MastersTab({
                 }
                 setShowModal(false);
               }} className="space-y-3">
-                <Input label="Item Code" value={itemForm.itemCode} onChange={e => setItemForm({...itemForm, itemCode: e.target.value})} required />
-                <Input label="Item Name" value={itemForm.name} onChange={e => setItemForm({...itemForm, name: e.target.value})} required />
-                <Select label="Category" options={categories.map(c => ({ value: c.id, label: c.name }))} value={itemForm.categoryId} onChange={e => setItemForm({...itemForm, categoryId: e.target.value})} />
-                <Input label="Unit (e.g. MT, Pcs, Bag, Kg)" value={itemForm.unit} onChange={e => setItemForm({...itemForm, unit: e.target.value})} required />
+                <Input
+                  label="Item Code"
+                  value={itemForm.itemCode}
+                  onChange={e => { setItemForm({...itemForm, itemCode: e.target.value}); clearError('itemCode'); }}
+                  error={formErrors.itemCode}
+                  required
+                />
+                <Input
+                  label="Item Name"
+                  value={itemForm.name}
+                  onChange={e => { setItemForm({...itemForm, name: e.target.value}); clearError('name'); }}
+                  error={formErrors.name}
+                  required
+                />
+                <Select
+                  label="Category"
+                  options={categories.map(c => ({ value: c.id, label: c.name }))}
+                  value={itemForm.categoryId}
+                  onChange={e => { setItemForm({...itemForm, categoryId: e.target.value}); clearError('categoryId'); }}
+                  error={formErrors.categoryId}
+                  required
+                />
+                <Input
+                  label="Unit (e.g. MT, Pcs, Bag, Kg)"
+                  value={itemForm.unit}
+                  onChange={e => { setItemForm({...itemForm, unit: e.target.value}); clearError('unit'); }}
+                  error={formErrors.unit}
+                  required
+                />
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Minimum Stock" type="number" value={itemForm.minStock} onChange={e => setItemForm({...itemForm, minStock: Number(e.target.value)})} />
                   <Input label="Reorder Level" type="number" value={itemForm.reorderLevel} onChange={e => setItemForm({...itemForm, reorderLevel: Number(e.target.value)})} />
@@ -484,21 +651,48 @@ export function MastersTab({
             )}
 
             {subTab === 'vendors' && (
-              <form onSubmit={(e) => {
+              <form noValidate onSubmit={(e) => {
                 e.preventDefault();
+                const errors: Record<string, string> = {};
+                if (!vendorForm.name?.trim()) errors.name = 'Vendor name is required';
+                if (!vendorForm.contactPerson?.trim()) errors.contactPerson = 'Contact person is required';
+                
+                if (!vendorForm.phone?.trim()) {
+                  errors.phone = 'Phone number is required';
+                } else if (!isValidPhone(vendorForm.phone)) {
+                  errors.phone = 'Enter a valid 10-digit mobile number';
+                }
+
+                if (!vendorForm.email?.trim()) {
+                  errors.email = 'Email address is required';
+                } else if (!isValidEmail(vendorForm.email)) {
+                  errors.email = 'Please enter a valid email address';
+                }
+
+                if (!vendorForm.gstNo?.trim()) {
+                  errors.gstNo = 'GST number is required';
+                } else if (!isValidGST(vendorForm.gstNo)) {
+                  errors.gstNo = 'Enter a valid 15-character GSTIN (e.g. 27AAAAA0000A1Z5)';
+                }
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  return;
+                }
+
                 const payload = {
-                  name: vendorForm.name,
-                  contactPerson: vendorForm.contactPerson,
-                  email: vendorForm.email,
-                  phone: vendorForm.phone,
-                  gstNo: vendorForm.gstNo,
-                  panNo: vendorForm.panNo,
+                  name: vendorForm.name.trim(),
+                  contactPerson: vendorForm.contactPerson.trim(),
+                  email: vendorForm.email.trim().toLowerCase(),
+                  phone: vendorForm.phone.trim(),
+                  gstNo: vendorForm.gstNo.trim().toUpperCase(),
+                  panNo: vendorForm.panNo.trim().toUpperCase(),
                   creditPeriod: vendorForm.creditPeriod,
-                  address: vendorForm.address,
+                  address: vendorForm.address.trim(),
                   bankDetails: {
-                    bankName: vendorForm.bankName,
-                    accountNo: vendorForm.accountNo,
-                    ifscCode: vendorForm.ifscCode
+                    bankName: vendorForm.bankName.trim(),
+                    accountNo: vendorForm.accountNo.trim(),
+                    ifscCode: vendorForm.ifscCode.trim().toUpperCase()
                   }
                 };
                 if (editingId && onEditVendor) {
@@ -508,15 +702,62 @@ export function MastersTab({
                 }
                 setShowModal(false);
               }} className="space-y-3">
-                <Input label="Vendor Name" value={vendorForm.name} onChange={e => setVendorForm({...vendorForm, name: e.target.value})} required />
-                <Input label="Contact Person" value={vendorForm.contactPerson} onChange={e => setVendorForm({...vendorForm, contactPerson: e.target.value})} required />
+                <Input
+                  label="Vendor Name"
+                  value={vendorForm.name}
+                  onChange={e => { setVendorForm({...vendorForm, name: e.target.value}); clearError('name'); }}
+                  error={formErrors.name}
+                  required
+                />
+                <Input
+                  label="Contact Person"
+                  value={vendorForm.contactPerson}
+                  onChange={e => { setVendorForm({...vendorForm, contactPerson: e.target.value}); clearError('contactPerson'); }}
+                  error={formErrors.contactPerson}
+                  required
+                />
                 <div className="grid grid-cols-2 gap-3">
-                  <Input label="Phone Number" value={vendorForm.phone} onChange={e => setVendorForm({...vendorForm, phone: e.target.value})} required />
-                  <Input label="Email Address" type="email" value={vendorForm.email} onChange={e => setVendorForm({...vendorForm, email: e.target.value})} required />
+                  <Input
+                    label="Phone Number"
+                    value={vendorForm.phone}
+                    maxLength={10}
+                    onChange={e => { setVendorForm({...vendorForm, phone: formatPhone(e.target.value)}); clearError('phone'); }}
+                    placeholder="10-digit mobile"
+                    error={formErrors.phone}
+                    required
+                  />
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    value={vendorForm.email}
+                    onChange={e => { setVendorForm({...vendorForm, email: e.target.value}); clearError('email'); }}
+                    placeholder="vendor@company.com"
+                    error={formErrors.email}
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Input label="GST Number" value={vendorForm.gstNo} onChange={e => setVendorForm({...vendorForm, gstNo: e.target.value})} required />
+                  <Input
+                    label="GST Number"
+                    value={vendorForm.gstNo}
+                    maxLength={15}
+                    onChange={e => { setVendorForm({...vendorForm, gstNo: formatGST(e.target.value)}); clearError('gstNo'); }}
+                    placeholder="15-digit GSTIN"
+                    error={formErrors.gstNo}
+                    required
+                  />
+                  <Input
+                    label="PAN Number (Optional)"
+                    value={vendorForm.panNo}
+                    maxLength={10}
+                    onChange={e => { setVendorForm({...vendorForm, panNo: formatPAN(e.target.value)}); clearError('panNo'); }}
+                    placeholder="10-digit PAN"
+                    error={formErrors.panNo}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <Input label="Credit Period (Days)" type="number" value={vendorForm.creditPeriod} onChange={e => setVendorForm({...vendorForm, creditPeriod: Number(e.target.value)})} />
+                  <Input label="Address" value={vendorForm.address} onChange={e => setVendorForm({...vendorForm, address: e.target.value})} placeholder="City, State" />
                 </div>
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
@@ -526,8 +767,17 @@ export function MastersTab({
             )}
 
             {subTab === 'projects' && (
-              <form onSubmit={(e) => {
+              <form noValidate onSubmit={(e) => {
                 e.preventDefault();
+                const errors: Record<string, string> = {};
+                if (!projectForm.name?.trim()) errors.name = 'Project name is required';
+                if (!projectForm.location?.trim()) errors.location = 'Location is required';
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  return;
+                }
+
                 if (editingId && onEditProject) {
                   onEditProject(editingId, projectForm);
                 } else {
@@ -535,8 +785,20 @@ export function MastersTab({
                 }
                 setShowModal(false);
               }} className="space-y-3">
-                <Input label="Project Name" value={projectForm.name} onChange={e => setProjectForm({...projectForm, name: e.target.value})} required />
-                <Input label="Project Location" value={projectForm.location} onChange={e => setProjectForm({...projectForm, location: e.target.value})} required />
+                <Input
+                  label="Project Name"
+                  value={projectForm.name}
+                  onChange={e => { setProjectForm({...projectForm, name: e.target.value}); clearError('name'); }}
+                  error={formErrors.name}
+                  required
+                />
+                <Input
+                  label="Location"
+                  value={projectForm.location}
+                  onChange={e => { setProjectForm({...projectForm, location: e.target.value}); clearError('location'); }}
+                  error={formErrors.location}
+                  required
+                />
                 <Select
                   label="Status"
                   options={[
@@ -555,8 +817,24 @@ export function MastersTab({
             )}
 
             {subTab === 'users' && (
-              <form onSubmit={(e) => {
+              <form noValidate onSubmit={(e) => {
                 e.preventDefault();
+                const errors: Record<string, string> = {};
+                if (!userForm.name?.trim()) errors.name = 'Full name is required';
+                
+                if (!userForm.email?.trim()) {
+                  errors.email = 'Email address is required';
+                } else if (!isValidEmail(userForm.email)) {
+                  errors.email = 'Please enter a valid email address';
+                }
+
+                if (!userForm.department?.trim()) errors.department = 'Department is required';
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  return;
+                }
+
                 if (editingId && onEditUser) {
                   onEditUser(editingId, userForm);
                 } else {
@@ -564,8 +842,22 @@ export function MastersTab({
                 }
                 setShowModal(false);
               }} className="space-y-3">
-                <Input label="Full Name" value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} required />
-                <Input label="Email Address" type="email" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} required />
+                <Input
+                  label="Full Name"
+                  value={userForm.name}
+                  onChange={e => { setUserForm({...userForm, name: e.target.value}); clearError('name'); }}
+                  error={formErrors.name}
+                  required
+                />
+                <Input
+                  label="Email Address"
+                  type="email"
+                  value={userForm.email}
+                  onChange={e => { setUserForm({...userForm, email: e.target.value}); clearError('email'); }}
+                  placeholder="user@company.com"
+                  error={formErrors.email}
+                  required
+                />
                 <Input
                   label={editingId ? "Reset Password (Optional)" : "Password (Default: 123456)"}
                   type="password"
@@ -574,20 +866,21 @@ export function MastersTab({
                   placeholder={editingId ? "Leave blank to keep existing, or enter new password" : "Enter account password"}
                 />
                 <Select
-                  label="Assign Role"
-                  options={[
-                    { value: 'Requester', label: 'Requester (Site Engineer)' },
-                    { value: 'Approver', label: 'Approver (Project Manager)' },
-                    { value: 'Purchase', label: 'Purchase Manager (Procurement)' },
-                    { value: 'Store', label: 'Store Incharge (Inventory/GRN)' },
-                    { value: 'Accounts', label: 'Accounts Team (Bills & Payments)' },
-                    { value: 'Management', label: 'Management (Executive Oversight)' },
-                    { value: 'Admin', label: 'System Administrator' }
-                  ]}
+                  label="Assign Role (Dynamic Role Master)"
+                  options={availableRolesList.map(r => ({
+                    value: r.role,
+                    label: `${r.name || r.role}${r.description ? ` - ${r.description.slice(0, 35)}${r.description.length > 35 ? '...' : ''}` : ''}`
+                  }))}
                   value={userForm.role}
                   onChange={e => setUserForm({...userForm, role: e.target.value})}
                 />
-                <Input label="Department" value={userForm.department} onChange={e => setUserForm({...userForm, department: e.target.value})} required />
+                <Input
+                  label="Department"
+                  value={userForm.department}
+                  onChange={e => { setUserForm({...userForm, department: e.target.value}); clearError('department'); }}
+                  error={formErrors.department}
+                  required
+                />
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
                   <Button variant="primary" type="submit">{editingId ? 'Update User' : 'Save User'}</Button>
@@ -595,9 +888,89 @@ export function MastersTab({
               </form>
             )}
 
-            {subTab === 'categories' && (
-              <form onSubmit={(e) => {
+            {subTab === 'roles' && (
+              <form noValidate onSubmit={(e) => {
                 e.preventDefault();
+                const errors: Record<string, string> = {};
+                if (!roleForm.role?.trim()) errors.role = 'Role code is required';
+                if (!roleForm.name?.trim()) errors.name = 'Display role name is required';
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  return;
+                }
+
+                const payload = {
+                  role: roleForm.role.trim(),
+                  name: roleForm.name.trim() || roleForm.role.trim(),
+                  description: roleForm.description.trim(),
+                  status: roleForm.status
+                };
+
+                if (editingId && onEditRole) {
+                  onEditRole(editingId, payload);
+                } else if (onAddRole) {
+                  onAddRole(payload);
+                }
+                setShowModal(false);
+              }} className="space-y-3">
+                <Input
+                  label="Role Code / Identifier"
+                  value={roleForm.role}
+                  onChange={e => {
+                    setRoleForm({
+                      ...roleForm,
+                      role: e.target.value,
+                      name: roleForm.name === roleForm.role ? e.target.value : roleForm.name
+                    });
+                    clearError('role');
+                  }}
+                  placeholder="e.g. QualityInspector or SiteSupervisor"
+                  disabled={!!(editingId && roleForm.role.toLowerCase() === 'admin')}
+                  error={formErrors.role}
+                  required
+                />
+                <Input
+                  label="Display Role Name"
+                  value={roleForm.name}
+                  onChange={e => { setRoleForm({...roleForm, name: e.target.value}); clearError('name'); }}
+                  placeholder="e.g. Quality Inspector"
+                  error={formErrors.name}
+                  required
+                />
+                <Input
+                  label="Role Description"
+                  value={roleForm.description}
+                  onChange={e => { setRoleForm({...roleForm, description: e.target.value}); clearError('description'); }}
+                  placeholder="Briefly describe what this role does"
+                />
+                <Select
+                  label="Status"
+                  options={[
+                    { value: 'Active', label: 'Active' },
+                    { value: 'Inactive', label: 'Inactive' }
+                  ]}
+                  value={roleForm.status}
+                  onChange={e => setRoleForm({...roleForm, status: e.target.value as any})}
+                />
+                <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                  <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+                  <Button variant="primary" type="submit">{editingId ? 'Update Role' : 'Save Role'}</Button>
+                </div>
+              </form>
+            )}
+
+            {subTab === 'categories' && (
+              <form noValidate onSubmit={(e) => {
+                e.preventDefault();
+                const errors: Record<string, string> = {};
+                if (!categoryForm.name?.trim()) errors.name = 'Category name is required';
+
+                if (Object.keys(errors).length > 0) {
+                  setFormErrors(errors);
+                  return;
+                }
+
                 if (editingId && onEditCategory) {
                   onEditCategory(editingId, categoryForm);
                 } else {
@@ -605,8 +978,18 @@ export function MastersTab({
                 }
                 setShowModal(false);
               }} className="space-y-3">
-                <Input label="Category Name" value={categoryForm.name} onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} required />
-                <Input label="Description" value={categoryForm.description} onChange={e => setCategoryForm({...categoryForm, description: e.target.value})} />
+                <Input
+                  label="Category Name"
+                  value={categoryForm.name}
+                  onChange={e => { setCategoryForm({...categoryForm, name: e.target.value}); clearError('name'); }}
+                  error={formErrors.name}
+                  required
+                />
+                <Input
+                  label="Description"
+                  value={categoryForm.description}
+                  onChange={e => setCategoryForm({...categoryForm, description: e.target.value})}
+                />
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
                   <Button variant="primary" type="submit">{editingId ? 'Update Category' : 'Save Category'}</Button>

@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { RolePermission, ActionCapability, User } from '@/lib/storeData';
 import { Table } from '@/components/ui/Table';
-import { Edit3, X, Shield, Search } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Edit3, X, Shield, Search, Plus, Trash2, Lock, Sparkles, Check } from 'lucide-react';
 
 interface RolePermissionsTabProps {
   rolePermissions: RolePermission[];
@@ -44,29 +46,61 @@ export const PERMISSION_FEATURES = [
 
 export function RolePermissionsTab({
   rolePermissions,
-  onSaveRolePermission
+  onSaveRolePermission,
+  onDeleteRolePermission
 }: RolePermissionsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [editModalRole, setEditModalRole] = useState<RolePermission | null>(null);
+  const [showAddRoleModal, setShowAddRoleModal] = useState(false);
   const [currentPerms, setCurrentPerms] = useState<Record<string, ActionCapability>>({});
 
-  // Merge fixed system roles with stored permissions
-  const displayRoles = FIXED_SYSTEM_ROLES.map(fixed => {
-    const existing = rolePermissions.find(rp => rp.role.toLowerCase() === fixed.role.toLowerCase());
-    return {
+  // Add Role Form State
+  const [newRoleForm, setNewRoleForm] = useState({
+    role: '',
+    name: '',
+    description: '',
+    preset: 'blank' as 'blank' | 'full' | 'requester' | 'store' | 'accounts'
+  });
+  const [addRoleErrors, setAddRoleErrors] = useState<Record<string, string>>({});
+
+  // Merge dynamic roles with fixed system roles
+  const allRolesMap = new Map<string, { role: string; description: string; modules: string[]; permissions: Record<string, ActionCapability>; isSystemRole?: boolean }>();
+
+  // Add default system roles
+  FIXED_SYSTEM_ROLES.forEach(fixed => {
+    allRolesMap.set(fixed.role.toLowerCase(), {
       role: fixed.role,
       description: fixed.description,
-      modules: existing?.modules || [],
-      permissions: existing?.permissions || {}
-    };
-  }).filter(r => r.role.toLowerCase().includes(searchQuery.toLowerCase()) || r.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      modules: [],
+      permissions: {},
+      isSystemRole: true
+    });
+  });
+
+  // Overlay / add all roles from rolePermissions state
+  rolePermissions.forEach(rp => {
+    const key = (rp.role || '').toLowerCase();
+    if (!key) return;
+    const existing = allRolesMap.get(key);
+    allRolesMap.set(key, {
+      role: rp.name || rp.role,
+      description: rp.description || existing?.description || 'Custom ERP User Role',
+      modules: rp.modules || existing?.modules || [],
+      permissions: rp.permissions || existing?.permissions || {},
+      isSystemRole: rp.isSystemRole ?? existing?.isSystemRole ?? false
+    });
+  });
+
+  const displayRoles = Array.from(allRolesMap.values()).filter(r =>
+    r.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleOpenEdit = (rp: RolePermission & { description?: string }) => {
     const existingPerms: Record<string, ActionCapability> = {};
     const isAdmin = rp.role === 'Admin';
     PERMISSION_FEATURES.forEach(f => {
       if (isAdmin) {
-        // Admin always has all capabilities checked
         existingPerms[f] = {
           viewGlobal: true,
           viewOwn: false,
@@ -78,7 +112,7 @@ export function RolePermissionsTab({
         const p = rp.permissions?.[f] || {};
         existingPerms[f] = {
           viewGlobal: !!p.viewGlobal,
-          viewOwn: !p.viewGlobal && !!p.viewOwn, // Ensure mutually exclusive
+          viewOwn: !p.viewGlobal && !!p.viewOwn,
           create: !!p.create,
           update: !!p.update,
           delete: !!p.delete,
@@ -90,7 +124,7 @@ export function RolePermissionsTab({
   };
 
   const toggleCapability = (feature: string, cap: keyof ActionCapability) => {
-    if (editModalRole?.role === 'Admin') return; // Admin is fixed/disabled
+    if (editModalRole?.role === 'Admin') return;
 
     setCurrentPerms(prev => {
       const featPerm = prev[feature] || { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
@@ -99,11 +133,11 @@ export function RolePermissionsTab({
       if (cap === 'viewGlobal') {
         const nextVal = !featPerm.viewGlobal;
         nextPerm.viewGlobal = nextVal;
-        if (nextVal) nextPerm.viewOwn = false; // Mutually exclusive
+        if (nextVal) nextPerm.viewOwn = false;
       } else if (cap === 'viewOwn') {
         const nextVal = !featPerm.viewOwn;
         nextPerm.viewOwn = nextVal;
-        if (nextVal) nextPerm.viewGlobal = false; // Mutually exclusive
+        if (nextVal) nextPerm.viewGlobal = false;
       } else {
         nextPerm[cap] = !featPerm[cap];
       }
@@ -132,32 +166,78 @@ export function RolePermissionsTab({
     setEditModalRole(null);
   };
 
+  const handleCreateNewRole = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: Record<string, string> = {};
+    if (!newRoleForm.role?.trim()) errors.role = 'Role code / identifier is required';
+    if (!newRoleForm.name?.trim()) errors.name = 'Role display name is required';
+
+    const normalizedRole = newRoleForm.role.trim().replace(/\s+/g, '');
+    if (allRolesMap.has(normalizedRole.toLowerCase())) {
+      errors.role = 'A role with this identifier already exists';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setAddRoleErrors(errors);
+      return;
+    }
+
+    // Build initial permissions based on preset
+    const initialPerms: Record<string, ActionCapability> = {};
+    PERMISSION_FEATURES.forEach(f => {
+      if (newRoleForm.preset === 'full') {
+        initialPerms[f] = { viewGlobal: true, viewOwn: false, create: true, update: true, delete: true };
+      } else if (newRoleForm.preset === 'requester') {
+        const isReq = ['Purchase Requests', 'Stock', 'Store Outward', 'Product'].includes(f);
+        initialPerms[f] = { viewGlobal: false, viewOwn: isReq, create: isReq, update: isReq, delete: false };
+      } else if (newRoleForm.preset === 'store') {
+        const isStore = ['Goods Receipt (GRN)', 'Store Outward', 'Stock', 'Product'].includes(f);
+        initialPerms[f] = { viewGlobal: isStore, viewOwn: false, create: isStore, update: isStore, delete: false };
+      } else if (newRoleForm.preset === 'accounts') {
+        const isAcc = ['Vendor Invoices', 'Payment Requests', 'Payment Entries', 'Reports'].includes(f);
+        initialPerms[f] = { viewGlobal: isAcc, viewOwn: false, create: isAcc, update: isAcc, delete: false };
+      } else {
+        initialPerms[f] = { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
+      }
+    });
+
+    onSaveRolePermission(normalizedRole, {
+      newRoleName: newRoleForm.name.trim(),
+      permissions: initialPerms,
+      modules: ['dashboard']
+    });
+
+    setShowAddRoleModal(false);
+    setNewRoleForm({ role: '', name: '', description: '', preset: 'blank' });
+    setAddRoleErrors({});
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Top Header Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
-            <Shield className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-[#0F172C]">System Roles &amp; Capability Matrix</h2>
-            <p className="text-xs text-slate-500 font-medium">Configure granular feature permissions (View, Create, Update, Delete) for system roles</p>
-          </div>
+    <div className="space-y-4 animate-fade-in">
+      {/* Top Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative min-w-[260px] max-w-sm flex-1">
+          <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search role or description..."
+            className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all shadow-2xs"
+          />
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="relative min-w-[260px]">
-            <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search role or description..."
-              className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-slate-50/70 border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20 transition-all"
-            />
-          </div>
-        </div>
+        <Button
+          variant="primary"
+          icon={<Plus className="h-4 w-4" />}
+          onClick={() => {
+            setNewRoleForm({ role: '', name: '', description: '', preset: 'blank' });
+            setAddRoleErrors({});
+            setShowAddRoleModal(true);
+          }}
+        >
+          Add New Role
+        </Button>
       </div>
 
       {/* Roles Table */}
@@ -170,6 +250,7 @@ export function RolePermissionsTab({
           const permCount = Object.values(rp.permissions || {}).reduce((acc, cap) => {
             return acc + (cap.viewGlobal ? 1 : 0) + (cap.viewOwn ? 1 : 0) + (cap.create ? 1 : 0) + (cap.update ? 1 : 0) + (cap.delete ? 1 : 0);
           }, 0);
+          const isSystem = rp.isSystemRole || FIXED_SYSTEM_ROLES.some(f => f.role.toLowerCase() === rp.role.toLowerCase());
 
           return (
             <tr key={rp.role} className="hover:bg-slate-50 transition-colors">
@@ -179,11 +260,15 @@ export function RolePermissionsTab({
                     <Shield className="h-3.5 w-3.5" />
                   </div>
                   <span className="font-bold text-[#0F172C]">{rp.role}</span>
-                  {rp.role === 'Admin' && (
+                  {rp.role === 'Admin' ? (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
                       Superuser
                     </span>
-                  )}
+                  ) : !isSystem ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Custom
+                    </span>
+                  ) : null}
                 </div>
               </td>
               <td className="px-4 py-3 text-xs font-medium text-slate-800 max-w-xs">
@@ -198,7 +283,7 @@ export function RolePermissionsTab({
                 </div>
               </td>
               <td className="px-4 py-3 text-right">
-                <div className="inline-flex items-center space-x-1.5 justify-end">
+                <div className="inline-flex items-center space-x-2 justify-end">
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(rp)}
@@ -207,12 +292,123 @@ export function RolePermissionsTab({
                     <Edit3 className="h-3.5 w-3.5" />
                     <span>Configure</span>
                   </button>
+
+                  {!isSystem && onDeleteRolePermission && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete custom role "${rp.role}"?`)) {
+                          onDeleteRolePermission(rp.role);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 transition-all cursor-pointer shadow-2xs"
+                      title="Delete Custom Role"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
           );
         }}
       />
+
+      {/* Add New Role Modal */}
+      {showAddRoleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 animate-modal-zoom space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-bold text-[#0F172C]">Add New System Role</h3>
+              </div>
+              <button
+                onClick={() => setShowAddRoleModal(false)}
+                className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form noValidate onSubmit={handleCreateNewRole} className="space-y-3.5">
+              <Input
+                label="Role Code / Identifier"
+                value={newRoleForm.role}
+                onChange={(e) => {
+                  setNewRoleForm({
+                    ...newRoleForm,
+                    role: e.target.value,
+                    name: newRoleForm.name === newRoleForm.role ? e.target.value : newRoleForm.name
+                  });
+                  setAddRoleErrors(prev => ({ ...prev, role: '' }));
+                }}
+                placeholder="e.g. QualityInspector or SiteSupervisor"
+                error={addRoleErrors.role}
+                required
+              />
+
+              <Input
+                label="Display Role Name"
+                value={newRoleForm.name}
+                onChange={(e) => {
+                  setNewRoleForm({ ...newRoleForm, name: e.target.value });
+                  setAddRoleErrors(prev => ({ ...prev, name: '' }));
+                }}
+                placeholder="e.g. Quality Inspector"
+                error={addRoleErrors.name}
+                required
+              />
+
+              <Input
+                label="Role Description"
+                value={newRoleForm.description}
+                onChange={(e) => setNewRoleForm({ ...newRoleForm, description: e.target.value })}
+                placeholder="Briefly describe responsibilities for this role"
+              />
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 select-none">
+                  Initial Permission Preset
+                </label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {[
+                    { id: 'blank', label: 'Custom (Blank)' },
+                    { id: 'requester', label: 'Requester Standard' },
+                    { id: 'store', label: 'Store / GRN Standard' },
+                    { id: 'accounts', label: 'Accounts Standard' },
+                    { id: 'full', label: 'Full Access (All)' },
+                  ].map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setNewRoleForm({ ...newRoleForm, preset: preset.id as any })}
+                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                        newRoleForm.preset === preset.id
+                          ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-medium'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <Button variant="secondary" onClick={() => setShowAddRoleModal(false)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit">
+                  Save Role
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Granular Permission Matrix Modal */}
       {editModalRole && (
@@ -242,7 +438,7 @@ export function RolePermissionsTab({
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSaveModal} className="flex-1 flex flex-col overflow-hidden">
+            <form noValidate onSubmit={handleSaveModal} className="flex-1 flex flex-col overflow-hidden">
               <div className="p-6 space-y-5 overflow-y-auto flex-1 bg-slate-50/40">
                 {/* Role Header Info */}
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
