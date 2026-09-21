@@ -99,8 +99,6 @@ export function SidebarNav({
     { id: 'payment-req', label: 'Payment Requests', icon: <CreditCard className="h-4.5 w-4.5" /> },
     { id: 'payments', label: 'Payment Entries', icon: <CreditCard className="h-4.5 w-4.5" /> },
     { id: 'reports', label: 'Store Reports', icon: <FileSpreadsheet className="h-4.5 w-4.5" /> },
-    { id: 'audit', label: 'Audit Trail', icon: <History className="h-4.5 w-4.5" /> },
-    { id: 'notifications', label: 'Alerts & Notifications', icon: <Bell className="h-4.5 w-4.5" />, badge: unreadNotificationsCount },
     { id: 'permissions', label: 'Roles & Access', icon: <Sliders className="h-4.5 w-4.5" /> },
   ];
 

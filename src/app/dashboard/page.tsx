@@ -36,6 +36,7 @@ import {
   auditLogsApi,
   notificationsApi,
   rolePermissionsApi,
+  rolesApi,
   projectsApi,
   vendorsApi,
   categoriesApi,
@@ -194,12 +195,13 @@ export default function DashboardPage() {
           });
         }
       } else if (tab === 'masters') {
-        const [u, p, v, c, it] = await Promise.allSettled([
+        const [u, p, v, c, it, r] = await Promise.allSettled([
           usersApi.getAll(),
           projectsApi.getAll(),
           vendorsApi.getAll(),
           categoriesApi.getAll(),
-          itemsApi.getAll()
+          itemsApi.getAll(),
+          rolesApi.getAll()
         ]);
         setDb(prev => {
           const next = {
@@ -209,6 +211,7 @@ export default function DashboardPage() {
             vendors: v.status === 'fulfilled' && v.value?.data ? v.value.data : prev.vendors,
             categories: c.status === 'fulfilled' && c.value?.data ? c.value.data : prev.categories,
             items: it.status === 'fulfilled' && it.value?.data ? it.value.data : prev.items,
+            rolePermissions: r.status === 'fulfilled' && r.value?.data ? r.value.data : prev.rolePermissions,
           };
           saveDatabase(next);
           return next;
@@ -865,6 +868,46 @@ export default function DashboardPage() {
                 apiCall(() => itemsApi.delete(id));
                 addAuditLog(currentUser.id, 'Delete Item', '', `Deleted item ${i?.name || id}`, 'Item', id);
                 toast.success('Item deleted!');
+              }}
+              roles={db.rolePermissions}
+              onAddRole={(r) => {
+                const newRole = {
+                  id: `role-${Date.now()}`,
+                  role: r.role || '',
+                  name: r.name || r.role || '',
+                  description: r.description || '',
+                  isSystemRole: false,
+                  status: r.status || 'Active',
+                  modules: ['dashboard'],
+                  permissions: {}
+                };
+                updateDB({ ...db, rolePermissions: [newRole, ...db.rolePermissions] });
+                apiCall(() => rolesApi.create(r));
+                addAuditLog(currentUser.id, 'Create Role', '', `Added custom role ${newRole.name}`, 'RolePermissions', newRole.role);
+                toast.success(`Role '${newRole.name}' created successfully!`);
+              }}
+              onEditRole={(id, updated) => {
+                const roleIndex = db.rolePermissions.findIndex(r => r.id === id || r._id === id || r.role === id);
+                if (roleIndex !== -1) {
+                  const existing = db.rolePermissions[roleIndex];
+                  const updatedRole = { ...existing, ...updated };
+                  db.rolePermissions[roleIndex] = updatedRole;
+                  updateDB({ ...db });
+                  apiCall(() => rolesApi.update(existing.id || existing._id || existing.role, updated));
+                  addAuditLog(currentUser.id, 'Update Role', '', `Updated role ${updatedRole.name || updatedRole.role}`, 'RolePermissions', updatedRole.role);
+                  toast.success(`Role '${updatedRole.name || updatedRole.role}' updated successfully!`);
+                }
+              }}
+              onDeleteRole={(id) => {
+                const target = db.rolePermissions.find(r => r.id === id || r._id === id || r.role === id);
+                if (target?.role === 'Admin') {
+                  toast.error('System Admin role cannot be deleted');
+                  return;
+                }
+                updateDB({ ...db, rolePermissions: db.rolePermissions.filter(r => r.id !== id && r._id !== id && r.role !== id) });
+                apiCall(() => rolesApi.delete(target?.id || target?._id || target?.role || id));
+                addAuditLog(currentUser.id, 'Delete Role', '', `Deleted role ${target?.name || target?.role || id}`, 'RolePermissions', id);
+                toast.success('Role deleted successfully!');
               }}
             />
           )}

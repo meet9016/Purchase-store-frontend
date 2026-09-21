@@ -17,6 +17,7 @@ export interface SelectProps {
   placeholder?: string;
   className?: string;
   helperText?: string;
+  error?: string;
   required?: boolean;
   disabled?: boolean;
   icon?: React.ReactNode;
@@ -31,6 +32,8 @@ export function Select({
   placeholder = 'Select option...',
   className = '',
   helperText,
+  error,
+  required = false,
   disabled = false,
   icon,
   size = 'md'
@@ -76,6 +79,7 @@ export function Select({
       {label && (
         <label className="block text-xs font-semibold text-slate-700 mb-1 select-none">
           {label}
+          {required && <span className="text-red-500 font-bold ml-1">*</span>}
         </label>
       )}
       
@@ -83,7 +87,11 @@ export function Select({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 focus:bg-white transition-all text-left cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed ${paddingY} ${className}`}
+        className={`w-full flex items-center justify-between rounded-xl bg-slate-50 border ${
+          error
+            ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+            : 'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 focus:bg-white'
+        } text-slate-900 font-semibold focus:outline-none transition-all text-left cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed ${paddingY} ${className}`}
       >
         <div className="flex items-center space-x-2 truncate min-w-0 flex-1">
           {icon && <span className="text-blue-600 flex-shrink-0">{icon}</span>}
@@ -153,9 +161,13 @@ export function Select({
         </div>
       )}
 
-      {helperText && (
+      {error ? (
+        <p className="mt-1 text-xs text-red-500 font-medium flex items-center gap-1">
+          <span>{error}</span>
+        </p>
+      ) : helperText ? (
         <p className="mt-1 text-xs text-slate-500 font-medium">{helperText}</p>
-      )}
+      ) : null}
     </div>
   );
 }

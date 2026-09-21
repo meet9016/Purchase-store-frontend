@@ -396,6 +396,30 @@ export const notificationsApi = {
   },
 };
 
+// ─── ROLES MASTER ─────────────────────────────────────────────────────────────
+export const rolesApi = {
+  getAll: async (params?: QueryParams) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<RolePermission[]>>('/roles', { params });
+    return res.data;
+  },
+  getById: async (id: string) => {
+    const res = await axiosClient.get<ApiResponseEnvelope<RolePermission>>(`/roles/${id}`);
+    return res.data;
+  },
+  create: async (data: Partial<RolePermission>) => {
+    const res = await axiosClient.post<ApiResponseEnvelope<RolePermission>>('/roles', data);
+    return res.data;
+  },
+  update: async (id: string, data: Partial<RolePermission>) => {
+    const res = await axiosClient.put<ApiResponseEnvelope<RolePermission>>(`/roles/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string) => {
+    const res = await axiosClient.delete<ApiResponseEnvelope<null>>(`/roles/${id}`);
+    return res.data;
+  },
+};
+
 // ─── ROLE PERMISSIONS ─────────────────────────────────────────────────────────
 export const rolePermissionsApi = {
   getAll: async () => {
@@ -421,6 +445,7 @@ export const api = {
   vendors: vendorsApi,
   categories: categoriesApi,
   items: itemsApi,
+  roles: rolesApi,
   purchaseRequests: purchaseRequestsApi,
   purchaseOrders: purchaseOrdersApi,
   grns: grnsApi,
@@ -435,3 +460,4 @@ export const api = {
 };
 
 export default api;
+

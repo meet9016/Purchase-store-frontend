@@ -307,10 +307,16 @@ export interface ActionCapability {
 
 export interface RolePermission {
   id?: string;
+  _id?: string;
   role: string;
+  name?: string;
+  description?: string;
+  isSystemRole?: boolean;
+  status?: 'Active' | 'Inactive';
   modules: string[];
   permissions?: Record<string, ActionCapability>;
 }
+
 
 // Environment API Base Configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005/api';

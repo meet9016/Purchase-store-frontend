@@ -181,10 +181,10 @@ export default function LoginPage() {
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
+          <form noValidate onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Email Address
+                Email Address <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -200,7 +200,7 @@ export default function LoginPage() {
                   }}
                   placeholder="name@company.com"
                   className={`block w-full pl-10 pr-3.5 py-2.5 text-xs border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none transition-colors ${
-                    validationErrors.email ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500' : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+                    validationErrors.email ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-50/20' : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
                   }`}
                 />
               </div>
@@ -211,7 +211,7 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Password
+                Password <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
