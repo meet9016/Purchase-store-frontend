@@ -97,8 +97,8 @@ export function PurchaseOrdersTab({
         headers={['PO Number', 'Vendor Name', 'Project', 'PO Date', 'Total Amount', 'Status', 'Actions']}
         data={filteredPos}
         itemsPerPage={10}
-        renderRow={(po) => (
-          <tr key={po.id} className="hover:bg-slate-50 transition-colors">
+        renderRow={(po, idx) => (
+          <tr key={`${po.id || po.poNumber}-${idx}`} className="hover:bg-slate-50 transition-colors">
             <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{po.poNumber}</td>
             <td className="px-4 py-3 font-medium text-slate-900 text-xs">{po.vendorName}</td>
             <td className="px-4 py-3 font-medium text-slate-800 text-xs">{po.projectName}</td>

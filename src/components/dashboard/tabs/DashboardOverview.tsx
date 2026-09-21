@@ -144,7 +144,6 @@ export function DashboardOverview({
               variant="primary"
               icon={<Plus className="w-4 h-4" />}
               onClick={onOpenCreatePRModal}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-600/20"
             >
               Create PR
             </Button>

@@ -68,7 +68,7 @@ export default function LoginPage() {
     // 1. Try Backend API Authentication
     try {
       const result = await authApi.login(cleanEmail, cleanPass);
-      const authData = (result.data || result) as any;
+      const authData = (result?.data || result) as any;
       const token = authData?.token;
       const user = authData?.user;
 
@@ -78,35 +78,41 @@ export default function LoginPage() {
         toast.success(`Welcome back, ${user.name || 'User'}!`);
         setTimeout(() => {
           window.location.href = '/dashboard';
-        }, 300);
+        }, 200);
         return;
       }
     } catch (apiErr: any) {
-      const errMsg = apiErr?.response?.data?.message || apiErr?.message || '';
-      if (errMsg.includes('Invalid email or password') || errMsg.includes('deactivated') || errMsg.includes('required')) {
-        setLoading(false);
-        setError(errMsg);
-        toast.error(errMsg);
-        return;
-      }
+      console.warn('[Backend Auth Failed, checking local fallback]', apiErr?.message || apiErr);
     }
 
     // 2. Local Fallback authentication
     const activeDb = getDatabase();
-    let user = activeDb.users.find(u => u.email.toLowerCase().trim() === cleanEmail);
+    let user = activeDb.users.find((u) => u.email.toLowerCase().trim() === cleanEmail);
 
-    if (!user && (cleanEmail === 'admin@gmail.com' || cleanEmail === 'admin')) {
-      user = {
-        id: 'usr-admin',
-        name: 'Alok Sharma',
-        email: 'admin@gmail.com',
-        role: 'Admin',
-        department: 'Executive Management',
-        active: true,
-        password: '123456'
-      };
-      activeDb.users.unshift(user);
-      saveDatabase(activeDb);
+    // Auto-create demo user locally if not present
+    if (!user) {
+      const demoMatch = DEMO_ROLES.find((d) => d.email.toLowerCase().trim() === cleanEmail);
+      if (demoMatch || cleanEmail.includes('@')) {
+        const inferredRole = demoMatch ? demoMatch.role : (cleanEmail.startsWith('admin') ? 'Admin' : 'Purchase');
+        const defaultNames: Record<string, string> = {
+          Admin: 'Alok Sharma',
+          Purchase: 'Rahul Verma',
+          Store: 'Vikram Singh',
+          Accounts: 'Sneha Patel',
+          Approver: 'Priya Mehta',
+        };
+        user = {
+          id: `usr-${Date.now()}`,
+          name: demoMatch ? defaultNames[demoMatch.role] || demoMatch.role : cleanEmail.split('@')[0].toUpperCase(),
+          email: cleanEmail,
+          role: inferredRole,
+          department: 'Operations Division',
+          active: true,
+          password: cleanPass || '123456',
+        };
+        activeDb.users.push(user);
+        saveDatabase(activeDb);
+      }
     }
 
     if (!user) {
@@ -133,7 +139,7 @@ export default function LoginPage() {
     toast.success(`Welcome back, ${user.name || 'User'}!`);
     setTimeout(() => {
       window.location.href = '/dashboard';
-    }, 300);
+    }, 200);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -142,22 +148,14 @@ export default function LoginPage() {
     performLogin(email, password);
   };
 
-  const selectDemoRole = (demo: typeof DEMO_ROLES[0]) => {
-    setEmail(demo.email);
-    setPassword(demo.pass);
-    setValidationErrors({});
-    setError('');
-    performLogin(demo.email, demo.pass);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white">
       {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 mb-3">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/20 mb-3">
           <ShoppingBag className="w-6 h-6" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-2xl font-bold tracking-tight text-[#0F172C]">
           Purchase &amp; Store Management
         </h1>
         <p className="mt-1 text-xs text-slate-500 font-medium">
@@ -196,11 +194,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: '' }));
+                    if (validationErrors.email) setValidationErrors((prev) => ({ ...prev, email: '' }));
                   }}
                   placeholder="name@company.com"
                   className={`block w-full pl-10 pr-3.5 py-2.5 text-xs border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none transition-colors ${
-                    validationErrors.email ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-50/20' : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+                    validationErrors.email
+                      ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 bg-rose-50/20'
+                      : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
                   }`}
                 />
               </div>
@@ -223,11 +223,13 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
-                    if (validationErrors.password) setValidationErrors(prev => ({ ...prev, password: '' }));
+                    if (validationErrors.password) setValidationErrors((prev) => ({ ...prev, password: '' }));
                   }}
                   placeholder="••••••••"
                   className={`block w-full pl-10 pr-10 py-2.5 text-xs border rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none transition-colors ${
-                    validationErrors.password ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500' : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+                    validationErrors.password
+                      ? 'border-rose-300 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
+                      : 'border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
                   }`}
                 />
                 <button
@@ -260,7 +262,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-colors cursor-pointer disabled:opacity-60 shadow-blue-600/20"
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-xl shadow-xs text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:outline-none transition-colors cursor-pointer disabled:opacity-60 shadow-blue-600/20"
               >
                 {loading ? (
                   <span className="flex items-center space-x-2">
@@ -276,8 +278,6 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
-
-       
         </div>
       </div>
     </div>

@@ -98,8 +98,8 @@ export function PaymentEntriesTab({
         data={payments}
         itemsPerPage={10}
         emptyMessage="No payment entries recorded yet. Click 'Add Payment Entry' to log a disbursement."
-        renderRow={(pay) => (
-          <tr key={pay.id} className="hover:bg-slate-50 transition-colors">
+        renderRow={(pay, idx) => (
+          <tr key={`${pay.id || pay.paymentId || pay.paymentNumber}-${idx}`} className="hover:bg-slate-50 transition-colors">
             <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{pay.paymentId || pay.paymentNumber}</td>
             <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(pay.paymentDate)}</td>
             <td className="px-4 py-3 text-slate-900 text-xs font-semibold">{pay.vendorName}</td>

@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {
-  Project, Vendor, Category, Item,
+  Project, Vendor, Category, Unit, Item,
   PurchaseRequest, PurchaseOrder, GRN,
   Stock, StockTransaction, StoreOutward,
   VendorBill, PaymentRequest, PaymentEntry,
@@ -13,6 +13,7 @@ interface DataState {
   projects: Project[];
   vendors: Vendor[];
   categories: Category[];
+  units: Unit[];
   items: Item[];
   purchaseRequests: PurchaseRequest[];
   purchaseOrders: PurchaseOrder[];
@@ -37,6 +38,7 @@ const seed: DatabaseState = typeof window !== 'undefined' ? getDatabase() : {
   projects: [],
   vendors: [],
   categories: [],
+  units: [],
   items: [],
   purchaseRequests: [],
   purchaseOrders: [],
@@ -56,6 +58,7 @@ const initialState: DataState = {
   projects: seed.projects,
   vendors: seed.vendors,
   categories: seed.categories,
+  units: seed.units,
   items: seed.items,
   purchaseRequests: seed.purchaseRequests,
   purchaseOrders: seed.purchaseOrders,

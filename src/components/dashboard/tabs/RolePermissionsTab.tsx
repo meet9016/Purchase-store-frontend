@@ -57,20 +57,17 @@ export function RolePermissionsTab({
   // Add Role Form State
   const [newRoleForm, setNewRoleForm] = useState({
     role: '',
-    name: '',
-    description: '',
-    preset: 'blank' as 'blank' | 'full' | 'requester' | 'store' | 'accounts'
+    name: ''
   });
   const [addRoleErrors, setAddRoleErrors] = useState<Record<string, string>>({});
 
   // Merge dynamic roles with fixed system roles
-  const allRolesMap = new Map<string, { role: string; description: string; modules: string[]; permissions: Record<string, ActionCapability>; isSystemRole?: boolean }>();
+  const allRolesMap = new Map<string, { role: string; description?: string; modules: string[]; permissions: Record<string, ActionCapability>; isSystemRole?: boolean }>();
 
   // Add default system roles
   FIXED_SYSTEM_ROLES.forEach(fixed => {
     allRolesMap.set(fixed.role.toLowerCase(), {
       role: fixed.role,
-      description: fixed.description,
       modules: [],
       permissions: {},
       isSystemRole: true
@@ -84,7 +81,6 @@ export function RolePermissionsTab({
     const existing = allRolesMap.get(key);
     allRolesMap.set(key, {
       role: rp.name || rp.role,
-      description: rp.description || existing?.description || 'Custom ERP User Role',
       modules: rp.modules || existing?.modules || [],
       permissions: rp.permissions || existing?.permissions || {},
       isSystemRole: rp.isSystemRole ?? existing?.isSystemRole ?? false
@@ -92,8 +88,7 @@ export function RolePermissionsTab({
   });
 
   const displayRoles = Array.from(allRolesMap.values()).filter(r =>
-    r.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.description.toLowerCase().includes(searchQuery.toLowerCase())
+    r.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleOpenEdit = (rp: RolePermission & { description?: string }) => {
@@ -182,23 +177,10 @@ export function RolePermissionsTab({
       return;
     }
 
-    // Build initial permissions based on preset
+    // Default initial permissions (blank)
     const initialPerms: Record<string, ActionCapability> = {};
     PERMISSION_FEATURES.forEach(f => {
-      if (newRoleForm.preset === 'full') {
-        initialPerms[f] = { viewGlobal: true, viewOwn: false, create: true, update: true, delete: true };
-      } else if (newRoleForm.preset === 'requester') {
-        const isReq = ['Purchase Requests', 'Stock', 'Store Outward', 'Product'].includes(f);
-        initialPerms[f] = { viewGlobal: false, viewOwn: isReq, create: isReq, update: isReq, delete: false };
-      } else if (newRoleForm.preset === 'store') {
-        const isStore = ['Goods Receipt (GRN)', 'Store Outward', 'Stock', 'Product'].includes(f);
-        initialPerms[f] = { viewGlobal: isStore, viewOwn: false, create: isStore, update: isStore, delete: false };
-      } else if (newRoleForm.preset === 'accounts') {
-        const isAcc = ['Vendor Invoices', 'Payment Requests', 'Payment Entries', 'Reports'].includes(f);
-        initialPerms[f] = { viewGlobal: isAcc, viewOwn: false, create: isAcc, update: isAcc, delete: false };
-      } else {
-        initialPerms[f] = { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
-      }
+      initialPerms[f] = { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
     });
 
     onSaveRolePermission(normalizedRole, {
@@ -208,7 +190,7 @@ export function RolePermissionsTab({
     });
 
     setShowAddRoleModal(false);
-    setNewRoleForm({ role: '', name: '', description: '', preset: 'blank' });
+    setNewRoleForm({ role: '', name: '' });
     setAddRoleErrors({});
   };
 
@@ -222,7 +204,7 @@ export function RolePermissionsTab({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search role or description..."
+            placeholder="Search role..."
             className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all shadow-2xs"
           />
         </div>
@@ -231,7 +213,7 @@ export function RolePermissionsTab({
           variant="primary"
           icon={<Plus className="h-4 w-4" />}
           onClick={() => {
-            setNewRoleForm({ role: '', name: '', description: '', preset: 'blank' });
+            setNewRoleForm({ role: '', name: '' });
             setAddRoleErrors({});
             setShowAddRoleModal(true);
           }}
@@ -242,18 +224,18 @@ export function RolePermissionsTab({
 
       {/* Roles Table */}
       <Table
-        headers={['Role Name', 'Description', 'Capability Status', 'Actions']}
+        headers={['Role Name', 'Capability Status', 'Actions']}
         data={displayRoles}
         itemsPerPage={10}
         emptyMessage="No system roles found."
-        renderRow={(rp) => {
+        renderRow={(rp, idx) => {
           const permCount = Object.values(rp.permissions || {}).reduce((acc, cap) => {
             return acc + (cap.viewGlobal ? 1 : 0) + (cap.viewOwn ? 1 : 0) + (cap.create ? 1 : 0) + (cap.update ? 1 : 0) + (cap.delete ? 1 : 0);
           }, 0);
           const isSystem = rp.isSystemRole || FIXED_SYSTEM_ROLES.some(f => f.role.toLowerCase() === rp.role.toLowerCase());
 
           return (
-            <tr key={rp.role} className="hover:bg-slate-50 transition-colors">
+            <tr key={`${rp.role}-${idx}`} className="hover:bg-slate-50 transition-colors">
               <td className="px-4 py-3 text-xs font-semibold text-slate-900">
                 <div className="flex items-center space-x-2.5">
                   <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
@@ -270,9 +252,6 @@ export function RolePermissionsTab({
                     </span>
                   ) : null}
                 </div>
-              </td>
-              <td className="px-4 py-3 text-xs font-medium text-slate-800 max-w-xs">
-                {rp.description}
               </td>
               <td className="px-4 py-3 text-xs">
                 <div className="flex items-center space-x-2">
@@ -361,41 +340,6 @@ export function RolePermissionsTab({
                 error={addRoleErrors.name}
                 required
               />
-
-              <Input
-                label="Role Description"
-                value={newRoleForm.description}
-                onChange={(e) => setNewRoleForm({ ...newRoleForm, description: e.target.value })}
-                placeholder="Briefly describe responsibilities for this role"
-              />
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 select-none">
-                  Initial Permission Preset
-                </label>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {[
-                    { id: 'blank', label: 'Custom (Blank)' },
-                    { id: 'requester', label: 'Requester Standard' },
-                    { id: 'store', label: 'Store / GRN Standard' },
-                    { id: 'accounts', label: 'Accounts Standard' },
-                    { id: 'full', label: 'Full Access (All)' },
-                  ].map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => setNewRoleForm({ ...newRoleForm, preset: preset.id as any })}
-                      className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
-                        newRoleForm.preset === preset.id
-                          ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
-                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-medium'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                 <Button variant="secondary" onClick={() => setShowAddRoleModal(false)}>
@@ -599,7 +543,7 @@ export function RolePermissionsTab({
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold transition-all cursor-pointer shadow-md shadow-blue-600/25"
+                  className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs shadow-blue-600/20"
                 >
                   Save Changes
                 </button>

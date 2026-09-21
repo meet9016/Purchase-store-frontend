@@ -59,8 +59,8 @@ export function StoreOutwardTab({ outwards, currentUser, rolePermissions = [], o
         data={outwards}
         itemsPerPage={10}
         emptyMessage="No store outward issued yet. Click 'Issue Material' to create one."
-        renderRow={(out) => (
-          <tr key={out.id} className="hover:bg-slate-50 transition-colors">
+        renderRow={(out, idx) => (
+          <tr key={`${out.id || out.outwardNumber || out.issueNumber}-${idx}`} className="hover:bg-slate-50 transition-colors">
             <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{out.outwardNumber || out.issueNumber}</td>
             <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(out.issueDate || out.date)}</td>
             <td className="px-4 py-3 text-slate-900 text-xs font-medium">{out.projectName || '-'}</td>

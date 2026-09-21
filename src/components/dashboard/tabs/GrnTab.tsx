@@ -59,8 +59,8 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
         data={grns}
         itemsPerPage={10}
         emptyMessage="No GRNs created yet. Click 'Create GRN' to record material inward."
-        renderRow={(grn) => (
-          <tr key={grn.id} className="hover:bg-slate-50 transition-colors">
+        renderRow={(grn, idx) => (
+          <tr key={`${grn.id || grn.grnNumber}-${idx}`} className="hover:bg-slate-50 transition-colors">
             <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{grn.grnNumber}</td>
             <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(grn.grnDate || grn.receivedDate)}</td>
             <td className="px-4 py-3 text-slate-900 text-xs font-semibold">{grn.poNumber}</td>

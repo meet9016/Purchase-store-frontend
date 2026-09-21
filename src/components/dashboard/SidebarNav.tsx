@@ -106,7 +106,7 @@ export function SidebarNav({
     <aside className="w-64 bg-white border-r border-slate-200/90 flex flex-col h-screen sticky top-0 flex-shrink-0 z-30 select-none">
       {/* Brand Header */}
       <div className="px-5 py-4 border-b border-slate-100 flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/20 flex items-center justify-center flex-shrink-0">
           <ShoppingBag className="h-5 w-5" />
         </div>
         <div>

@@ -96,8 +96,8 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
         data={bills}
         itemsPerPage={10}
         emptyMessage="No vendor bills registered yet. Click 'Register Bill' to add one."
-        renderRow={(bill) => (
-          <tr key={bill.id} className="hover:bg-slate-50 transition-colors">
+        renderRow={(bill, idx) => (
+          <tr key={`${bill.id || bill.billNumber}-${idx}`} className="hover:bg-slate-50 transition-colors">
             <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{bill.billNumber}</td>
             <td className="px-4 py-3 text-slate-800 text-xs font-medium whitespace-nowrap">{formatDate(bill.billDate)}</td>
             <td className="px-4 py-3 text-slate-900 font-medium text-xs">{bill.vendorName}</td>
