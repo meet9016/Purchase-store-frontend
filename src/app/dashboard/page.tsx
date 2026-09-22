@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   getDatabase,
   saveDatabase,
@@ -79,6 +80,7 @@ async function apiCall<T>(fn: () => Promise<T>, onSuccess?: (result: T) => void)
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       const active = localStorage.getItem('active_user');
@@ -124,7 +126,29 @@ export default function DashboardPage() {
   // Function to refresh specific tab data from backend REST API
   const fetchTabData = useCallback(async (tab: SidebarTab) => {
     try {
-      if (tab === 'pr') {
+      if (tab === 'dashboard') {
+        const [prRes, poRes, grnRes, stockRes, billRes, payRes] = await Promise.allSettled([
+          purchaseRequestsApi.getAll(),
+          purchaseOrdersApi.getAll(),
+          grnsApi.getAll(),
+          stockApi.getAll(),
+          vendorBillsApi.getAll(),
+          paymentRequestsApi.getAll(),
+        ]);
+        setDb(prev => {
+          const next = {
+            ...prev,
+            purchaseRequests: prRes.status === 'fulfilled' && Array.isArray(prRes.value?.data) ? deduplicateById(prRes.value.data) : prev.purchaseRequests,
+            purchaseOrders: poRes.status === 'fulfilled' && Array.isArray(poRes.value?.data) ? deduplicateById(poRes.value.data) : prev.purchaseOrders,
+            grns: grnRes.status === 'fulfilled' && Array.isArray(grnRes.value?.data) ? deduplicateById(grnRes.value.data) : prev.grns,
+            stock: stockRes.status === 'fulfilled' && Array.isArray(stockRes.value?.data) ? deduplicateById(stockRes.value.data) : prev.stock,
+            vendorBills: billRes.status === 'fulfilled' && Array.isArray(billRes.value?.data) ? deduplicateById(billRes.value.data) : prev.vendorBills,
+            paymentRequests: payRes.status === 'fulfilled' && Array.isArray(payRes.value?.data) ? deduplicateById(payRes.value.data) : prev.paymentRequests,
+          };
+          saveDatabase(next);
+          return next;
+        });
+      } else if (tab === 'pr') {
         const res = await purchaseRequestsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
           setDb(prev => {
@@ -284,14 +308,14 @@ export default function DashboardPage() {
         console.error(e);
       }
     } else {
-      window.location.href = '/login';
+      router.push('/login');
       return;
     }
 
     // Initial data fetch via active tab REST API
     fetchTabData('dashboard');
     setBackendOnline(true);
-  }, []);
+  }, [activeTab, fetchTabData, router]);
 
   const simulateRole = (role: string) => {
     if (!db) return;
@@ -315,7 +339,7 @@ export default function DashboardPage() {
   const handleLogout = () => {
     localStorage.removeItem('active_user');
     localStorage.removeItem('auth_token');
-    window.location.href = '/login';
+    router.push('/login');
   };
 
   // ─── PURCHASE REQUEST HANDLERS ─────────────────────────────────────────────
