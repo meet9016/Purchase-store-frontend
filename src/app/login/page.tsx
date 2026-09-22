@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getDatabase, saveDatabase } from '@/lib/storeData';
 import { authApi } from '@/lib/api';
 import { toast } from 'sonner';
@@ -40,6 +41,8 @@ export default function LoginPage() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
+  const router = useRouter();
+
   const validateLoginForm = () => {
     const errs: Record<string, string> = {};
     const cleanEmail = email.trim();
@@ -76,74 +79,86 @@ export default function LoginPage() {
         localStorage.setItem('auth_token', token);
         localStorage.setItem('active_user', JSON.stringify(user));
         toast.success(`Welcome back, ${user.name || 'User'}!`);
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 200);
+        window.location.href = '/dashboard';
         return;
       }
     } catch (apiErr: any) {
-      console.warn('[Backend Auth Failed, checking local fallback]', apiErr?.message || apiErr);
+      const serverMsg = apiErr?.message || apiErr?.data?.message || apiErr?.response?.data?.message;
+      console.warn('[Backend Auth Failed]', serverMsg || apiErr);
+
+      // If backend explicitly rejected with invalid credentials (400, 401, 403, 404)
+      if (apiErr?.status === 401 || apiErr?.status === 400 || apiErr?.status === 403 || apiErr?.status === 404) {
+        const errorMsg = serverMsg || 'Invalid email or password. Please try again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setLoading(false);
+        return;
+      }
     }
 
-    // 2. Local Fallback authentication
+    // 2. Local Fallback authentication (Only if backend server is unreachable)
     const activeDb = getDatabase();
-    let user = activeDb.users.find((u) => u.email.toLowerCase().trim() === cleanEmail);
+    let user = activeDb?.users?.find((u) => u.email.toLowerCase().trim() === cleanEmail);
 
-    // Auto-create demo user locally if not present
-    if (!user) {
-      const demoMatch = DEMO_ROLES.find((d) => d.email.toLowerCase().trim() === cleanEmail);
-      if (demoMatch || cleanEmail.includes('@')) {
-        const inferredRole = demoMatch ? demoMatch.role : (cleanEmail.startsWith('admin') ? 'Admin' : 'Purchase');
-        const defaultNames: Record<string, string> = {
-          Admin: 'Alok Sharma',
-          Purchase: 'Rahul Verma',
-          Store: 'Vikram Singh',
-          Accounts: 'Sneha Patel',
-          Approver: 'Priya Mehta',
-        };
-        user = {
-          id: `usr-${Date.now()}`,
-          name: demoMatch ? defaultNames[demoMatch.role] || demoMatch.role : cleanEmail.split('@')[0].toUpperCase(),
-          email: cleanEmail,
-          role: inferredRole,
-          department: 'Operations Division',
-          active: true,
-          password: cleanPass || '123456',
-        };
+    // Auto-seed demo role if matching demo email
+    const demoMatch = DEMO_ROLES.find((d) => d.email.toLowerCase().trim() === cleanEmail);
+    if (!user && demoMatch) {
+      const defaultNames: Record<string, string> = {
+        Admin: 'Alok Sharma',
+        Purchase: 'Rahul Verma',
+        Store: 'Vikram Singh',
+        Accounts: 'Sneha Patel',
+        Approver: 'Priya Mehta',
+      };
+      user = {
+        id: `usr-${Date.now()}`,
+        name: defaultNames[demoMatch.role] || demoMatch.role,
+        email: cleanEmail,
+        role: demoMatch.role,
+        department: 'Operations Division',
+        active: true,
+        password: demoMatch.pass || '123456',
+      };
+      if (activeDb?.users) {
         activeDb.users.push(user);
         saveDatabase(activeDb);
       }
     }
 
     if (!user) {
+      const errMsg = `Account '${targetEmail}' not found.`;
       setLoading(false);
-      setError(`Account '${targetEmail}' not found.`);
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
     if (!user.active) {
+      const errMsg = 'This user account is currently deactivated.';
       setLoading(false);
-      setError('This user account is currently deactivated.');
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
     const validPassword = user.password || '123456';
     if (cleanPass !== '123456' && cleanPass !== validPassword) {
+      const errMsg = 'Invalid email or password.';
       setLoading(false);
-      setError('Invalid email or password.');
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
     localStorage.setItem('active_user', JSON.stringify(user));
     localStorage.setItem('auth_token', 'local_jwt_' + Date.now());
     toast.success(`Welcome back, ${user.name || 'User'}!`);
-    setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 200);
+    window.location.href = '/dashboard';
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!validateLoginForm()) return;
     performLogin(email, password);
   };
@@ -163,12 +178,12 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Main Login Card */}
+          {/* Main Login Card */}
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-6 px-6 shadow-sm border border-slate-200/90 rounded-2xl sm:px-8">
           <div className="mb-5 text-center">
             <h2 className="text-base font-bold text-slate-900">Sign In to Your Account</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Enter your credentials or use quick demo login</p>
+            <p className="text-xs text-slate-500 mt-0.5">Enter your credentials to access the portal</p>
           </div>
 
           {error && (
