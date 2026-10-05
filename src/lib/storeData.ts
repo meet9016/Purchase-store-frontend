@@ -833,45 +833,7 @@ export function deduplicateById<T extends { id?: string }>(arr: T[]): T[] {
 }
 
 export function getDatabase(): DatabaseState {
-  if (typeof window === 'undefined') {
-    return getInitialSeed();
-  }
-
-  const stored = localStorage.getItem(DB_KEY);
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      // Validate that stored state has minimum users
-      if (parsed && Array.isArray(parsed.users) && parsed.users.length > 0) {
-        return {
-          users: deduplicateById(parsed.users),
-          projects: deduplicateById(parsed.projects || INITIAL_PROJECTS),
-          vendors: deduplicateById(parsed.vendors || INITIAL_VENDORS),
-          categories: deduplicateById(parsed.categories || INITIAL_CATEGORIES),
-          units: deduplicateById(parsed.units?.length ? parsed.units : INITIAL_UNITS),
-          items: deduplicateById(parsed.items || INITIAL_ITEMS),
-          purchaseRequests: deduplicateById(parsed.purchaseRequests || INITIAL_PRS),
-          purchaseOrders: deduplicateById(parsed.purchaseOrders || INITIAL_POS),
-          grns: deduplicateById(parsed.grns || INITIAL_GRNS),
-          stock: deduplicateById(parsed.stock || INITIAL_STOCKS),
-          stockTransactions: deduplicateById(parsed.stockTransactions || []),
-          storeOutwards: deduplicateById(parsed.storeOutwards || INITIAL_OUTWARDS),
-          vendorBills: deduplicateById(parsed.vendorBills || INITIAL_BILLS),
-          paymentRequests: deduplicateById(parsed.paymentRequests || INITIAL_PAYMENT_REQUESTS),
-          paymentEntries: deduplicateById(parsed.paymentEntries || INITIAL_PAYMENT_ENTRIES),
-          auditLogs: deduplicateById(parsed.auditLogs || INITIAL_AUDIT_LOGS),
-          notifications: deduplicateById(parsed.notifications || INITIAL_NOTIFICATIONS),
-          rolePermissions: parsed.rolePermissions || DEFAULT_ROLE_PERMISSIONS
-        };
-      }
-    } catch (e) {
-      console.error('Error parsing localStorage DB, re-seeding:', e);
-    }
-  }
-
-  const seed = getInitialSeed();
-  localStorage.setItem(DB_KEY, JSON.stringify(seed));
-  return seed;
+  return getInitialSeed();
 }
 
 function getInitialSeed(): DatabaseState {
@@ -902,9 +864,7 @@ export async function fetchInitialData(): Promise<DatabaseState> {
 }
 
 export function saveDatabase(data: DatabaseState) {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(DB_KEY, JSON.stringify(data));
-  }
+  // Persistence strictly managed by backend API
 }
 
 export const fetchDatabaseFromBackend = fetchInitialData;
@@ -917,20 +877,7 @@ export function addAuditLog(
   module: string,
   referenceId: string
 ) {
-  const db = getDatabase();
-  const newLog: AuditLog = {
-    id: `log-${Date.now()}`,
-    userId,
-    userName: db.users.find(u => u.id === userId)?.name || 'System User',
-    action,
-    oldValue,
-    newValue,
-    module,
-    referenceId,
-    timestamp: new Date().toISOString()
-  };
-  db.auditLogs.unshift(newLog);
-  saveDatabase(db);
+  // Audit log dispatched via API
 }
 
 export function sendNotification(
@@ -940,19 +887,6 @@ export function sendNotification(
   referenceModule?: string,
   referenceId?: string
 ) {
-  const db = getDatabase();
-  const newNotif: Notification = {
-    id: `notif-${Date.now()}`,
-    recipientRole,
-    title,
-    message,
-    readBy: [],
-    read: false,
-    referenceModule,
-    referenceId,
-    timestamp: new Date().toISOString()
-  };
-  db.notifications.unshift(newNotif);
-  saveDatabase(db);
+  // Notification dispatched via API
 }
 

@@ -116,10 +116,9 @@ export default function DashboardPage() {
   const [paymentReqForm, setPaymentReqForm] = useState({ billId: '', requestedAmount: 0, remarks: '' });
   const [paymentEntryForm, setPaymentEntryForm] = useState({ billId: '', paymentAmount: 0, paymentMode: 'Bank Transfer/NEFT/RTGS' as const, transactionNumber: '', remarks: '' });
 
-  // Update DB helper — saves locally + syncs to backend
+  // Update DB helper — updates React state
   const updateDB = useCallback((newDb: DatabaseState) => {
     if (!newDb) return;
-    saveDatabase(newDb);
     setDb({ ...newDb });
   }, []);
 
@@ -135,90 +134,54 @@ export default function DashboardPage() {
           vendorBillsApi.getAll(),
           paymentRequestsApi.getAll(),
         ]);
-        setDb(prev => {
-          const next = {
-            ...prev,
-            purchaseRequests: prRes.status === 'fulfilled' && Array.isArray(prRes.value?.data) ? deduplicateById(prRes.value.data) : prev.purchaseRequests,
-            purchaseOrders: poRes.status === 'fulfilled' && Array.isArray(poRes.value?.data) ? deduplicateById(poRes.value.data) : prev.purchaseOrders,
-            grns: grnRes.status === 'fulfilled' && Array.isArray(grnRes.value?.data) ? deduplicateById(grnRes.value.data) : prev.grns,
-            stock: stockRes.status === 'fulfilled' && Array.isArray(stockRes.value?.data) ? deduplicateById(stockRes.value.data) : prev.stock,
-            vendorBills: billRes.status === 'fulfilled' && Array.isArray(billRes.value?.data) ? deduplicateById(billRes.value.data) : prev.vendorBills,
-            paymentRequests: payRes.status === 'fulfilled' && Array.isArray(payRes.value?.data) ? deduplicateById(payRes.value.data) : prev.paymentRequests,
-          };
-          saveDatabase(next);
-          return next;
-        });
+        setDb(prev => ({
+          ...prev,
+          purchaseRequests: prRes.status === 'fulfilled' && Array.isArray(prRes.value?.data) ? deduplicateById(prRes.value.data) : prev.purchaseRequests,
+          purchaseOrders: poRes.status === 'fulfilled' && Array.isArray(poRes.value?.data) ? deduplicateById(poRes.value.data) : prev.purchaseOrders,
+          grns: grnRes.status === 'fulfilled' && Array.isArray(grnRes.value?.data) ? deduplicateById(grnRes.value.data) : prev.grns,
+          stock: stockRes.status === 'fulfilled' && Array.isArray(stockRes.value?.data) ? deduplicateById(stockRes.value.data) : prev.stock,
+          vendorBills: billRes.status === 'fulfilled' && Array.isArray(billRes.value?.data) ? deduplicateById(billRes.value.data) : prev.vendorBills,
+          paymentRequests: payRes.status === 'fulfilled' && Array.isArray(payRes.value?.data) ? deduplicateById(payRes.value.data) : prev.paymentRequests,
+        }));
       } else if (tab === 'pr') {
         const res = await purchaseRequestsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, purchaseRequests: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, purchaseRequests: deduplicateById(res.data) }));
         }
       } else if (tab === 'po') {
         const res = await purchaseOrdersApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, purchaseOrders: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, purchaseOrders: deduplicateById(res.data) }));
         }
       } else if (tab === 'grn') {
         const res = await grnsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, grns: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, grns: deduplicateById(res.data) }));
         }
       } else if (tab === 'stock') {
         const res = await stockApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, stock: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, stock: deduplicateById(res.data) }));
         }
       } else if (tab === 'outward') {
         const res = await outwardsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, storeOutwards: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, storeOutwards: deduplicateById(res.data) }));
         }
       } else if (tab === 'bills') {
         const res = await vendorBillsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, vendorBills: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, vendorBills: deduplicateById(res.data) }));
         }
       } else if (tab === 'payment-req') {
         const res = await paymentRequestsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, paymentRequests: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, paymentRequests: deduplicateById(res.data) }));
         }
       } else if (tab === 'payments') {
         const res = await paymentEntriesApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, paymentEntries: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, paymentEntries: deduplicateById(res.data) }));
         }
       } else if (tab === 'masters') {
         const [u, p, v, c, un, it, r] = await Promise.allSettled([
@@ -230,46 +193,30 @@ export default function DashboardPage() {
           itemsApi.getAll(),
           rolesApi.getAll()
         ]);
-        setDb(prev => {
-          const next = {
-            ...prev,
-            users: u.status === 'fulfilled' && u.value?.data ? deduplicateById(u.value.data) : prev.users,
-            projects: p.status === 'fulfilled' && p.value?.data ? deduplicateById(p.value.data) : prev.projects,
-            vendors: v.status === 'fulfilled' && v.value?.data ? deduplicateById(v.value.data) : prev.vendors,
-            categories: c.status === 'fulfilled' && c.value?.data ? deduplicateById(c.value.data) : prev.categories,
-            units: un.status === 'fulfilled' && un.value?.data ? deduplicateById(un.value.data) : prev.units,
-            items: it.status === 'fulfilled' && it.value?.data ? deduplicateById(it.value.data) : prev.items,
-            rolePermissions: r.status === 'fulfilled' && r.value?.data ? deduplicateById(r.value.data) : prev.rolePermissions,
-          };
-          saveDatabase(next);
-          return next;
-        });
+        setDb(prev => ({
+          ...prev,
+          users: u.status === 'fulfilled' && u.value?.data ? deduplicateById(u.value.data) : prev.users,
+          projects: p.status === 'fulfilled' && p.value?.data ? deduplicateById(p.value.data) : prev.projects,
+          vendors: v.status === 'fulfilled' && v.value?.data ? deduplicateById(v.value.data) : prev.vendors,
+          categories: c.status === 'fulfilled' && c.value?.data ? deduplicateById(c.value.data) : prev.categories,
+          units: un.status === 'fulfilled' && un.value?.data ? deduplicateById(un.value.data) : prev.units,
+          items: it.status === 'fulfilled' && it.value?.data ? deduplicateById(it.value.data) : prev.items,
+          rolePermissions: r.status === 'fulfilled' && r.value?.data ? deduplicateById(r.value.data) : prev.rolePermissions,
+        }));
       } else if (tab === 'permissions') {
         const res = await rolePermissionsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, rolePermissions: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, rolePermissions: deduplicateById(res.data) }));
         }
       } else if (tab === 'audit') {
         const res = await auditLogsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, auditLogs: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, auditLogs: deduplicateById(res.data) }));
         }
       } else if (tab === 'notifications') {
         const res = await notificationsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => {
-            const next = { ...prev, notifications: deduplicateById(res.data) };
-            saveDatabase(next);
-            return next;
-          });
+          setDb(prev => ({ ...prev, notifications: deduplicateById(res.data) }));
         }
       }
     } catch (err: any) {
@@ -355,8 +302,7 @@ export default function DashboardPage() {
       return { itemId: it.itemId, itemName: dbIt?.name || 'Item', quantity: it.quantity, unit: dbIt?.unit || 'Pcs', remarks: it.remarks || '' };
     });
 
-    const newPr: PurchaseRequest = {
-      id: `pr-${Date.now()}`,
+    const newPrPayload: Omit<PurchaseRequest, 'id'> = {
       prNumber: prNum,
       requestDate: new Date().toISOString().split('T')[0],
       projectId: prForm.projectId,
@@ -370,31 +316,48 @@ export default function DashboardPage() {
       history: [{ status: 'Submitted', user: currentUser.name, timestamp: new Date().toISOString(), remarks: 'PR Created' }]
     };
 
-    const updated = { ...db, purchaseRequests: [newPr, ...db.purchaseRequests] };
-    updateDB(updated);
+    try {
+      const res = await purchaseRequestsApi.create(newPrPayload as any);
+      const createdItem = (res?.data || res) as any;
+      const finalPr: PurchaseRequest = {
+        ...newPrPayload,
+        id: createdItem?.id || createdItem?._id || `pr-${Date.now()}`
+      };
 
-    // Backend call (non-blocking)
-    apiCall(() => purchaseRequestsApi.create(newPr as any));
-    addAuditLog(currentUser.id, 'Create PR', '', `Created PR ${prNum}`, 'PR', newPr.id);
-    sendNotification('Approver', 'New PR Submitted', `PR ${prNum} submitted by ${currentUser.name}`);
-    apiCall(() => notificationsApi.create({ recipientRole: 'Approver', title: 'New PR Submitted', message: `PR ${prNum} submitted by ${currentUser.name}`, readBy: [], read: false, timestamp: new Date().toISOString(), id: '' } as any));
+      setDb(prev => ({ ...prev, purchaseRequests: [finalPr, ...prev.purchaseRequests] }));
+      await fetchTabData('pr');
 
-    setPrForm({ projectId: '', requiredDate: '', priority: 'Medium', items: [], attachmentUrl: '' });
-    setOpenModal(null);
-    toast.success(`Purchase Request ${prNum} created!`);
+      addAuditLog(currentUser.id, 'Create PR', '', `Created PR ${prNum}`, 'PR', finalPr.id);
+      sendNotification('Approver', 'New PR Submitted', `PR ${prNum} submitted by ${currentUser.name}`);
+      notificationsApi.create({ recipientRole: 'Approver', title: 'New PR Submitted', message: `PR ${prNum} submitted by ${currentUser.name}`, readBy: [], read: false, timestamp: new Date().toISOString(), id: '' } as any).catch(() => {});
+
+      setPrForm({ projectId: '', requiredDate: '', priority: 'Medium', items: [], attachmentUrl: '' });
+      setOpenModal(null);
+      toast.success(`Purchase Request ${prNum} created successfully!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to create Purchase Request via API. Data not saved.');
+    }
   };
 
   const handleUpdatePRStatus = async (prId: string, status: PurchaseRequest['status'], reason?: string) => {
     if (!db || !currentUser) return;
     const pr = db.purchaseRequests.find(p => p.id === prId);
     if (!pr) return;
-    pr.status = status;
-    if (reason) pr.rejectionReason = reason;
-    pr.history.push({ status, user: currentUser.name, timestamp: new Date().toISOString(), remarks: reason || `Status set to ${status}` });
-    updateDB({ ...db });
-    apiCall(() => purchaseRequestsApi.update(prId, { status, rejectionReason: reason, history: pr.history }));
-    addAuditLog(currentUser.id, 'PR Status Update', '', `Updated PR ${pr.prNumber} to ${status}`, 'PR', pr.id);
-    toast.success(`PR ${pr.prNumber} updated to ${status}`);
+
+    const newHistory = [...(pr.history || []), { status, user: currentUser.name, timestamp: new Date().toISOString(), remarks: reason || `Status set to ${status}` }];
+
+    try {
+      await purchaseRequestsApi.update(prId, { status, rejectionReason: reason, history: newHistory });
+      setDb(prev => ({
+        ...prev,
+        purchaseRequests: prev.purchaseRequests.map(p => p.id === prId ? { ...p, status, rejectionReason: reason, history: newHistory } : p)
+      }));
+      await fetchTabData('pr');
+      addAuditLog(currentUser.id, 'PR Status Update', '', `Updated PR ${pr.prNumber} to ${status}`, 'PR', pr.id);
+      toast.success(`PR ${pr.prNumber} updated to ${status}`);
+    } catch (err: any) {
+      toast.error(err?.message || `Failed to update PR status to ${status} via API.`);
+    }
   };
 
   // ─── PURCHASE ORDER HANDLERS ───────────────────────────────────────────────
@@ -414,8 +377,7 @@ export default function DashboardPage() {
       return { itemId: it.itemId, itemName: itemObj?.name || 'Item', quantity: it.quantity, unit: itemObj?.unit || 'Pcs', rate: it.rate, tax: it.tax, discount: 0, amount: lineTotal, totalAmount: lineTotal };
     });
 
-    const newPo: PurchaseOrder = {
-      id: `po-${Date.now()}`,
+    const newPoPayload = {
       poNumber: poNum,
       poDate: new Date().toISOString().split('T')[0],
       prId: selectedPr.id,
@@ -432,29 +394,51 @@ export default function DashboardPage() {
       items: poItems,
       totalPOAmount: total,
       totalAmount: total,
-      status: 'Approved',
+      status: 'Approved' as const,
     };
 
-    selectedPr.status = 'PO Created';
-    updateDB({ ...db, purchaseOrders: [newPo, ...db.purchaseOrders] });
-    apiCall(() => purchaseOrdersApi.create(newPo as any));
-    apiCall(() => purchaseRequestsApi.update(selectedPr.id, { status: 'PO Created' }));
-    addAuditLog(currentUser.id, 'Create PO', '', `Generated PO ${poNum}`, 'PO', newPo.id);
-    sendNotification('Store', 'New Purchase Order', `PO ${poNum} issued for ${selectedVendor.name}`);
+    try {
+      const res = await purchaseOrdersApi.create(newPoPayload as any);
+      const createdItem = (res?.data || res) as any;
+      const finalPo: PurchaseOrder = {
+        ...newPoPayload,
+        id: createdItem?.id || createdItem?._id || `po-${Date.now()}`
+      };
 
-    setPoForm({ prId: '', vendorId: '', creditPeriod: 30, expectedDeliveryDate: '', deliveryLocation: '', termsConditions: '', remarks: '', items: [] });
-    setOpenModal(null);
-    toast.success(`Purchase Order ${poNum} issued!`);
+      await purchaseRequestsApi.update(selectedPr.id, { status: 'PO Created' }).catch(() => {});
+      setDb(prev => ({
+        ...prev,
+        purchaseOrders: [finalPo, ...prev.purchaseOrders],
+        purchaseRequests: prev.purchaseRequests.map(p => p.id === selectedPr.id ? { ...p, status: 'PO Created' } : p)
+      }));
+      await fetchTabData('po');
+
+      addAuditLog(currentUser.id, 'Create PO', '', `Generated PO ${poNum}`, 'PO', finalPo.id);
+      sendNotification('Store', 'New Purchase Order', `PO ${poNum} issued for ${selectedVendor.name}`);
+
+      setPoForm({ prId: '', vendorId: '', creditPeriod: 30, expectedDeliveryDate: '', deliveryLocation: '', termsConditions: '', remarks: '', items: [] });
+      setOpenModal(null);
+      toast.success(`Purchase Order ${poNum} issued successfully!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to create Purchase Order via API. Data not saved.');
+    }
   };
 
   const handleUpdatePOStatus = async (poId: string, status: PurchaseOrder['status']) => {
     if (!db || !currentUser) return;
     const po = db.purchaseOrders.find(p => p.id === poId);
-    if (po) {
-      po.status = status;
-      updateDB({ ...db });
-      apiCall(() => purchaseOrdersApi.update(poId, { status }));
+    if (!po) return;
+
+    try {
+      await purchaseOrdersApi.update(poId, { status });
+      setDb(prev => ({
+        ...prev,
+        purchaseOrders: prev.purchaseOrders.map(p => p.id === poId ? { ...p, status } : p)
+      }));
+      await fetchTabData('po');
       toast.success(`PO ${po.poNumber} updated to ${status}`);
+    } catch (err: any) {
+      toast.error(err?.message || `Failed to update PO status to ${status} via API.`);
     }
   };
 
@@ -471,8 +455,8 @@ export default function DashboardPage() {
       shortQty: 0, excessQty: 0, damagedQty: 0, unit: it.unit || 'Pcs', batchNumber: `BATCH-${Date.now().toString().slice(-4)}`
     }));
 
-    const newGrn: GRN = {
-      id: `grn-${Date.now()}`, grnNumber: grnNum,
+    const newGrnPayload = {
+      grnNumber: grnNum,
       grnDate: new Date().toISOString().split('T')[0],
       receivedDate: new Date().toISOString().split('T')[0],
       poId: selectedPo.id, poNumber: selectedPo.poNumber,
@@ -484,28 +468,26 @@ export default function DashboardPage() {
       receivedBy: currentUser.id, receiverName: currentUser.name
     };
 
-    // Update stock
-    const updatedStock = [...db.stock];
-    const newTransactions: StockTransaction[] = [];
-    for (const it of grnItems) {
-      const existingStock = updatedStock.find(s => s.projectId === selectedPo.projectId && s.itemId === it.itemId);
-      if (existingStock) { existingStock.quantity += it.receivedQty; }
-      else {
-        const itemObj = db.items.find(i => i.id === it.itemId);
-        updatedStock.push({ id: `stk-${Date.now()}-${it.itemId}`, projectId: selectedPo.projectId, projectName: selectedPo.projectName, itemId: it.itemId, itemName: it.itemName, itemCode: itemObj?.itemCode || '', unit: it.unit, quantity: it.receivedQty, reorderLevel: itemObj?.reorderLevel || 10 });
-      }
-      newTransactions.push({ id: `txn-${Date.now()}-${it.itemId}`, projectId: selectedPo.projectId, itemId: it.itemId, transactionType: 'INWARD_GRN', quantity: it.receivedQty, referenceId: newGrn.id, referenceNumber: grnNum, transactionDate: new Date().toISOString().split('T')[0], createdBy: currentUser.id });
+    try {
+      const res = await grnsApi.create(newGrnPayload as any);
+      const createdItem = (res?.data || res) as any;
+      const finalGrn: GRN = {
+        ...newGrnPayload,
+        id: createdItem?.id || createdItem?._id || `grn-${Date.now()}`
+      };
+
+      await fetchTabData('grn');
+      await fetchTabData('stock');
+
+      addAuditLog(currentUser.id, 'Create GRN', '', `Received GRN ${grnNum} for PO ${selectedPo.poNumber}`, 'GRN', finalGrn.id);
+      sendNotification('Accounts', 'GRN Inward Verified', `GRN ${grnNum} received for ${selectedPo.vendorName}`);
+
+      setGrnForm({ poId: '', vehicleNumber: '', challanNumber: '', vendorInvoiceNumber: '', remarks: '', items: [] });
+      setOpenModal(null);
+      toast.success(`GRN ${grnNum} registered and stock updated via API!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to register GRN via API. Data not saved.');
     }
-
-    selectedPo.status = 'Partially Received';
-    updateDB({ ...db, grns: [newGrn, ...db.grns], stock: updatedStock, stockTransactions: [...newTransactions, ...db.stockTransactions] });
-    apiCall(() => grnsApi.create(newGrn as any));
-    addAuditLog(currentUser.id, 'Create GRN', '', `Received GRN ${grnNum} for PO ${selectedPo.poNumber}`, 'GRN', newGrn.id);
-    sendNotification('Accounts', 'GRN Inward Verified', `GRN ${grnNum} received for ${selectedPo.vendorName}`);
-
-    setGrnForm({ poId: '', vehicleNumber: '', challanNumber: '', vendorInvoiceNumber: '', remarks: '', items: [] });
-    setOpenModal(null);
-    toast.success(`GRN ${grnNum} registered and stock updated!`);
   };
 
   // ─── STORE OUTWARD HANDLERS ────────────────────────────────────────────────
@@ -526,25 +508,34 @@ export default function DashboardPage() {
     const outNum = `OUT-${new Date().getFullYear()}-${String(db.storeOutwards.length + 101).padStart(5, '0')}`;
     const issuedItem = { itemId: outwardItemInput.itemId, itemName: itemObj?.name || 'Item', quantity: outwardItemInput.quantity, unit: itemObj?.unit || 'Pcs' };
 
-    const newOutward: StoreOutward = {
-      id: `out-${Date.now()}`, outwardNumber: outNum, issueNumber: outNum,
+    const newOutwardPayload = {
+      outwardNumber: outNum, issueNumber: outNum,
       issueDate: new Date().toISOString().split('T')[0], date: new Date().toISOString().split('T')[0],
       projectId: outwardForm.projectId, projectName: targetProject?.name || 'Site Project',
       issuedTo: outwardForm.issuedTo, department: outwardForm.department, purpose: outwardForm.purpose,
       items: [issuedItem], remarks: outwardForm.remarks || '', issuedBy: currentUser.id, issuedByName: currentUser.name, status: 'Issued'
     };
 
-    stockItem.quantity -= outwardItemInput.quantity;
-    const newTxn: StockTransaction = { id: `txn-${Date.now()}`, projectId: outwardForm.projectId, itemId: outwardItemInput.itemId, transactionType: 'OUTWARD_ISSUE', quantity: outwardItemInput.quantity, referenceId: newOutward.id, referenceNumber: outNum, transactionDate: new Date().toISOString().split('T')[0], createdBy: currentUser.id };
+    try {
+      const res = await outwardsApi.create(newOutwardPayload as any);
+      const createdItem = (res?.data || res) as any;
+      const finalOut: StoreOutward = {
+        ...newOutwardPayload,
+        id: createdItem?.id || createdItem?._id || `out-${Date.now()}`
+      };
 
-    updateDB({ ...db, storeOutwards: [newOutward, ...db.storeOutwards], stockTransactions: [newTxn, ...db.stockTransactions] });
-    apiCall(() => outwardsApi.create(newOutward as any));
-    addAuditLog(currentUser.id, 'Store Outward', '', `Issued ${outwardItemInput.quantity} ${itemObj?.unit} via ${outNum}`, 'Outward', newOutward.id);
+      await fetchTabData('outward');
+      await fetchTabData('stock');
 
-    setOutwardForm({ projectId: '', issuedTo: '', department: '', purpose: '', remarks: '', items: [] });
-    setOutwardItemInput({ itemId: '', quantity: 1 });
-    setOpenModal(null);
-    toast.success(`Store Outward Voucher ${outNum} generated!`);
+      addAuditLog(currentUser.id, 'Store Outward', '', `Issued ${outwardItemInput.quantity} ${itemObj?.unit} via ${outNum}`, 'Outward', finalOut.id);
+
+      setOutwardForm({ projectId: '', issuedTo: '', department: '', purpose: '', remarks: '', items: [] });
+      setOutwardItemInput({ itemId: '', quantity: 1 });
+      setOpenModal(null);
+      toast.success(`Store Outward Voucher ${outNum} generated via API!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to issue Store Outward via API. Data not saved.');
+    }
   };
 
   // ─── VENDOR BILL HANDLERS ─────────────────────────────────────────────────
@@ -558,8 +549,8 @@ export default function DashboardPage() {
     const billDateObj = new Date(billForm.billDate || Date.now());
     const dueDateObj = new Date(billDateObj.getTime() + (billForm.creditPeriod || 30) * 86400000);
 
-    const newBill: VendorBill = {
-      id: `bill-${Date.now()}`, vendorId: selectedPo.vendorId, vendorName: selectedPo.vendorName || 'Vendor',
+    const newBillPayload = {
+      vendorId: selectedPo.vendorId, vendorName: selectedPo.vendorName || 'Vendor',
       poId: selectedPo.id, poNumber: selectedPo.poNumber, billNumber: billNum,
       vendorInvoiceNumber: billForm.vendorInvoiceNumber || billNum,
       billDate: billForm.billDate || new Date().toISOString().split('T')[0],
@@ -570,14 +561,25 @@ export default function DashboardPage() {
       paymentStatus: 'Upcoming', status: 'Submitted'
     };
 
-    updateDB({ ...db, vendorBills: [newBill, ...db.vendorBills] });
-    apiCall(() => vendorBillsApi.create(newBill as any));
-    addAuditLog(currentUser.id, 'Create Bill', '', `Registered Bill ${billNum}`, 'Bill', newBill.id);
-    sendNotification('Accounts', 'New Vendor Invoice', `Invoice ${newBill.vendorInvoiceNumber} registered for ${newBill.vendorName}`);
+    try {
+      const res = await vendorBillsApi.create(newBillPayload as any);
+      const createdItem = (res?.data || res) as any;
+      const finalBill: VendorBill = {
+        ...newBillPayload,
+        id: createdItem?.id || createdItem?._id || `bill-${Date.now()}`
+      };
 
-    setBillForm({ poId: '', vendorInvoiceNumber: '', billDate: new Date().toISOString().split('T')[0], billAmount: 0, creditPeriod: 30, dueDate: '' });
-    setOpenModal(null);
-    toast.success(`Vendor Bill ${billNum} registered!`);
+      await fetchTabData('bills');
+
+      addAuditLog(currentUser.id, 'Create Bill', '', `Registered Bill ${billNum}`, 'Bill', finalBill.id);
+      sendNotification('Accounts', 'New Vendor Invoice', `Invoice ${finalBill.vendorInvoiceNumber} registered for ${finalBill.vendorName}`);
+
+      setBillForm({ poId: '', vendorInvoiceNumber: '', billDate: new Date().toISOString().split('T')[0], billAmount: 0, creditPeriod: 30, dueDate: '' });
+      setOpenModal(null);
+      toast.success(`Vendor Bill ${billNum} registered via API!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to register Vendor Bill via API. Data not saved.');
+    }
   };
 
   // ─── PAYMENT REQUEST HANDLERS ─────────────────────────────────────────────
@@ -588,8 +590,8 @@ export default function DashboardPage() {
     if (!selectedBill) { toast.error('Please select a valid Bill'); return; }
 
     const reqNum = `REQ-${new Date().getFullYear()}-${String(db.paymentRequests.length + 101).padStart(5, '0')}`;
-    const newReq: PaymentRequest = {
-      id: `payreq-${Date.now()}`, vendorId: selectedBill.vendorId, vendorName: selectedBill.vendorName,
+    const newReqPayload = {
+      vendorId: selectedBill.vendorId, vendorName: selectedBill.vendorName,
       billId: selectedBill.id, billNumber: selectedBill.billNumber, requestNumber: reqNum, requestId: reqNum,
       poNumber: selectedBill.poNumber, billAmount: selectedBill.billAmount,
       dueDate: selectedBill.dueDate, outstandingAmount: selectedBill.outstandingAmount,
@@ -599,15 +601,26 @@ export default function DashboardPage() {
       remarks: paymentReqForm.remarks || 'Payment request initiated', status: 'Submitted'
     };
 
-    selectedBill.paymentStatus = 'Payment Request Pending';
-    updateDB({ ...db, paymentRequests: [newReq, ...db.paymentRequests] });
-    apiCall(() => paymentRequestsApi.create(newReq as any));
-    addAuditLog(currentUser.id, 'Payment Request', '', `Raised ${reqNum} for ₹${paymentReqForm.requestedAmount}`, 'PaymentRequest', newReq.id);
-    sendNotification('Admin', 'Payment Request Submitted', `${reqNum} created for ${selectedBill.vendorName}`);
+    try {
+      const res = await paymentRequestsApi.create(newReqPayload as any);
+      const createdItem = (res?.data || res) as any;
+      const finalReq: PaymentRequest = {
+        ...newReqPayload,
+        id: createdItem?.id || createdItem?._id || `payreq-${Date.now()}`
+      };
 
-    setPaymentReqForm({ billId: '', requestedAmount: 0, remarks: '' });
-    setOpenModal(null);
-    toast.success(`Payment Request ${reqNum} submitted!`);
+      await fetchTabData('payment-req');
+      await fetchTabData('bills');
+
+      addAuditLog(currentUser.id, 'Payment Request', '', `Raised ${reqNum} for ₹${paymentReqForm.requestedAmount}`, 'PaymentRequest', finalReq.id);
+      sendNotification('Admin', 'Payment Request Submitted', `${reqNum} created for ${selectedBill.vendorName}`);
+
+      setPaymentReqForm({ billId: '', requestedAmount: 0, remarks: '' });
+      setOpenModal(null);
+      toast.success(`Payment Request ${reqNum} submitted via API!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to submit Payment Request via API. Data not saved.');
+    }
   };
 
   // ─── PAYMENT ENTRY HANDLERS ───────────────────────────────────────────────
@@ -618,8 +631,8 @@ export default function DashboardPage() {
     if (!selectedBill) { toast.error('Select a valid Bill'); return; }
 
     const payNum = `PAY-${new Date().getFullYear()}-${String(db.paymentEntries.length + 101).padStart(5, '0')}`;
-    const newEntry: PaymentEntry = {
-      id: `pay-${Date.now()}`, paymentId: payNum, paymentNumber: payNum,
+    const newEntryPayload = {
+      paymentId: payNum, paymentNumber: payNum,
       paymentDate: new Date().toISOString().split('T')[0],
       vendorId: selectedBill.vendorId, vendorName: selectedBill.vendorName,
       billId: selectedBill.id, billNumber: selectedBill.billNumber,
@@ -629,30 +642,46 @@ export default function DashboardPage() {
       enteredBy: currentUser.id, enteredByName: currentUser.name
     };
 
-    selectedBill.paidAmount = (selectedBill.paidAmount || 0) + paymentEntryForm.paymentAmount;
-    selectedBill.outstandingAmount = Math.max(0, selectedBill.billAmount - selectedBill.paidAmount);
-    selectedBill.status = selectedBill.outstandingAmount === 0 ? 'Paid' : 'Partially Paid';
-    selectedBill.paymentStatus = selectedBill.status;
+    try {
+      const res = await paymentEntriesApi.create(newEntryPayload as any);
+      const createdItem = (res?.data || res) as any;
+      const finalEntry: PaymentEntry = {
+        ...newEntryPayload,
+        id: createdItem?.id || createdItem?._id || `pay-${Date.now()}`
+      };
 
-    updateDB({ ...db, paymentEntries: [newEntry, ...db.paymentEntries] });
-    apiCall(() => paymentEntriesApi.create(newEntry as any));
-    addAuditLog(currentUser.id, 'Payment Entry', '', `Disbursed ₹${paymentEntryForm.paymentAmount} via ${paymentEntryForm.paymentMode} (${payNum})`, 'PaymentEntry', newEntry.id);
-    sendNotification('Accounts', 'Payment Disbursed', `${payNum} recorded for ${selectedBill.vendorName}`);
+      await fetchTabData('payments');
+      await fetchTabData('bills');
 
-    setPaymentEntryForm({ billId: '', paymentAmount: 0, paymentMode: 'Bank Transfer/NEFT/RTGS', transactionNumber: '', remarks: '' });
-    setOpenModal(null);
-    toast.success(`Payment Voucher ${payNum} saved!`);
+      addAuditLog(currentUser.id, 'Payment Entry', '', `Disbursed ₹${paymentEntryForm.paymentAmount} via ${paymentEntryForm.paymentMode} (${payNum})`, 'PaymentEntry', finalEntry.id);
+      sendNotification('Accounts', 'Payment Disbursed', `${payNum} recorded for ${selectedBill.vendorName}`);
+
+      setPaymentEntryForm({ billId: '', paymentAmount: 0, paymentMode: 'Bank Transfer/NEFT/RTGS', transactionNumber: '', remarks: '' });
+      setOpenModal(null);
+      toast.success(`Payment Voucher ${payNum} saved via API!`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to record Payment Entry via API. Data not saved.');
+    }
   };
 
   const handleToggleModule = async (role: string, module: string) => {
     if (!db) return;
     const rp = db.rolePermissions.find(r => r.role === role);
     if (rp) {
-      if (rp.modules.includes(module)) { rp.modules = rp.modules.filter(m => m !== module); }
-      else { rp.modules.push(module); }
-      updateDB({ ...db });
-      apiCall(() => rolePermissionsApi.update(role, { modules: rp.modules, permissions: rp.permissions }));
-      toast.success(`Permission updated for ${role}`);
+      const nextModules = rp.modules.includes(module)
+        ? rp.modules.filter(m => m !== module)
+        : [...rp.modules, module];
+      try {
+        await rolePermissionsApi.update(role, { modules: nextModules, permissions: rp.permissions });
+        setDb(prev => ({
+          ...prev,
+          rolePermissions: prev.rolePermissions.map(r => r.role === role ? { ...r, modules: nextModules } : r)
+        }));
+        await fetchTabData('permissions');
+        toast.success(`Permission updated for ${role}`);
+      } catch (err: any) {
+        toast.error(err?.message || `Failed to update permissions for ${role} via API`);
+      }
     }
   };
 
@@ -793,200 +822,227 @@ export default function DashboardPage() {
               items={db.items}
               currentUser={currentUser}
               rolePermissions={db.rolePermissions}
-              onAddUser={(u: any) => {
+              onAddUser={async (u: any) => {
                 const newUser = { id: `usr-${Date.now()}`, ...u, password: u.password || '123456', email: u.email.toLowerCase().trim() };
-                const existingIndex = db.users.findIndex(item => item.email.toLowerCase().trim() === newUser.email);
-                let newUsersList;
-                if (existingIndex !== -1) { db.users[existingIndex] = { ...db.users[existingIndex], ...newUser }; newUsersList = [...db.users]; }
-                else { newUsersList = [newUser, ...db.users]; }
-                updateDB({ ...db, users: newUsersList });
-                apiCall(() => usersApi.create(newUser));
-                addAuditLog(currentUser.id, 'Create User', '', `Created user ${u.name}`, 'User', newUser.id);
-                toast.success(`User ${u.name} saved!`);
+                try {
+                  await usersApi.create(newUser);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Create User', '', `Created user ${u.name}`, 'User', newUser.id);
+                  toast.success(`User ${u.name} saved via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to save user via API. Data not saved.');
+                }
               }}
-              onEditUser={(id, updated) => {
-                const userIndex = db.users.findIndex(u => u.id === id);
-                if (userIndex !== -1) {
-                  const cleanedUpdates = { ...updated };
-                  if (!cleanedUpdates.password) delete cleanedUpdates.password;
-                  if (cleanedUpdates.email) cleanedUpdates.email = cleanedUpdates.email.toLowerCase().trim();
-                  db.users[userIndex] = { ...db.users[userIndex], ...cleanedUpdates };
-                  updateDB({ ...db });
-                  apiCall(() => usersApi.update(id, cleanedUpdates));
+              onEditUser={async (id, updated) => {
+                const cleanedUpdates = { ...updated };
+                if (!cleanedUpdates.password) delete cleanedUpdates.password;
+                if (cleanedUpdates.email) cleanedUpdates.email = cleanedUpdates.email.toLowerCase().trim();
+                try {
+                  await usersApi.update(id, cleanedUpdates);
+                  await fetchTabData('masters');
                   addAuditLog(currentUser.id, 'Update User', '', `Updated user ${updated.name || id}`, 'User', id);
-                  toast.success('User updated successfully!');
+                  toast.success('User updated successfully via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to update user via API.');
                 }
               }}
-              onDeleteUser={(id) => {
+              onDeleteUser={async (id) => {
                 const targetUser = db.users.find(item => item.id === id);
-                updateDB({ ...db, users: db.users.filter(item => item.id !== id) });
-                if (targetUser) {
-                  apiCall(() => usersApi.delete(targetUser.id || (targetUser as any)._id || targetUser.email));
-                  addAuditLog(currentUser.id, 'Delete User', '', `Deleted user ${targetUser.name}`, 'User', id);
-                  toast.success('User deleted successfully');
+                try {
+                  await usersApi.delete(targetUser?.id || (targetUser as any)?._id || targetUser?.email || id);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete User', '', `Deleted user ${targetUser?.name || id}`, 'User', id);
+                  toast.success('User deleted successfully via API');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to delete user via API.');
                 }
               }}
-              onAddProject={(p) => {
-                const newPrj = { id: `prj-${Date.now()}`, ...p };
-                updateDB({ ...db, projects: [newPrj, ...db.projects] });
-                apiCall(() => projectsApi.create(p));
-                addAuditLog(currentUser.id, 'Create Project', '', `Added project ${p.name}`, 'Project', newPrj.id);
-                toast.success(`Project ${p.name} created!`);
+              onAddProject={async (p) => {
+                try {
+                  const res = await projectsApi.create(p);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Create Project', '', `Added project ${p.name}`, 'Project', (res?.data as any)?.id || (res?.data as any)?._id || '');
+                  toast.success(`Project ${p.name} created via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to create project via API. Data not saved.');
+                }
               }}
-              onEditProject={(id, updated) => {
-                const prjIndex = db.projects.findIndex(p => p.id === id);
-                if (prjIndex !== -1) { db.projects[prjIndex] = { ...db.projects[prjIndex], ...updated }; updateDB({ ...db }); apiCall(() => projectsApi.update(id, updated)); toast.success('Project updated!'); }
+              onEditProject={async (id, updated) => {
+                try {
+                  await projectsApi.update(id, updated);
+                  await fetchTabData('masters');
+                  toast.success('Project updated via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to update project via API.');
+                }
               }}
-              onDeleteProject={(id) => {
+              onDeleteProject={async (id) => {
                 const p = db.projects.find(item => item.id === id);
-                updateDB({ ...db, projects: db.projects.filter(item => item.id !== id) });
-                apiCall(() => projectsApi.delete(id));
-                addAuditLog(currentUser.id, 'Delete Project', '', `Deleted project ${p?.name || id}`, 'Project', id);
-                toast.success('Project deleted!');
+                try {
+                  await projectsApi.delete(id);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete Project', '', `Deleted project ${p?.name || id}`, 'Project', id);
+                  toast.success('Project deleted via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to delete project via API.');
+                }
               }}
-              onAddVendor={(v) => {
-                const newVen = { id: `ven-${Date.now()}`, ...v };
-                updateDB({ ...db, vendors: [newVen, ...db.vendors] });
-                apiCall(() => vendorsApi.create(v));
-                addAuditLog(currentUser.id, 'Create Vendor', '', `Added vendor ${v.name}`, 'Vendor', newVen.id);
-                toast.success(`Vendor ${v.name} saved!`);
+              onAddVendor={async (v) => {
+                try {
+                  const res = await vendorsApi.create(v);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Create Vendor', '', `Added vendor ${v.name}`, 'Vendor', (res?.data as any)?.id || (res?.data as any)?._id || '');
+                  toast.success(`Vendor ${v.name} saved via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to save vendor via API. Data not saved.');
+                }
               }}
-              onEditVendor={(id, updated) => {
-                const venIndex = db.vendors.findIndex(v => v.id === id);
-                if (venIndex !== -1) { db.vendors[venIndex] = { ...db.vendors[venIndex], ...updated }; updateDB({ ...db }); apiCall(() => vendorsApi.update(id, updated)); toast.success('Vendor updated!'); }
+              onEditVendor={async (id, updated) => {
+                try {
+                  await vendorsApi.update(id, updated);
+                  await fetchTabData('masters');
+                  toast.success('Vendor updated via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to update vendor via API.');
+                }
               }}
-              onDeleteVendor={(id) => {
+              onDeleteVendor={async (id) => {
                 const v = db.vendors.find(item => item.id === id);
-                updateDB({ ...db, vendors: db.vendors.filter(item => item.id !== id) });
-                apiCall(() => vendorsApi.delete(id));
-                addAuditLog(currentUser.id, 'Delete Vendor', '', `Deleted vendor ${v?.name || id}`, 'Vendor', id);
-                toast.success('Vendor deleted!');
+                try {
+                  await vendorsApi.delete(id);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete Vendor', '', `Deleted vendor ${v?.name || id}`, 'Vendor', id);
+                  toast.success('Vendor deleted via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to delete vendor via API.');
+                }
               }}
-              onAddCategory={(c) => {
-                const newCat = { id: `cat-${Date.now()}`, ...c };
-                updateDB({ ...db, categories: [newCat, ...db.categories] });
-                apiCall(() => categoriesApi.create(c));
-                addAuditLog(currentUser.id, 'Create Category', '', `Added category ${c.name}`, 'Category', newCat.id);
-                toast.success(`Category ${c.name} added!`);
+              onAddCategory={async (c) => {
+                try {
+                  const res = await categoriesApi.create(c);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Create Category', '', `Added category ${c.name}`, 'Category', (res?.data as any)?.id || (res?.data as any)?._id || '');
+                  toast.success(`Category ${c.name} added via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to add category via API. Data not saved.');
+                }
               }}
-              onEditCategory={(id, updated) => {
-                const catIndex = db.categories.findIndex(c => c.id === id);
-                if (catIndex !== -1) { db.categories[catIndex] = { ...db.categories[catIndex], ...updated }; updateDB({ ...db }); apiCall(() => categoriesApi.update(id, updated)); toast.success('Category updated!'); }
+              onEditCategory={async (id, updated) => {
+                try {
+                  await categoriesApi.update(id, updated);
+                  await fetchTabData('masters');
+                  toast.success('Category updated via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to update category via API.');
+                }
               }}
-              onDeleteCategory={(id) => {
+              onDeleteCategory={async (id) => {
                 const c = db.categories.find(item => item.id === id);
-                updateDB({ ...db, categories: db.categories.filter(item => item.id !== id) });
-                apiCall(() => categoriesApi.delete(id));
-                addAuditLog(currentUser.id, 'Delete Category', '', `Deleted category ${c?.name || id}`, 'Category', id);
-                toast.success('Category deleted!');
+                try {
+                  await categoriesApi.delete(id);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete Category', '', `Deleted category ${c?.name || id}`, 'Category', id);
+                  toast.success('Category deleted via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to delete category via API.');
+                }
               }}
               onAddUnit={async (u) => {
-                const newUnt = { id: `unt-${Date.now()}`, ...u };
-                const existingIdx = (db.units || []).findIndex(item => item.code?.toLowerCase().trim() === u.code?.toLowerCase().trim());
-                let updatedUnits;
-                if (existingIdx !== -1) {
-                  updatedUnits = [...(db.units || [])];
-                  updatedUnits[existingIdx] = { ...updatedUnits[existingIdx], ...u };
-                } else {
-                  updatedUnits = [newUnt, ...(db.units || [])];
-                }
-                updateDB({ ...db, units: updatedUnits });
-
                 try {
                   const res = await unitsApi.create(u);
-                  const createdData = (res?.data || res) as any;
-                  if (createdData?.id || createdData?._id) {
-                    const finalId = createdData.id || createdData._id;
-                    setDb(prev => {
-                      const next = {
-                        ...prev,
-                        units: (prev.units || []).map(item => item.id === newUnt.id ? { ...item, id: finalId } : item)
-                      };
-                      saveDatabase(next);
-                      return next;
-                    });
-                  }
-                } catch (e: any) {
-                  console.warn('[API Unit Create Warning]', e?.message || e);
-                }
-
-                addAuditLog(currentUser.id, 'Create Unit', '', `Added unit ${u.code} (${u.name})`, 'Unit', newUnt.id);
-                toast.success(`Unit '${u.code}' saved successfully!`);
-              }}
-              onEditUnit={(id, updated) => {
-                const untIndex = (db.units || []).findIndex(u => u.id === id);
-                if (untIndex !== -1) {
-                  const updatedList = [...(db.units || [])];
-                  updatedList[untIndex] = { ...updatedList[untIndex], ...updated };
-                  updateDB({ ...db, units: updatedList });
-                  apiCall(() => unitsApi.update(id, updated));
-                  toast.success('Unit updated!');
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Create Unit', '', `Added unit ${u.code} (${u.name})`, 'Unit', (res?.data as any)?.id || (res?.data as any)?._id || '');
+                  toast.success(`Unit '${u.code}' saved successfully via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to create unit via API. Data not saved.');
                 }
               }}
-              onDeleteUnit={(id) => {
+              onEditUnit={async (id, updated) => {
+                try {
+                  await unitsApi.update(id, updated);
+                  await fetchTabData('masters');
+                  toast.success('Unit updated via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to update unit via API.');
+                }
+              }}
+              onDeleteUnit={async (id) => {
                 const u = (db.units || []).find(item => item.id === id);
-                updateDB({ ...db, units: (db.units || []).filter(item => item.id !== id) });
-                apiCall(() => unitsApi.delete(id));
-                addAuditLog(currentUser.id, 'Delete Unit', '', `Deleted unit ${u?.code || id}`, 'Unit', id);
-                toast.success('Unit deleted!');
+                try {
+                  await unitsApi.delete(id);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete Unit', '', `Deleted unit ${u?.code || id}`, 'Unit', id);
+                  toast.success('Unit deleted via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to delete unit via API.');
+                }
               }}
-              onAddItem={(i) => {
-                const newItm = { id: `itm-${Date.now()}`, ...i };
-                updateDB({ ...db, items: [newItm, ...db.items] });
-                apiCall(() => itemsApi.create(i));
-                addAuditLog(currentUser.id, 'Create Item', '', `Added item ${i.name}`, 'Item', newItm.id);
-                toast.success(`Item ${i.name} registered!`);
+              onAddItem={async (i) => {
+                try {
+                  const res = await itemsApi.create(i);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Create Item', '', `Added item ${i.name}`, 'Item', (res?.data as any)?.id || (res?.data as any)?._id || '');
+                  toast.success(`Item ${i.name} registered via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to register item via API. Data not saved.');
+                }
               }}
-              onEditItem={(id, updated) => {
-                const itmIndex = db.items.findIndex(i => i.id === id);
-                if (itmIndex !== -1) { db.items[itmIndex] = { ...db.items[itmIndex], ...updated }; updateDB({ ...db }); apiCall(() => itemsApi.update(id, updated)); toast.success('Item updated!'); }
+              onEditItem={async (id, updated) => {
+                try {
+                  await itemsApi.update(id, updated);
+                  await fetchTabData('masters');
+                  toast.success('Item updated via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to update item via API.');
+                }
               }}
-              onDeleteItem={(id) => {
+              onDeleteItem={async (id) => {
                 const i = db.items.find(item => item.id === id);
-                updateDB({ ...db, items: db.items.filter(item => item.id !== id) });
-                apiCall(() => itemsApi.delete(id));
-                addAuditLog(currentUser.id, 'Delete Item', '', `Deleted item ${i?.name || id}`, 'Item', id);
-                toast.success('Item deleted!');
+                try {
+                  await itemsApi.delete(id);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete Item', '', `Deleted item ${i?.name || id}`, 'Item', id);
+                  toast.success('Item deleted via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to delete item via API.');
+                }
               }}
               roles={db.rolePermissions}
-              onAddRole={(r) => {
-                const newRole = {
-                  id: `role-${Date.now()}`,
-                  role: r.role || '',
-                  name: r.name || r.role || '',
-                  description: r.description || '',
-                  isSystemRole: false,
-                  status: r.status || 'Active',
-                  modules: ['dashboard'],
-                  permissions: {}
-                };
-                updateDB({ ...db, rolePermissions: [newRole, ...db.rolePermissions] });
-                apiCall(() => rolesApi.create(r));
-                addAuditLog(currentUser.id, 'Create Role', '', `Added custom role ${newRole.name}`, 'RolePermissions', newRole.role);
-                toast.success(`Role '${newRole.name}' created successfully!`);
-              }}
-              onEditRole={(id, updated) => {
-                const roleIndex = db.rolePermissions.findIndex(r => r.id === id || r._id === id || r.role === id);
-                if (roleIndex !== -1) {
-                  const existing = db.rolePermissions[roleIndex];
-                  const updatedRole = { ...existing, ...updated };
-                  db.rolePermissions[roleIndex] = updatedRole;
-                  updateDB({ ...db });
-                  apiCall(() => rolesApi.update(existing.id || existing._id || existing.role, updated));
-                  addAuditLog(currentUser.id, 'Update Role', '', `Updated role ${updatedRole.name || updatedRole.role}`, 'RolePermissions', updatedRole.role);
-                  toast.success(`Role '${updatedRole.name || updatedRole.role}' updated successfully!`);
+              onAddRole={async (r) => {
+                try {
+                  await rolesApi.create(r);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Create Role', '', `Added custom role ${r.name || r.role}`, 'RolePermissions', r.role || '');
+                  toast.success(`Role '${r.name || r.role}' created successfully via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to create role via API. Data not saved.');
                 }
               }}
-              onDeleteRole={(id) => {
+              onEditRole={async (id, updated) => {
+                const target = db.rolePermissions.find(r => r.id === id || r._id === id || r.role === id);
+                try {
+                  await rolesApi.update(target?.id || target?._id || target?.role || id, updated);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Update Role', '', `Updated role ${updated.name || updated.role || id}`, 'RolePermissions', id);
+                  toast.success(`Role '${updated.name || updated.role || id}' updated successfully via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to update role via API.');
+                }
+              }}
+              onDeleteRole={async (id) => {
                 const target = db.rolePermissions.find(r => r.id === id || r._id === id || r.role === id);
                 if (target?.role === 'Admin') {
                   toast.error('System Admin role cannot be deleted');
                   return;
                 }
-                updateDB({ ...db, rolePermissions: db.rolePermissions.filter(r => r.id !== id && r._id !== id && r.role !== id) });
-                apiCall(() => rolesApi.delete(target?.id || target?._id || target?.role || id));
-                addAuditLog(currentUser.id, 'Delete Role', '', `Deleted role ${target?.name || target?.role || id}`, 'RolePermissions', id);
-                toast.success('Role deleted successfully!');
+                try {
+                  await rolesApi.delete(target?.id || target?._id || target?.role || id);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete Role', '', `Deleted role ${target?.name || target?.role || id}`, 'RolePermissions', id);
+                  toast.success('Role deleted successfully via API!');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Failed to delete role via API.');
+                }
               }}
             />
           )}
@@ -1049,13 +1105,14 @@ export default function DashboardPage() {
               currentUser={currentUser}
               rolePermissions={db.rolePermissions}
               onOpenCreateBillModal={() => setOpenModal('create-bill')}
-              onUpdateBillStatus={(id, status) => {
+              onUpdateBillStatus={async (id, status) => {
                 const bill = db.vendorBills.find(b => b.id === id);
-                if (bill) {
-                  bill.status = status;
-                  updateDB({ ...db });
-                  apiCall(() => vendorBillsApi.update(id, { status }));
-                  toast.success(`Bill ${bill.billNumber} updated to ${status}`);
+                try {
+                  await vendorBillsApi.update(id, { status });
+                  await fetchTabData('bills');
+                  toast.success(`Bill ${bill?.billNumber || id} updated to ${status} via API`);
+                } catch (err: any) {
+                  toast.error(err?.message || `Failed to update bill status to ${status} via API`);
                 }
               }}
             />
@@ -1067,13 +1124,13 @@ export default function DashboardPage() {
               currentUser={currentUser}
               rolePermissions={db.rolePermissions}
               onOpenCreatePaymentReqModal={() => setOpenModal('create-pay-req')}
-              onUpdatePaymentReqStatus={(id, status) => {
-                const req = db.paymentRequests.find(r => r.id === id);
-                if (req) {
-                  req.status = status;
-                  updateDB({ ...db });
-                  apiCall(() => paymentRequestsApi.update(id, { status }));
-                  toast.success(`Payment request set to ${status}`);
+              onUpdatePaymentReqStatus={async (id, status) => {
+                try {
+                  await paymentRequestsApi.update(id, { status });
+                  await fetchTabData('payment-req');
+                  toast.success(`Payment request set to ${status} via API`);
+                } catch (err: any) {
+                  toast.error(err?.message || `Failed to update payment request status via API`);
                 }
               }}
             />
@@ -1105,12 +1162,12 @@ export default function DashboardPage() {
           {activeTab === 'notifications' && (
             <NotificationsTab
               notifications={db.notifications}
-              onMarkRead={(id) => {
-                const n = db.notifications.find(item => item.id === id);
-                if (n) {
-                  n.read = true;
-                  updateDB({ ...db });
-                  apiCall(() => notificationsApi.markRead(id));
+              onMarkRead={async (id) => {
+                try {
+                  await notificationsApi.markRead(id);
+                  await fetchTabData('notifications');
+                } catch (err: any) {
+                  console.warn('[Mark notification read failed]', err);
                 }
               }}
             />
@@ -1119,33 +1176,26 @@ export default function DashboardPage() {
           {activeTab === 'permissions' && (
             <RolePermissionsTab
               rolePermissions={db.rolePermissions}
-              onSaveRolePermission={(role, payload) => {
-                const existingIdx = db.rolePermissions.findIndex(r => r.role === role);
+              onSaveRolePermission={async (role, payload) => {
                 const finalRole = payload.newRoleName || role;
-                const newRolePerm = {
-                  role: finalRole,
-                  modules: payload.modules || ['dashboard'],
-                  permissions: payload.permissions || {}
-                };
-
-                let updatedList = [...db.rolePermissions];
-                if (existingIdx !== -1) {
-                  updatedList[existingIdx] = newRolePerm;
-                } else {
-                  updatedList.push(newRolePerm);
+                try {
+                  await rolePermissionsApi.update(role, payload);
+                  await fetchTabData('permissions');
+                  addAuditLog(currentUser.id, 'Update Role Permissions', '', `Updated permissions for ${finalRole}`, 'RolePermissions', finalRole);
+                  toast.success(`Role & capabilities saved for ${finalRole} via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || `Failed to save role permissions for ${finalRole} via API`);
                 }
-
-                updateDB({ ...db, rolePermissions: updatedList });
-                apiCall(() => rolePermissionsApi.update(role, payload));
-                addAuditLog(currentUser.id, 'Update Role Permissions', '', `Updated permissions for ${finalRole}`, 'RolePermissions', finalRole);
-                toast.success(`Role & capabilities saved for ${finalRole}!`);
               }}
-              onDeleteRolePermission={(role) => {
-                const updatedList = db.rolePermissions.filter(r => r.role !== role);
-                updateDB({ ...db, rolePermissions: updatedList });
-                apiCall(() => rolePermissionsApi.delete(role));
-                addAuditLog(currentUser.id, 'Delete Role', '', `Deleted role ${role}`, 'RolePermissions', role);
-                toast.success(`Role ${role} deleted successfully`);
+              onDeleteRolePermission={async (role) => {
+                try {
+                  await rolePermissionsApi.delete(role);
+                  await fetchTabData('permissions');
+                  addAuditLog(currentUser.id, 'Delete Role', '', `Deleted role ${role}`, 'RolePermissions', role);
+                  toast.success(`Role ${role} deleted successfully via API`);
+                } catch (err: any) {
+                  toast.error(err?.message || `Failed to delete role ${role} via API`);
+                }
               }}
             />
           )}
