@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   getDatabase,
   saveDatabase,
@@ -81,6 +81,9 @@ async function apiCall<T>(fn: () => Promise<T>, onSuccess?: (result: T) => void)
 
 export default function DashboardPage() {
   const router = useRouter();
+  const params = useParams();
+  const activeTab = (params?.tab as SidebarTab) || 'dashboard';
+
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       const active = localStorage.getItem('active_user');
@@ -92,9 +95,12 @@ export default function DashboardPage() {
   });
 
   const [db, setDb] = useState<DatabaseState>(() => getDatabase());
-  const [activeTab, setActiveTab] = useState<SidebarTab>('dashboard');
   const [navLayout, setNavLayout] = useState<'sidebar' | 'header'>('sidebar');
   const [backendOnline, setBackendOnline] = useState(false);
+
+  const handleTabChange = useCallback((tab: SidebarTab) => {
+    router.push(`/${tab}`);
+  }, [router]);
 
   // Modal & Selected Drawer States
   const [openModal, setOpenModal] = useState<string | null>(null);
@@ -262,7 +268,7 @@ export default function DashboardPage() {
     // Initial data fetch via active tab REST API
     fetchTabData('dashboard');
     setBackendOnline(true);
-  }, [activeTab, fetchTabData, router]);
+  }, [fetchTabData, router]); // Removed activeTab dependency
 
   const simulateRole = (role: string) => {
     if (!db) return;
@@ -768,7 +774,7 @@ export default function DashboardPage() {
       {navLayout === 'sidebar' && (
         <SidebarNav
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           currentUser={currentUser}
           rolePermissions={db.rolePermissions}
           onLogout={handleLogout}
@@ -786,7 +792,7 @@ export default function DashboardPage() {
           filterProject={filterProject}
           setFilterProject={setFilterProject}
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           unreadNotificationsCount={unreadNotificationsCount}
           navLayout={navLayout}
           setNavLayout={setNavLayout}
@@ -804,7 +810,7 @@ export default function DashboardPage() {
               vendorBills={db.vendorBills}
               currentUser={currentUser}
               rolePermissions={db.rolePermissions}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
               onOpenCreatePRModal={() => setOpenModal('create-pr')}
               onOpenCreatePOModal={() => setOpenModal('create-po')}
               onOpenCreateGRNModal={() => setOpenModal('create-grn')}
