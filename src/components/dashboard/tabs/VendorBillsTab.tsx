@@ -124,7 +124,11 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
                 {isAccountsOrAdmin && bill.status === 'Submitted' && (
                   <button
                     type="button"
-                    onClick={() => onUpdateBillStatus(bill.id, 'Verified')}
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to verify this Vendor Bill?")) {
+                        onUpdateBillStatus(bill.id, 'Verified');
+                      }
+                    }}
                     className="p-2 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white border border-teal-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Verify Bill"
                   >
@@ -134,7 +138,11 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
                 {isAccountsOrAdmin && bill.status === 'Verified' && (
                   <button
                     type="button"
-                    onClick={() => onUpdateBillStatus(bill.id, 'Approved for Payment')}
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to approve this bill for payment?")) {
+                        onUpdateBillStatus(bill.id, 'Approved for Payment');
+                      }
+                    }}
                     className="p-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Approve for Payment"
                   >
@@ -184,7 +192,12 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
               </span>
               <div className="flex space-x-2">
                 {isAccountsOrAdmin && selectedBill.status === 'Submitted' && (
-                  <Button variant="success" size="sm" onClick={() => { onUpdateBillStatus(selectedBill.id, 'Verified'); setSelectedBill(null); }}>
+                  <Button variant="success" size="sm" onClick={() => {
+                    if (window.confirm("Are you sure you want to verify this Vendor Bill?")) {
+                      onUpdateBillStatus(selectedBill.id, 'Verified'); 
+                      setSelectedBill(null); 
+                    }
+                  }}>
                     Verify Bill
                   </Button>
                 )}

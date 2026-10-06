@@ -621,7 +621,7 @@ export default function DashboardPage() {
   const handleCreateBill = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !currentUser) return;
-    const selectedPo = db.purchaseOrders.find(p => p.id === billForm.poId);
+    const selectedPo = db.purchaseOrders.find(p => p.id === billForm.poId) || (billForm as any)._po;
     if (!selectedPo) { toast.error('Select a valid Purchase Order'); return; }
 
     const billNum = `BILL-${new Date().getFullYear()}-${String(db.vendorBills.length + 101).padStart(5, '0')}`;
@@ -665,7 +665,7 @@ export default function DashboardPage() {
   const handleCreatePaymentReq = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !currentUser) return;
-    const selectedBill = db.vendorBills.find(b => b.id === paymentReqForm.billId);
+    const selectedBill = db.vendorBills.find(b => b.id === paymentReqForm.billId) || (paymentReqForm as any)._bill;
     if (!selectedBill) { toast.error('Please select a valid Bill'); return; }
 
     const reqNum = `REQ-${new Date().getFullYear()}-${String(db.paymentRequests.length + 101).padStart(5, '0')}`;

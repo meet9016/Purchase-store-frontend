@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Project, Vendor, Item, PurchaseRequest, PurchaseOrder, VendorBill, PaymentRequest, Stock } from '@/lib/storeData';
-import { purchaseRequestsApi, vendorsApi, purchaseOrdersApi, projectsApi, itemsApi } from '@/lib/api';
+import { purchaseRequestsApi, vendorsApi, purchaseOrdersApi, projectsApi, itemsApi, vendorBillsApi } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -116,6 +116,7 @@ export function Modals({
   const [backendPOs, setBackendPOs] = React.useState<PurchaseOrder[]>([]);
   const [backendProjects, setBackendProjects] = React.useState<Project[]>([]);
   const [backendItems, setBackendItems] = React.useState<Item[]>([]);
+  const [backendBills, setBackendBills] = React.useState<VendorBill[]>([]);
 
   React.useEffect(() => {
     setErrors({});
@@ -128,7 +129,7 @@ export function Modals({
         if (res?.data && Array.isArray(res.data)) setBackendVendors(res.data);
       }).catch(console.error);
     }
-    if (openModal === 'create-grn') {
+    if (openModal === 'create-grn' || openModal === 'create-bill') {
       purchaseOrdersApi.getAll().then(res => {
         if (res?.data && Array.isArray(res.data)) setBackendPOs(res.data);
       }).catch(console.error);
@@ -140,6 +141,11 @@ export function Modals({
       
       itemsApi.getAll().then(res => {
         if (res?.data && Array.isArray(res.data)) setBackendItems(res.data);
+      }).catch(console.error);
+    }
+    if (openModal === 'create-pay-req') {
+      vendorBillsApi.getAll().then(res => {
+        if (res?.data && Array.isArray(res.data)) setBackendBills(res.data);
       }).catch(console.error);
     }
   }, [openModal]);
@@ -649,17 +655,18 @@ export function Modals({
             >
               <Select
                 label="Select Purchase Order"
-                options={purchaseOrders.map(p => ({ value: p.id, label: `${p.poNumber} - ${p.vendorName} (${formatCurrency(p.totalPOAmount || 0)})` }))}
+                options={backendPOs.map(p => ({ value: p.id, label: `${p.poNumber} - (${p.vendorName})` }))}
                 value={billForm?.poId || ''}
                 onChange={e => {
-                  const selPo = purchaseOrders.find(p => p.id === e.target.value);
+                  const selPo = backendPOs.find(p => p.id === e.target.value);
                   if (setBillForm) {
                     setBillForm({
                       ...billForm,
                       poId: e.target.value,
                       billAmount: selPo?.totalPOAmount || 0,
-                      creditPeriod: selPo?.creditPeriod || 30
-                    });
+                      creditPeriod: selPo?.creditPeriod || 30,
+                      _po: selPo
+                    } as any);
                   }
                   clearError('poId');
                 }}
@@ -751,18 +758,19 @@ export function Modals({
             >
               <Select
                 label="Select Vendor Bill"
-                options={vendorBills.filter(b => (b.outstandingAmount || b.billAmount) > 0).map(b => ({
+                options={backendBills.filter(b => (b.outstandingAmount || b.billAmount) > 0).map(b => ({
                   value: b.id,
                   label: `${b.billNumber} (${b.vendorName}) - Due: ${formatCurrency(b.outstandingAmount || b.billAmount)}`
                 }))}
                 value={paymentReqForm.billId}
                 onChange={e => {
-                  const sel = vendorBills.find(b => b.id === e.target.value);
+                  const sel = backendBills.find(b => b.id === e.target.value);
                   setPaymentReqForm({
                     ...paymentReqForm,
                     billId: e.target.value,
-                    requestedAmount: sel?.outstandingAmount || sel?.billAmount || 0
-                  });
+                    requestedAmount: sel?.outstandingAmount || sel?.billAmount || 0,
+                    _bill: sel
+                  } as any);
                   clearError('billId');
                   clearError('requestedAmount');
                 }}
