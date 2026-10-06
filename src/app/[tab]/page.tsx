@@ -94,7 +94,16 @@ export default function DashboardPage() {
     return null;
   });
 
-  const [db, setDb] = useState<DatabaseState>(() => getDatabase());
+  const [db, setDb] = useState<DatabaseState>(() => {
+    const initialDb = getDatabase();
+    if (typeof window !== 'undefined') {
+      const cachedRoles = localStorage.getItem('cached_roles');
+      if (cachedRoles) {
+        try { initialDb.rolePermissions = JSON.parse(cachedRoles); } catch (e) { console.error(e); }
+      }
+    }
+    return initialDb;
+  });
   const [navLayout, setNavLayout] = useState<'sidebar' | 'header'>('sidebar');
   const [backendOnline, setBackendOnline] = useState(false);
 
@@ -112,7 +121,7 @@ export default function DashboardPage() {
   const [filterProject, setFilterProject] = useState('');
 
   // Form States
-  const [prForm, setPrForm] = useState({ projectId: '', requiredDate: '', priority: 'Medium' as const, items: [] as any[], attachmentUrl: '' });
+  const [prForm, setPrForm] = useState({ projectId: '', requiredDate: new Date().toISOString().split('T')[0], priority: 'Medium' as const, items: [] as any[], attachmentUrl: '' });
   const [prItemInput, setPrItemInput] = useState({ itemId: '', quantity: 1, remarks: '' });
   const [poForm, setPoForm] = useState({ prId: '', vendorId: '', creditPeriod: 30, expectedDeliveryDate: '', deliveryLocation: '', termsConditions: '', remarks: '', items: [] as any[] });
   const [grnForm, setGrnForm] = useState({ poId: '', vehicleNumber: '', challanNumber: '', vendorInvoiceNumber: '', remarks: '', items: [] as any[] });
@@ -132,28 +141,76 @@ export default function DashboardPage() {
   const fetchTabData = useCallback(async (tab: SidebarTab) => {
     try {
       if (tab === 'dashboard') {
-        const [prRes, poRes, grnRes, stockRes, billRes, payRes] = await Promise.allSettled([
-          purchaseRequestsApi.getAll(),
-          purchaseOrdersApi.getAll(),
-          grnsApi.getAll(),
-          stockApi.getAll(),
-          vendorBillsApi.getAll(),
-          paymentRequestsApi.getAll(),
-        ]);
+        const rolesRes = await rolePermissionsApi.getAll().catch(() => null);
+        let fetchedRoles = db.rolePermissions;
+        if (rolesRes?.status === 200 || rolesRes?.status === 'success') {
+          fetchedRoles = deduplicateById(rolesRes.data as any);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('cached_roles', JSON.stringify(fetchedRoles));
+          }
+          setDb(prev => ({ ...prev, rolePermissions: fetchedRoles }));
+        }
+
+        const userStr = typeof window !== 'undefined' ? localStorage.getItem('active_user') : null;
+        let currentRole = 'Admin';
+        if (userStr) {
+          try { const u = JSON.parse(userStr); currentRole = u.role || 'Admin'; } catch(e){}
+        }
+
+        let canViewPR = false, canViewPO = false, canViewGRN = false, canViewStock = false, canViewBills = false, canViewPayReq = false;
+
+        if (currentRole === 'Admin') {
+          canViewPR = canViewPO = canViewGRN = canViewStock = canViewBills = canViewPayReq = true;
+        } else {
+          const rolePerm = fetchedRoles.find(rp => rp.role.toLowerCase() === currentRole.toLowerCase());
+          if (rolePerm && rolePerm.permissions) {
+             canViewPR = !!(rolePerm.permissions['Purchase Requests']?.viewGlobal || rolePerm.permissions['Purchase Requests']?.viewOwn);
+             canViewPO = !!(rolePerm.permissions['Purchase Orders']?.viewGlobal || rolePerm.permissions['Purchase Orders']?.viewOwn);
+             canViewGRN = !!(rolePerm.permissions['Goods Receipt (GRN)']?.viewGlobal || rolePerm.permissions['Goods Receipt (GRN)']?.viewOwn);
+             canViewStock = !!(rolePerm.permissions['Stock']?.viewGlobal || rolePerm.permissions['Stock']?.viewOwn);
+             canViewBills = !!(rolePerm.permissions['Vendor Invoices']?.viewGlobal || rolePerm.permissions['Vendor Invoices']?.viewOwn);
+             canViewPayReq = !!(rolePerm.permissions['Payment Requests']?.viewGlobal || rolePerm.permissions['Payment Requests']?.viewOwn);
+          }
+        }
+
+        const promises = [
+          canViewPR ? purchaseRequestsApi.getAll().catch(() => null) : Promise.resolve(null),
+          canViewPO ? purchaseOrdersApi.getAll().catch(() => null) : Promise.resolve(null),
+          canViewGRN ? grnsApi.getAll().catch(() => null) : Promise.resolve(null),
+          canViewStock ? stockApi.getAll().catch(() => null) : Promise.resolve(null),
+          canViewBills ? vendorBillsApi.getAll().catch(() => null) : Promise.resolve(null),
+          canViewPayReq ? paymentRequestsApi.getAll().catch(() => null) : Promise.resolve(null),
+          projectsApi.getAll().catch(() => null),
+          itemsApi.getAll().catch(() => null),
+          vendorsApi.getAll().catch(() => null)
+        ];
+
+        const [prRes, poRes, grnRes, stockRes, billRes, payRes, projRes, itemRes, vendRes] = await Promise.all(promises);
+
         setDb(prev => ({
           ...prev,
-          purchaseRequests: prRes.status === 'fulfilled' && Array.isArray(prRes.value?.data) ? deduplicateById(prRes.value.data) : prev.purchaseRequests,
-          purchaseOrders: poRes.status === 'fulfilled' && Array.isArray(poRes.value?.data) ? deduplicateById(poRes.value.data) : prev.purchaseOrders,
-          grns: grnRes.status === 'fulfilled' && Array.isArray(grnRes.value?.data) ? deduplicateById(grnRes.value.data) : prev.grns,
-          stock: stockRes.status === 'fulfilled' && Array.isArray(stockRes.value?.data) ? deduplicateById(stockRes.value.data) : prev.stock,
-          vendorBills: billRes.status === 'fulfilled' && Array.isArray(billRes.value?.data) ? deduplicateById(billRes.value.data) : prev.vendorBills,
-          paymentRequests: payRes.status === 'fulfilled' && Array.isArray(payRes.value?.data) ? deduplicateById(payRes.value.data) : prev.paymentRequests,
+          purchaseRequests: prRes && Array.isArray(prRes.data) ? deduplicateById(prRes.data) : prev.purchaseRequests,
+          purchaseOrders: poRes && Array.isArray(poRes.data) ? deduplicateById(poRes.data) : prev.purchaseOrders,
+          grns: grnRes && Array.isArray(grnRes.data) ? deduplicateById(grnRes.data) : prev.grns,
+          stock: stockRes && Array.isArray(stockRes.data) ? deduplicateById(stockRes.data) : prev.stock,
+          vendorBills: billRes && Array.isArray(billRes.data) ? deduplicateById(billRes.data) : prev.vendorBills,
+          paymentRequests: payRes && Array.isArray(payRes.data) ? deduplicateById(payRes.data) : prev.paymentRequests,
+          projects: projRes && Array.isArray(projRes.data) ? deduplicateById(projRes.data) : prev.projects,
+          items: itemRes && Array.isArray(itemRes.data) ? deduplicateById(itemRes.data) : prev.items,
+          vendors: vendRes && Array.isArray(vendRes.data) ? deduplicateById(vendRes.data) : prev.vendors,
         }));
       } else if (tab === 'pr') {
-        const res = await purchaseRequestsApi.getAll();
-        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => ({ ...prev, purchaseRequests: deduplicateById(res.data) }));
-        }
+        const [prRes, projRes, itemsRes] = await Promise.all([
+          purchaseRequestsApi.getAll(),
+          projectsApi.getAll().catch(() => null),
+          itemsApi.getAll().catch(() => null)
+        ]);
+        setDb(prev => ({ 
+          ...prev, 
+          purchaseRequests: (prRes?.status === 200 || prRes?.status === 'success') && Array.isArray(prRes.data) ? deduplicateById(prRes.data) : prev.purchaseRequests,
+          projects: (projRes?.status === 200 || projRes?.status === 'success') && Array.isArray(projRes.data) ? deduplicateById(projRes.data) : prev.projects,
+          items: (itemsRes?.status === 200 || itemsRes?.status === 'success') && Array.isArray(itemsRes.data) ? deduplicateById(itemsRes.data) : prev.items
+        }));
       } else if (tab === 'po') {
         const res = await purchaseOrdersApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
@@ -337,7 +394,7 @@ export default function DashboardPage() {
       sendNotification('Approver', 'New PR Submitted', `PR ${prNum} submitted by ${currentUser.name}`);
       notificationsApi.create({ recipientRole: 'Approver', title: 'New PR Submitted', message: `PR ${prNum} submitted by ${currentUser.name}`, readBy: [], read: false, timestamp: new Date().toISOString(), id: '' } as any).catch(() => {});
 
-      setPrForm({ projectId: '', requiredDate: '', priority: 'Medium', items: [], attachmentUrl: '' });
+      setPrForm({ projectId: '', requiredDate: new Date().toISOString().split('T')[0], priority: 'Medium', items: [], attachmentUrl: '' });
       setOpenModal(null);
       toast.success(`Purchase Request ${prNum} created successfully!`);
     } catch (err: any) {
