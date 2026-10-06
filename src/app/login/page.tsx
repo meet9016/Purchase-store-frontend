@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getDatabase, saveDatabase } from '@/lib/storeData';
-import { authApi } from '@/lib/api';
+import { getDatabase, saveDatabase, deduplicateById } from '@/lib/storeData';
+import { authApi, rolePermissionsApi } from '@/lib/api';
 import { toast } from 'sonner';
 import {
   Lock,
@@ -78,6 +78,17 @@ export default function LoginPage() {
       if (token && user) {
         localStorage.setItem('auth_token', token);
         localStorage.setItem('active_user', JSON.stringify(user));
+
+        try {
+          const rolesRes = await rolePermissionsApi.getAll();
+          if (rolesRes?.status === 200 || rolesRes?.status === 'success') {
+            const fetchedRoles = deduplicateById(rolesRes.data as any);
+            localStorage.setItem('cached_roles', JSON.stringify(fetchedRoles));
+          }
+        } catch (e) {
+          console.warn('Failed to fetch role permissions during login', e);
+        }
+
         toast.success(`Welcome back, ${user.name || 'User'}!`);
         window.location.href = '/dashboard';
         return;

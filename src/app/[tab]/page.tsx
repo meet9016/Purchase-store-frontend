@@ -141,15 +141,7 @@ export default function DashboardPage() {
   const fetchTabData = useCallback(async (tab: SidebarTab) => {
     try {
       if (tab === 'dashboard') {
-        const rolesRes = await rolePermissionsApi.getAll().catch(() => null);
         let fetchedRoles = db.rolePermissions;
-        if (rolesRes?.status === 200 || rolesRes?.status === 'success') {
-          fetchedRoles = deduplicateById(rolesRes.data as any);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('cached_roles', JSON.stringify(fetchedRoles));
-          }
-          setDb(prev => ({ ...prev, rolePermissions: fetchedRoles }));
-        }
 
         const userStr = typeof window !== 'undefined' ? localStorage.getItem('active_user') : null;
         let currentRole = 'Admin';
@@ -227,10 +219,15 @@ export default function DashboardPage() {
           setDb(prev => ({ ...prev, stock: deduplicateById(res.data) }));
         }
       } else if (tab === 'outward') {
-        const res = await outwardsApi.getAll();
-        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => ({ ...prev, storeOutwards: deduplicateById(res.data) }));
-        }
+        const [outRes, stockRes] = await Promise.all([
+          outwardsApi.getAll(),
+          stockApi.getAll().catch(() => null)
+        ]);
+        setDb(prev => ({ 
+          ...prev, 
+          storeOutwards: (outRes?.status === 200 || outRes?.status === 'success') && Array.isArray(outRes.data) ? deduplicateById(outRes.data) : prev.storeOutwards,
+          stock: (stockRes?.status === 200 || stockRes?.status === 'success') && Array.isArray(stockRes.data) ? deduplicateById(stockRes.data) : prev.stock
+        }));
       } else if (tab === 'bills') {
         const res = await vendorBillsApi.getAll();
         if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
@@ -322,8 +319,6 @@ export default function DashboardPage() {
       return;
     }
 
-    // Initial data fetch via active tab REST API
-    fetchTabData('dashboard');
     setBackendOnline(true);
   }, [fetchTabData, router]); // Removed activeTab dependency
 
@@ -427,17 +422,28 @@ export default function DashboardPage() {
   const handleCreatePO = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !currentUser) return;
-    const selectedPr = db.purchaseRequests.find(p => p.id === poForm.prId);
-    const selectedVendor = db.vendors.find(v => v.id === poForm.vendorId);
+    const selectedPr = db.purchaseRequests.find(p => p.id === poForm.prId) || (poForm as any)._pr;
+    const selectedVendor = db.vendors.find(v => v.id === poForm.vendorId) || (poForm as any)._vendor;
     if (!selectedPr || !selectedVendor) { toast.error('Select valid PR & Vendor'); return; }
 
     const poNum = `PO-${new Date().getFullYear()}-${String(db.purchaseOrders.length + 101).padStart(5, '0')}`;
     let total = 0;
     const poItems = poForm.items.map((it: any) => {
-      const itemObj = db.items.find(i => i.id === it.itemId);
-      const lineTotal = (it.quantity * it.rate) * (1 + (it.tax / 100));
+      const rate = it.rate || 0;
+      const tax = it.tax || 0;
+      const lineTotal = (it.quantity * rate) * (1 + (tax / 100));
       total += lineTotal;
-      return { itemId: it.itemId, itemName: itemObj?.name || 'Item', quantity: it.quantity, unit: itemObj?.unit || 'Pcs', rate: it.rate, tax: it.tax, discount: 0, amount: lineTotal, totalAmount: lineTotal };
+      return { 
+        itemId: it.itemId, 
+        itemName: it.itemName || 'Item', 
+        quantity: it.quantity, 
+        unit: it.unit || 'Pcs', 
+        rate, 
+        tax, 
+        discount: 0, 
+        amount: lineTotal, 
+        totalAmount: lineTotal 
+      };
     });
 
     const newPoPayload = {
@@ -509,7 +515,7 @@ export default function DashboardPage() {
   const handleCreateGRN = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !currentUser) return;
-    const selectedPo = db.purchaseOrders.find(p => p.id === grnForm.poId);
+    const selectedPo = db.purchaseOrders.find(p => p.id === grnForm.poId) || (grnForm as any)._po;
     if (!selectedPo) { toast.error('Please select a valid Purchase Order'); return; }
 
     const grnNum = `GRN-${new Date().getFullYear()}-${String(db.grns.length + 101).padStart(5, '0')}`;
@@ -559,12 +565,22 @@ export default function DashboardPage() {
     if (!db || !currentUser) return;
     if (!outwardItemInput.itemId) { toast.error('Please select an item to issue'); return; }
 
-    const itemObj = db.items.find(i => i.id === outwardItemInput.itemId);
-    const targetProject = db.projects.find(p => p.id === outwardForm.projectId);
-    const stockItem = db.stock.find(s => s.projectId === outwardForm.projectId && s.itemId === outwardItemInput.itemId);
+    const itemObj = db.items.find(i => i.id === outwardItemInput.itemId) || (outwardItemInput as any)._item;
+    const targetProject = db.projects.find(p => p.id === outwardForm.projectId) || (outwardForm as any)._project;
+    
+    let currentStockQty = 0;
+    try {
+      const stockRes = await stockApi.getAll({ projectId: outwardForm.projectId, itemId: outwardItemInput.itemId });
+      if (stockRes?.data && Array.isArray(stockRes.data)) {
+        const stockItem = stockRes.data.find(s => s.projectId === outwardForm.projectId && s.itemId === outwardItemInput.itemId);
+        if (stockItem) currentStockQty = stockItem.quantity || stockItem.currentStock || 0;
+      }
+    } catch (err) {
+      console.error("Failed to fetch live stock", err);
+    }
 
-    if (!stockItem || stockItem.quantity < outwardItemInput.quantity) {
-      toast.error(`Insufficient stock! Current: ${stockItem?.quantity || 0} ${itemObj?.unit || 'Pcs'}`);
+    if (currentStockQty < outwardItemInput.quantity) {
+      toast.error(`Insufficient stock! Current: ${currentStockQty} ${itemObj?.unit || 'Pcs'}`);
       return;
     }
 

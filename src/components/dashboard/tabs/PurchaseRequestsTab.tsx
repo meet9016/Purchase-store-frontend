@@ -27,6 +27,7 @@ export function PurchaseRequestsTab({
   onSelectPRDetail
 }: PurchaseRequestsTabProps) {
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [approvalModalPr, setApprovalModalPr] = useState<PurchaseRequest | null>(null);
   const [rejectionModalPr, setRejectionModalPr] = useState<PurchaseRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('');
 
@@ -143,7 +144,7 @@ export function PurchaseRequestsTab({
                       variant="success"
                       size="sm"
                       icon={<CheckCircle2 className="h-3.5 w-3.5" />}
-                      onClick={() => onUpdatePRStatus(pr.id, 'Approved')}
+                      onClick={() => setApprovalModalPr(pr)}
                     >
                       Approve
                     </Button>
@@ -165,6 +166,33 @@ export function PurchaseRequestsTab({
           </tr>
         )}
       />
+
+      {/* Approval Modal */}
+      {approvalModalPr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 animate-modal-zoom space-y-4">
+            <h3 className="text-lg font-bold text-[#0F172C]">Approve Purchase Request</h3>
+            <p className="text-sm text-slate-600 font-medium">Are you sure you want to approve PR <strong>{approvalModalPr.prNumber}</strong>?</p>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setApprovalModalPr(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="success"
+                onClick={() => {
+                  onUpdatePRStatus(approvalModalPr.id, 'Approved');
+                  setApprovalModalPr(null);
+                }}
+              >
+                Confirm Approval
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Rejection Modal */}
       {rejectionModalPr && (
