@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Project, Vendor, Item, PurchaseRequest, PurchaseOrder, VendorBill, PaymentRequest, Stock } from '@/lib/storeData';
+import { purchaseRequestsApi, vendorsApi, purchaseOrdersApi, projectsApi, itemsApi } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -108,9 +109,39 @@ export function Modals({
   setSelectedPo
 }: ModalsProps) {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  
+  // States for backend-fetched PO dropdown data
+  const [backendApprovedPRs, setBackendApprovedPRs] = React.useState<PurchaseRequest[]>([]);
+  const [backendVendors, setBackendVendors] = React.useState<Vendor[]>([]);
+  const [backendPOs, setBackendPOs] = React.useState<PurchaseOrder[]>([]);
+  const [backendProjects, setBackendProjects] = React.useState<Project[]>([]);
+  const [backendItems, setBackendItems] = React.useState<Item[]>([]);
 
   React.useEffect(() => {
     setErrors({});
+    if (openModal === 'create-po') {
+      purchaseRequestsApi.getAll({ status: 'Approved' }).then(res => {
+        if (res?.data && Array.isArray(res.data)) setBackendApprovedPRs(res.data);
+      }).catch(console.error);
+
+      vendorsApi.getAll().then(res => {
+        if (res?.data && Array.isArray(res.data)) setBackendVendors(res.data);
+      }).catch(console.error);
+    }
+    if (openModal === 'create-grn') {
+      purchaseOrdersApi.getAll().then(res => {
+        if (res?.data && Array.isArray(res.data)) setBackendPOs(res.data);
+      }).catch(console.error);
+    }
+    if (openModal === 'create-outward') {
+      projectsApi.getAll().then(res => {
+        if (res?.data && Array.isArray(res.data)) setBackendProjects(res.data);
+      }).catch(console.error);
+      
+      itemsApi.getAll().then(res => {
+        if (res?.data && Array.isArray(res.data)) setBackendItems(res.data);
+      }).catch(console.error);
+    }
   }, [openModal]);
 
   const clearError = (field: string) => {
@@ -308,19 +339,21 @@ export function Modals({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select
                   label="Select Approved Requisition"
-                  options={purchaseRequests.filter(pr => pr.status === 'Approved' || pr.status === 'Submitted').map(pr => ({ value: pr.id, label: `${pr.prNumber} - ${pr.projectName}` }))}
+                  options={backendApprovedPRs.map(pr => ({ value: pr.id, label: `${pr.prNumber} - ${pr.projectName}` }))}
                   value={poForm.prId}
                   onChange={e => {
-                    const selectedPr = purchaseRequests.find(pr => pr.id === e.target.value);
+                    const selectedPr = backendApprovedPRs.find(pr => pr.id === e.target.value);
                     if (selectedPr) {
                       const poItems = selectedPr.items.map(it => ({
                         itemId: it.itemId,
+                        itemName: it.itemName,
+                        unit: it.unit,
                         quantity: it.quantity,
-                        rate: 1000,
-                        tax: 18,
+                        rate: 0,
+                        tax: 0,
                         discount: 0
                       }));
-                      setPoForm({ ...poForm, prId: e.target.value, items: poItems });
+                      setPoForm({ ...poForm, prId: e.target.value, items: poItems, _pr: selectedPr });
                     }
                     clearError('prId');
                   }}
@@ -329,9 +362,13 @@ export function Modals({
                 />
                 <Select
                   label="Select Vendor"
-                  options={vendors.map(v => ({ value: v.id, label: v.name }))}
+                  options={backendVendors.map(v => ({ value: v.id, label: v.name }))}
                   value={poForm.vendorId}
-                  onChange={e => { setPoForm({...poForm, vendorId: e.target.value}); clearError('vendorId'); }}
+                  onChange={e => { 
+                    const selectedVendor = backendVendors.find(v => v.id === e.target.value);
+                    setPoForm({...poForm, vendorId: e.target.value, _vendor: selectedVendor}); 
+                    clearError('vendorId'); 
+                  }}
                   error={errors.vendorId}
                   required
                 />
@@ -403,9 +440,24 @@ export function Modals({
             >
               <Select
                 label="Select Purchase Order"
-                options={purchaseOrders.map(p => ({ value: p.id, label: `${p.poNumber} - ${p.vendorName} (${p.projectName})` }))}
+                options={backendPOs.map(p => ({ value: p.id, label: `${p.poNumber} - ${p.vendorName} (${p.projectName})` }))}
                 value={grnForm.poId}
-                onChange={e => { setGrnForm({ ...grnForm, poId: e.target.value }); clearError('poId'); }}
+                onChange={e => {
+                  const selectedPO = backendPOs.find(p => p.id === e.target.value);
+                  if (selectedPO) {
+                    const grnItems = selectedPO.items.map(it => ({
+                      itemId: it.itemId,
+                      itemName: it.itemName,
+                      quantity: it.quantity,
+                      receivedQuantity: it.quantity, // Default to full PO quantity
+                      acceptedQuantity: it.quantity,
+                      rejectedQuantity: 0,
+                      unit: it.unit
+                    }));
+                    setGrnForm({ ...grnForm, poId: e.target.value, items: grnItems, _po: selectedPO });
+                  }
+                  clearError('poId');
+                }}
                 error={errors.poId}
                 required
               />
@@ -488,9 +540,13 @@ export function Modals({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select
                   label="Project Site"
-                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  options={backendProjects.map(p => ({ value: p.id, label: `${p.name} (${p.location})` }))}
                   value={outwardForm.projectId}
-                  onChange={e => { setOutwardForm({ ...outwardForm, projectId: e.target.value }); clearError('projectId'); }}
+                  onChange={e => { 
+                    const selectedProject = backendProjects.find(p => p.id === e.target.value);
+                    setOutwardForm({ ...outwardForm, projectId: e.target.value, _project: selectedProject } as any); 
+                    clearError('projectId'); 
+                  }}
                   error={errors.projectId}
                   required
                 />
@@ -529,9 +585,13 @@ export function Modals({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Select
                     label="Item Name"
-                    options={items.map(i => ({ value: i.id, label: `${i.name} (${i.unit})` }))}
+                    options={backendItems.map(i => ({ value: i.id, label: i.name }))}
                     value={outwardItemInput.itemId}
-                    onChange={e => { setOutwardItemInput({ ...outwardItemInput, itemId: e.target.value }); clearError('item'); }}
+                    onChange={e => { 
+                      const selectedItem = backendItems.find(i => i.id === e.target.value);
+                      setOutwardItemInput({ ...outwardItemInput, itemId: e.target.value, _item: selectedItem } as any); 
+                      clearError('item'); 
+                    }}
                     error={errors.item}
                     required
                   />
