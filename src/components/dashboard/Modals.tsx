@@ -153,7 +153,7 @@ export function Modals({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Select
                   label="Project Location"
-                  options={projects.map(p => ({ value: p.id, label: p.name }))}
+                  options={projects.map(p => ({ value: p.id, label: `${p.name} (${p.location})` }))}
                   value={prForm.projectId}
                   onChange={e => { setPrForm({...prForm, projectId: e.target.value}); clearError('projectId'); }}
                   error={errors.projectId}

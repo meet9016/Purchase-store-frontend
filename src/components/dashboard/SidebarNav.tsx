@@ -53,7 +53,7 @@ export function SidebarNav({
   onLogout,
   unreadNotificationsCount
 }: SidebarProps) {
-  const currentRole = currentUser?.role || 'Admin';
+  const currentRole = currentUser?.role || '';
   const rolePerm = rolePermissions.find(rp => rp.role.toLowerCase() === currentRole.toLowerCase());
 
   // Mapping from SidebarTab to FeatureName in Permission Matrix
@@ -83,7 +83,7 @@ export function SidebarNav({
     }
 
     // Default fallback to allowedModules if no granular perm defined
-    const allowedModules = rolePerm?.modules || ['dashboard', 'pr', 'po', 'stock'];
+    const allowedModules = rolePerm?.modules || ['dashboard'];
     return allowedModules.includes(tabId);
   };
 

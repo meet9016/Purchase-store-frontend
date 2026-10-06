@@ -340,12 +340,6 @@ const INITIAL_USERS: User[] = [
   { id: 'usr-5', name: 'Sneha Verma', email: 'sneha.accounts@gmail.com', role: 'Accounts', department: 'Finance & Billing', active: true },
 ];
 
-const INITIAL_PROJECTS: Project[] = [
-  { id: 'prj-1', name: 'Skyview Heights Tower', location: 'Andheri East, Mumbai', status: 'Active' },
-  { id: 'prj-2', name: 'Metro Rail Phase 4', location: 'Bandra Kurla Complex, Mumbai', status: 'Active' },
-  { id: 'prj-3', name: 'Greenfield Logistic Park', location: 'Panvel, Navi Mumbai', status: 'Active' },
-  { id: 'prj-4', name: 'Highway Flyover Junction', location: 'Ghodbunder Road, Thane', status: 'Active' }
-];
 
 const INITIAL_CATEGORIES: Category[] = [
   { id: 'cat-1', name: 'Civil & Structural Materials', description: 'Cement, Aggregates, Sand and Bricks' },
@@ -839,7 +833,7 @@ export function getDatabase(): DatabaseState {
 function getInitialSeed(): DatabaseState {
   return {
     users: [...INITIAL_USERS],
-    projects: [...INITIAL_PROJECTS],
+    projects: [],
     vendors: [...INITIAL_VENDORS],
     categories: [...INITIAL_CATEGORIES],
     units: [...INITIAL_UNITS],
