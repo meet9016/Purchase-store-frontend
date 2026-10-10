@@ -26,8 +26,7 @@ export function PurchaseOrdersTab({
   onSelectPoDetail,
   onUpdatePOStatus
 }: PurchaseOrdersTabProps) {
-  const [filterStatus, setFilterStatus] = useState<string>('');
-  const filteredPos = purchaseOrders.filter(po => !filterStatus || po.status === filterStatus);
+  const filteredPos = purchaseOrders;
 
   const formatCurrency = (num: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(num);
@@ -65,20 +64,6 @@ export function PurchaseOrdersTab({
         </div>
 
         <div className="flex items-center space-x-3">
-          <div className="min-w-[160px]">
-            <Select
-              options={[
-                { value: '', label: 'All Statuses' },
-                { value: 'Draft', label: 'Draft' },
-                { value: 'Approved', label: 'Approved' },
-                { value: 'Partially Received', label: 'Partially Received' },
-                { value: 'Completed', label: 'Completed' },
-                { value: 'Cancelled', label: 'Cancelled' }
-              ]}
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-            />
-          </div>
 
           {canCreatePO && (
             <Button
@@ -94,7 +79,7 @@ export function PurchaseOrdersTab({
 
       {/* PO Table */}
       <Table
-        headers={['PO Number', 'Vendor Name', 'Project', 'PO Date', 'Total Amount', 'Status', 'Actions']}
+        headers={['PO Number', 'Vendor Name', 'Project', 'PO Date', 'Total Amount', 'Actions']}
         data={filteredPos}
         itemsPerPage={10}
         renderRow={(po, idx) => (
@@ -104,15 +89,6 @@ export function PurchaseOrdersTab({
             <td className="px-4 py-3 font-medium text-slate-800 text-xs">{po.projectName}</td>
             <td className="px-4 py-3 font-medium text-slate-800 text-xs whitespace-nowrap">{formatDate(po.poDate)}</td>
             <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{formatCurrency(po.totalPOAmount || po.totalAmount || 0)}</td>
-            <td className="px-4 py-3">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                po.status === 'Approved' || po.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' :
-                po.status === 'Partially Received' ? 'bg-blue-50 text-blue-700 border border-blue-200/70' :
-                'bg-amber-50 text-amber-700 border border-amber-200/70'
-              }`}>
-                {po.status}
-              </span>
-            </td>
             <td className="px-5 py-3">
               <div className="flex items-center space-x-2">
                 <Button

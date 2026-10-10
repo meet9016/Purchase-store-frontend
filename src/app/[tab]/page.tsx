@@ -146,7 +146,7 @@ export default function DashboardPage() {
         const userStr = typeof window !== 'undefined' ? localStorage.getItem('active_user') : null;
         let currentRole = 'Admin';
         if (userStr) {
-          try { const u = JSON.parse(userStr); currentRole = u.role || 'Admin'; } catch(e){}
+          try { const u = JSON.parse(userStr); currentRole = u.role || 'Admin'; } catch (e) { }
         }
 
         let canViewPR = false, canViewPO = false, canViewGRN = false, canViewStock = false, canViewBills = false, canViewPayReq = false;
@@ -156,12 +156,12 @@ export default function DashboardPage() {
         } else {
           const rolePerm = fetchedRoles.find(rp => rp.role.toLowerCase() === currentRole.toLowerCase());
           if (rolePerm && rolePerm.permissions) {
-             canViewPR = !!(rolePerm.permissions['Purchase Requests']?.viewGlobal || rolePerm.permissions['Purchase Requests']?.viewOwn);
-             canViewPO = !!(rolePerm.permissions['Purchase Orders']?.viewGlobal || rolePerm.permissions['Purchase Orders']?.viewOwn);
-             canViewGRN = !!(rolePerm.permissions['Goods Receipt (GRN)']?.viewGlobal || rolePerm.permissions['Goods Receipt (GRN)']?.viewOwn);
-             canViewStock = !!(rolePerm.permissions['Stock']?.viewGlobal || rolePerm.permissions['Stock']?.viewOwn);
-             canViewBills = !!(rolePerm.permissions['Vendor Invoices']?.viewGlobal || rolePerm.permissions['Vendor Invoices']?.viewOwn);
-             canViewPayReq = !!(rolePerm.permissions['Payment Requests']?.viewGlobal || rolePerm.permissions['Payment Requests']?.viewOwn);
+            canViewPR = !!(rolePerm.permissions['Purchase Requests']?.viewGlobal || rolePerm.permissions['Purchase Requests']?.viewOwn);
+            canViewPO = !!(rolePerm.permissions['Purchase Orders']?.viewGlobal || rolePerm.permissions['Purchase Orders']?.viewOwn);
+            canViewGRN = !!(rolePerm.permissions['Goods Receipt (GRN)']?.viewGlobal || rolePerm.permissions['Goods Receipt (GRN)']?.viewOwn);
+            canViewStock = !!(rolePerm.permissions['Stock']?.viewGlobal || rolePerm.permissions['Stock']?.viewOwn);
+            canViewBills = !!(rolePerm.permissions['Vendor Invoices']?.viewGlobal || rolePerm.permissions['Vendor Invoices']?.viewOwn);
+            canViewPayReq = !!(rolePerm.permissions['Payment Requests']?.viewGlobal || rolePerm.permissions['Payment Requests']?.viewOwn);
           }
         }
 
@@ -197,8 +197,8 @@ export default function DashboardPage() {
           projectsApi.getAll().catch(() => null),
           itemsApi.getAll().catch(() => null)
         ]);
-        setDb(prev => ({ 
-          ...prev, 
+        setDb(prev => ({
+          ...prev,
           purchaseRequests: (prRes?.status === 200 || prRes?.status === 'success') && Array.isArray(prRes.data) ? deduplicateById(prRes.data) : prev.purchaseRequests,
           projects: (projRes?.status === 200 || projRes?.status === 'success') && Array.isArray(projRes.data) ? deduplicateById(projRes.data) : prev.projects,
           items: (itemsRes?.status === 200 || itemsRes?.status === 'success') && Array.isArray(itemsRes.data) ? deduplicateById(itemsRes.data) : prev.items
@@ -223,8 +223,8 @@ export default function DashboardPage() {
           outwardsApi.getAll(),
           stockApi.getAll().catch(() => null)
         ]);
-        setDb(prev => ({ 
-          ...prev, 
+        setDb(prev => ({
+          ...prev,
           storeOutwards: (outRes?.status === 200 || outRes?.status === 'success') && Array.isArray(outRes.data) ? deduplicateById(outRes.data) : prev.storeOutwards,
           stock: (stockRes?.status === 200 || stockRes?.status === 'success') && Array.isArray(stockRes.data) ? deduplicateById(stockRes.data) : prev.stock
         }));
@@ -309,7 +309,7 @@ export default function DashboardPage() {
                 fetchTabData(activeTab);
               }
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       } catch (e) {
         console.error(e);
@@ -387,7 +387,7 @@ export default function DashboardPage() {
 
       addAuditLog(currentUser.id, 'Create PR', '', `Created PR ${prNum}`, 'PR', finalPr.id);
       sendNotification('Approver', 'New PR Submitted', `PR ${prNum} submitted by ${currentUser.name}`);
-      notificationsApi.create({ recipientRole: 'Approver', title: 'New PR Submitted', message: `PR ${prNum} submitted by ${currentUser.name}`, readBy: [], read: false, timestamp: new Date().toISOString(), id: '' } as any).catch(() => {});
+      notificationsApi.create({ recipientRole: 'Approver', title: 'New PR Submitted', message: `PR ${prNum} submitted by ${currentUser.name}`, readBy: [], read: false, timestamp: new Date().toISOString(), id: '' } as any).catch(() => { });
 
       setPrForm({ projectId: '', requiredDate: new Date().toISOString().split('T')[0], priority: 'Medium', items: [], attachmentUrl: '' });
       setOpenModal(null);
@@ -433,16 +433,16 @@ export default function DashboardPage() {
       const tax = it.tax || 0;
       const lineTotal = (it.quantity * rate) * (1 + (tax / 100));
       total += lineTotal;
-      return { 
-        itemId: it.itemId, 
-        itemName: it.itemName || 'Item', 
-        quantity: it.quantity, 
-        unit: it.unit || 'Pcs', 
-        rate, 
-        tax, 
-        discount: 0, 
-        amount: lineTotal, 
-        totalAmount: lineTotal 
+      return {
+        itemId: it.itemId,
+        itemName: it.itemName || 'Item',
+        quantity: it.quantity,
+        unit: it.unit || 'Pcs',
+        rate,
+        tax,
+        discount: 0,
+        amount: lineTotal,
+        totalAmount: lineTotal
       };
     });
 
@@ -464,6 +464,8 @@ export default function DashboardPage() {
       totalPOAmount: total,
       totalAmount: total,
       status: 'Approved' as const,
+      createdBy: currentUser.id,
+      buyerId: currentUser.id
     };
 
     try {
@@ -474,7 +476,7 @@ export default function DashboardPage() {
         id: createdItem?.id || createdItem?._id || `po-${Date.now()}`
       };
 
-      await purchaseRequestsApi.update(selectedPr.id, { status: 'PO Created' }).catch(() => {});
+      await purchaseRequestsApi.update(selectedPr.id, { status: 'PO Created' }).catch(() => { });
       setDb(prev => ({
         ...prev,
         purchaseOrders: [finalPo, ...prev.purchaseOrders],
@@ -567,7 +569,7 @@ export default function DashboardPage() {
 
     const itemObj = db.items.find(i => i.id === outwardItemInput.itemId) || (outwardItemInput as any)._item;
     const targetProject = db.projects.find(p => p.id === outwardForm.projectId) || (outwardForm as any)._project;
-    
+
     let currentStockQty = 0;
     try {
       const stockRes = await stockApi.getAll({ projectId: outwardForm.projectId, itemId: outwardItemInput.itemId });
@@ -637,7 +639,8 @@ export default function DashboardPage() {
       creditPeriod: billForm.creditPeriod || 30,
       dueDate: dueDateObj.toISOString().split('T')[0],
       paidAmount: 0, outstandingAmount: billForm.billAmount,
-      paymentStatus: 'Upcoming', status: 'Submitted'
+      paymentStatus: 'Upcoming', status: 'Submitted',
+      createdBy: currentUser.id
     };
 
     try {

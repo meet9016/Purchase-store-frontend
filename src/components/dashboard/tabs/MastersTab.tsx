@@ -20,7 +20,7 @@ interface MastersTabProps {
   roles?: RolePermission[];
   currentUser?: any;
   rolePermissions?: any[];
-  
+
   onAddUser: (user: Omit<User, 'id'>) => void;
   onEditUser?: (id: string, user: Partial<User>) => void;
   onDeleteUser?: (id: string) => void;
@@ -272,14 +272,14 @@ export function MastersTab({
   const availableRolesList = (roles && roles.length > 0)
     ? roles
     : DEFAULT_SYSTEM_ROLES.map(r => ({
-        id: r.role,
-        role: r.role,
-        name: r.role,
-        description: r.description,
-        isSystemRole: true,
-        status: 'Active' as const,
-        modules: []
-      }));
+      id: r.role,
+      role: r.role,
+      name: r.role,
+      description: r.description,
+      isSystemRole: true,
+      status: 'Active' as const,
+      modules: []
+    }));
 
   return (
     <div className="space-y-6">
@@ -299,11 +299,10 @@ export function MastersTab({
               key={tab.id}
               type="button"
               onClick={() => setSubTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                subTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-xs font-bold'
-                  : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80 hover:text-slate-900'
-              }`}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${subTab === tab.id
+                ? 'bg-blue-600 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80 hover:text-slate-900'
+                }`}
             >
               {tab.icon}
               <span>{tab.label}</span>
@@ -421,9 +420,8 @@ export function MastersTab({
                 </td>
                 <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{unt.name}</td>
                 <td className="px-4 py-3 text-xs">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[11px] ${
-                    unt.status === 'Inactive' ? 'bg-slate-100 text-slate-600 border border-slate-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
-                  }`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[11px] ${unt.status === 'Inactive' ? 'bg-slate-100 text-slate-600 border border-slate-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
+                    }`}>
                     {unt.status || 'Active'}
                   </span>
                 </td>
@@ -503,11 +501,10 @@ export function MastersTab({
               <td className="px-4 py-3 font-semibold text-slate-900 text-xs">{prj.name}</td>
               <td className="px-4 py-3 text-slate-800 text-xs font-medium">{prj.location}</td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                  prj.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' :
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${prj.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' :
                   prj.status === 'Completed' ? 'bg-blue-50 text-blue-700 border border-blue-200/70' :
-                  'bg-amber-50 text-amber-700 border border-amber-200/70'
-                }`}>
+                    'bg-amber-50 text-amber-700 border border-amber-200/70'
+                  }`}>
                   {prj.status}
                 </span>
               </td>
@@ -554,9 +551,8 @@ export function MastersTab({
               </td>
               <td className="px-4 py-3 text-slate-800 text-xs font-medium">{usr.department || '-'}</td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                  usr.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
-                }`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${usr.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
+                  }`}>
                   {usr.active ? 'Active' : 'Inactive'}
                 </span>
               </td>
@@ -618,9 +614,8 @@ export function MastersTab({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                    r.status !== 'Inactive' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
-                  }`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${r.status !== 'Inactive' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
+                    }`}>
                     {r.status || 'Active'}
                   </span>
                 </td>
@@ -688,14 +683,14 @@ export function MastersTab({
                 <Input
                   label="Item Code"
                   value={itemForm.itemCode}
-                  onChange={e => { setItemForm({...itemForm, itemCode: e.target.value}); clearError('itemCode'); }}
+                  onChange={e => { setItemForm({ ...itemForm, itemCode: e.target.value }); clearError('itemCode'); }}
                   error={formErrors.itemCode}
                   required
                 />
                 <Input
                   label="Item Name"
                   value={itemForm.name}
-                  onChange={e => { setItemForm({...itemForm, name: e.target.value}); clearError('name'); }}
+                  onChange={e => { setItemForm({ ...itemForm, name: e.target.value }); clearError('name'); }}
                   error={formErrors.name}
                   required
                 />
@@ -703,7 +698,7 @@ export function MastersTab({
                   label="Category"
                   options={categories.map(c => ({ value: c.id, label: c.name }))}
                   value={itemForm.categoryId}
-                  onChange={e => { setItemForm({...itemForm, categoryId: e.target.value}); clearError('categoryId'); }}
+                  onChange={e => { setItemForm({ ...itemForm, categoryId: e.target.value }); clearError('categoryId'); }}
                   error={formErrors.categoryId}
                   required
                 />
@@ -713,27 +708,27 @@ export function MastersTab({
                     (units && units.length > 0
                       ? units.filter(u => u.status !== 'Inactive').map(u => ({ value: u.code, label: `${u.code} - ${u.name}` }))
                       : [
-                          { value: 'Pcs', label: 'Pcs - Pieces' },
-                          { value: 'MT', label: 'MT - Metric Ton' },
-                          { value: 'Bag', label: 'Bag - Bags' },
-                          { value: 'Kg', label: 'Kg - Kilograms' },
-                          { value: 'Mtrs', label: 'Mtrs - Meters' },
-                          { value: 'Cu.M', label: 'Cu.M - Cubic Meters' },
-                          { value: 'Ltr', label: 'Ltr - Liters' },
-                          { value: 'Box', label: 'Box - Boxes' },
-                          { value: 'Nos', label: 'Nos - Numbers' },
-                          { value: 'SqFt', label: 'SqFt - Square Feet' },
-                          { value: 'Bundle', label: 'Bundle - Bundles' },
-                        ])
+                        { value: 'Pcs', label: 'Pcs - Pieces' },
+                        { value: 'MT', label: 'MT - Metric Ton' },
+                        { value: 'Bag', label: 'Bag - Bags' },
+                        { value: 'Kg', label: 'Kg - Kilograms' },
+                        { value: 'Mtrs', label: 'Mtrs - Meters' },
+                        { value: 'Cu.M', label: 'Cu.M - Cubic Meters' },
+                        { value: 'Ltr', label: 'Ltr - Liters' },
+                        { value: 'Box', label: 'Box - Boxes' },
+                        { value: 'Nos', label: 'Nos - Numbers' },
+                        { value: 'SqFt', label: 'SqFt - Square Feet' },
+                        { value: 'Bundle', label: 'Bundle - Bundles' },
+                      ])
                   }
                   value={itemForm.unit}
-                  onChange={e => { setItemForm({...itemForm, unit: e.target.value}); clearError('unit'); }}
+                  onChange={e => { setItemForm({ ...itemForm, unit: e.target.value }); clearError('unit'); }}
                   error={formErrors.unit}
                   required
                 />
                 <div className="grid grid-cols-2 gap-3">
-                  <Input label="Minimum Stock" type="number" value={itemForm.minStock} onChange={e => setItemForm({...itemForm, minStock: Number(e.target.value)})} />
-                  <Input label="Reorder Level" type="number" value={itemForm.reorderLevel} onChange={e => setItemForm({...itemForm, reorderLevel: Number(e.target.value)})} />
+                  <Input label="Minimum Stock" type="number" value={itemForm.minStock} onChange={e => setItemForm({ ...itemForm, minStock: Number(e.target.value) })} />
+                  <Input label="Reorder Level" type="number" value={itemForm.reorderLevel} onChange={e => setItemForm({ ...itemForm, reorderLevel: Number(e.target.value) })} />
                 </div>
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
@@ -770,7 +765,7 @@ export function MastersTab({
                 <Input
                   label="Unit Code / Symbol (e.g. MT, Pcs, Bag, Kg)"
                   value={unitForm.code}
-                  onChange={e => { setUnitForm({...unitForm, code: e.target.value}); clearError('code'); }}
+                  onChange={e => { setUnitForm({ ...unitForm, code: e.target.value }); clearError('code'); }}
                   placeholder="e.g. Pcs, MT, Bag, Kg, Mtrs, Cu.M"
                   error={formErrors.code}
                   required
@@ -778,7 +773,7 @@ export function MastersTab({
                 <Input
                   label="Unit Full Name"
                   value={unitForm.name}
-                  onChange={e => { setUnitForm({...unitForm, name: e.target.value}); clearError('name'); }}
+                  onChange={e => { setUnitForm({ ...unitForm, name: e.target.value }); clearError('name'); }}
                   placeholder="e.g. Pieces, Metric Ton, Bags, Kilograms"
                   error={formErrors.name}
                   required
@@ -790,7 +785,7 @@ export function MastersTab({
                     { value: 'Inactive', label: 'Inactive' }
                   ]}
                   value={unitForm.status}
-                  onChange={e => setUnitForm({...unitForm, status: e.target.value as any})}
+                  onChange={e => setUnitForm({ ...unitForm, status: e.target.value as any })}
                 />
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
@@ -805,7 +800,7 @@ export function MastersTab({
                 const errors: Record<string, string> = {};
                 if (!vendorForm.name?.trim()) errors.name = 'Vendor name is required';
                 if (!vendorForm.contactPerson?.trim()) errors.contactPerson = 'Contact person is required';
-                
+
                 if (!vendorForm.phone?.trim()) {
                   errors.phone = 'Phone number is required';
                 } else if (!isValidPhone(vendorForm.phone)) {
@@ -854,14 +849,18 @@ export function MastersTab({
                 <Input
                   label="Vendor Name"
                   value={vendorForm.name}
-                  onChange={e => { setVendorForm({...vendorForm, name: e.target.value}); clearError('name'); }}
+                  onChange={e => { setVendorForm({ ...vendorForm, name: e.target.value }); clearError('name'); }}
                   error={formErrors.name}
                   required
                 />
                 <Input
                   label="Contact Person"
                   value={vendorForm.contactPerson}
-                  onChange={e => { setVendorForm({...vendorForm, contactPerson: e.target.value}); clearError('contactPerson'); }}
+                  onChange={e => {
+                    const val = e.target.value.replace(/[0-9]/g, '');
+                    setVendorForm({ ...vendorForm, contactPerson: val });
+                    clearError('contactPerson');
+                  }}
                   error={formErrors.contactPerson}
                   required
                 />
@@ -870,7 +869,7 @@ export function MastersTab({
                     label="Phone Number"
                     value={vendorForm.phone}
                     maxLength={10}
-                    onChange={e => { setVendorForm({...vendorForm, phone: formatPhone(e.target.value)}); clearError('phone'); }}
+                    onChange={e => { setVendorForm({ ...vendorForm, phone: formatPhone(e.target.value) }); clearError('phone'); }}
                     placeholder="10-digit mobile"
                     error={formErrors.phone}
                     required
@@ -879,7 +878,7 @@ export function MastersTab({
                     label="Email Address"
                     type="email"
                     value={vendorForm.email}
-                    onChange={e => { setVendorForm({...vendorForm, email: e.target.value}); clearError('email'); }}
+                    onChange={e => { setVendorForm({ ...vendorForm, email: e.target.value }); clearError('email'); }}
                     placeholder="vendor@company.com"
                     error={formErrors.email}
                     required
@@ -890,7 +889,7 @@ export function MastersTab({
                     label="GST Number"
                     value={vendorForm.gstNo}
                     maxLength={15}
-                    onChange={e => { setVendorForm({...vendorForm, gstNo: formatGST(e.target.value)}); clearError('gstNo'); }}
+                    onChange={e => { setVendorForm({ ...vendorForm, gstNo: formatGST(e.target.value) }); clearError('gstNo'); }}
                     placeholder="15-digit GSTIN"
                     error={formErrors.gstNo}
                     required
@@ -899,14 +898,14 @@ export function MastersTab({
                     label="PAN Number (Optional)"
                     value={vendorForm.panNo}
                     maxLength={10}
-                    onChange={e => { setVendorForm({...vendorForm, panNo: formatPAN(e.target.value)}); clearError('panNo'); }}
+                    onChange={e => { setVendorForm({ ...vendorForm, panNo: formatPAN(e.target.value) }); clearError('panNo'); }}
                     placeholder="10-digit PAN"
                     error={formErrors.panNo}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Input label="Credit Period (Days)" type="number" value={vendorForm.creditPeriod} onChange={e => setVendorForm({...vendorForm, creditPeriod: Number(e.target.value)})} />
-                  <Input label="Address" value={vendorForm.address} onChange={e => setVendorForm({...vendorForm, address: e.target.value})} placeholder="City, State" />
+                  <Input label="Credit Period (Days)" type="number" value={vendorForm.creditPeriod} onChange={e => setVendorForm({ ...vendorForm, creditPeriod: Number(e.target.value) })} />
+                  <Input label="Address" value={vendorForm.address} onChange={e => setVendorForm({ ...vendorForm, address: e.target.value })} placeholder="City, State" />
                 </div>
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
@@ -937,14 +936,14 @@ export function MastersTab({
                 <Input
                   label="Project Name"
                   value={projectForm.name}
-                  onChange={e => { setProjectForm({...projectForm, name: e.target.value}); clearError('name'); }}
+                  onChange={e => { setProjectForm({ ...projectForm, name: e.target.value }); clearError('name'); }}
                   error={formErrors.name}
                   required
                 />
                 <Input
                   label="Location"
                   value={projectForm.location}
-                  onChange={e => { setProjectForm({...projectForm, location: e.target.value}); clearError('location'); }}
+                  onChange={e => { setProjectForm({ ...projectForm, location: e.target.value }); clearError('location'); }}
                   error={formErrors.location}
                   required
                 />
@@ -956,7 +955,7 @@ export function MastersTab({
                     { value: 'On Hold', label: 'On Hold' }
                   ]}
                   value={projectForm.status}
-                  onChange={e => setProjectForm({...projectForm, status: e.target.value as any})}
+                  onChange={e => setProjectForm({ ...projectForm, status: e.target.value as any })}
                 />
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
@@ -970,7 +969,7 @@ export function MastersTab({
                 e.preventDefault();
                 const errors: Record<string, string> = {};
                 if (!userForm.name?.trim()) errors.name = 'Full name is required';
-                
+
                 if (!userForm.email?.trim()) {
                   errors.email = 'Email address is required';
                 } else if (!isValidEmail(userForm.email)) {
@@ -994,7 +993,7 @@ export function MastersTab({
                 <Input
                   label="Full Name"
                   value={userForm.name}
-                  onChange={e => { setUserForm({...userForm, name: e.target.value}); clearError('name'); }}
+                  onChange={e => { setUserForm({ ...userForm, name: e.target.value }); clearError('name'); }}
                   error={formErrors.name}
                   required
                 />
@@ -1002,7 +1001,7 @@ export function MastersTab({
                   label="Email Address"
                   type="email"
                   value={userForm.email}
-                  onChange={e => { setUserForm({...userForm, email: e.target.value}); clearError('email'); }}
+                  onChange={e => { setUserForm({ ...userForm, email: e.target.value }); clearError('email'); }}
                   placeholder="user@company.com"
                   error={formErrors.email}
                   required
@@ -1011,7 +1010,7 @@ export function MastersTab({
                   label={editingId ? "Reset Password (Optional)" : "Password (Default: 123456)"}
                   type="password"
                   value={userForm.password}
-                  onChange={e => setUserForm({...userForm, password: e.target.value})}
+                  onChange={e => setUserForm({ ...userForm, password: e.target.value })}
                   placeholder={editingId ? "Leave blank to keep existing, or enter new password" : "Enter account password"}
                 />
                 <Select
@@ -1021,12 +1020,12 @@ export function MastersTab({
                     label: `${r.name || r.role}${r.description ? ` - ${r.description.slice(0, 35)}${r.description.length > 35 ? '...' : ''}` : ''}`
                   }))}
                   value={userForm.role}
-                  onChange={e => setUserForm({...userForm, role: e.target.value})}
+                  onChange={e => setUserForm({ ...userForm, role: e.target.value })}
                 />
                 <Input
                   label="Department"
                   value={userForm.department}
-                  onChange={e => { setUserForm({...userForm, department: e.target.value}); clearError('department'); }}
+                  onChange={e => { setUserForm({ ...userForm, department: e.target.value }); clearError('department'); }}
                   error={formErrors.department}
                   required
                 />
@@ -1081,7 +1080,7 @@ export function MastersTab({
                 <Input
                   label="Display Role Name"
                   value={roleForm.name}
-                  onChange={e => { setRoleForm({...roleForm, name: e.target.value}); clearError('name'); }}
+                  onChange={e => { setRoleForm({ ...roleForm, name: e.target.value }); clearError('name'); }}
                   placeholder="e.g. Quality Inspector"
                   error={formErrors.name}
                   required
@@ -1093,7 +1092,7 @@ export function MastersTab({
                     { value: 'Inactive', label: 'Inactive' }
                   ]}
                   value={roleForm.status}
-                  onChange={e => setRoleForm({...roleForm, status: e.target.value as any})}
+                  onChange={e => setRoleForm({ ...roleForm, status: e.target.value as any })}
                 />
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
@@ -1123,14 +1122,14 @@ export function MastersTab({
                 <Input
                   label="Category Name"
                   value={categoryForm.name}
-                  onChange={e => { setCategoryForm({...categoryForm, name: e.target.value}); clearError('name'); }}
+                  onChange={e => { setCategoryForm({ ...categoryForm, name: e.target.value }); clearError('name'); }}
                   error={formErrors.name}
                   required
                 />
                 <Input
                   label="Description"
                   value={categoryForm.description}
-                  onChange={e => setCategoryForm({...categoryForm, description: e.target.value})}
+                  onChange={e => setCategoryForm({ ...categoryForm, description: e.target.value })}
                 />
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
