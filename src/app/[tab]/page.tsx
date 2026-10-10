@@ -347,13 +347,26 @@ export default function DashboardPage() {
     router.push('/login');
   };
 
+  const getNextDocNumber = (prefix: string, list: any[], key: string) => {
+    const currentYear = new Date().getFullYear();
+    const existingNums = (list || [])
+      .map(item => {
+        const val = item?.[key] || '';
+        const match = val.match(new RegExp(`${prefix}-\\d+-(\\d+)`));
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(n => !isNaN(n) && n > 0);
+    const nextSeq = existingNums.length > 0 ? Math.max(...existingNums, 100) + 1 : (list?.length || 0) + 101;
+    return `${prefix}-${currentYear}-${String(nextSeq).padStart(5, '0')}`;
+  };
+
   // ─── PURCHASE REQUEST HANDLERS ─────────────────────────────────────────────
   const handleCreatePR = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!db || !currentUser) return;
     if (prForm.items.length === 0) { toast.error('Please add at least one line item'); return; }
 
-    const prNum = `PR-${new Date().getFullYear()}-${String(db.purchaseRequests.length + 101).padStart(5, '0')}`;
+    const prNum = getNextDocNumber('PR', db.purchaseRequests, 'prNumber');
     const targetProject = db.projects.find(p => p.id === prForm.projectId);
     const itemsWithNames = prForm.items.map((it: any) => {
       const dbIt = db.items.find(i => i.id === it.itemId);
@@ -379,19 +392,20 @@ export default function DashboardPage() {
       const createdItem = (res?.data || res) as any;
       const finalPr: PurchaseRequest = {
         ...newPrPayload,
+        prNumber: createdItem?.prNumber || prNum,
         id: createdItem?.id || createdItem?._id || `pr-${Date.now()}`
       };
 
       setDb(prev => ({ ...prev, purchaseRequests: [finalPr, ...prev.purchaseRequests] }));
       await fetchTabData('pr');
 
-      addAuditLog(currentUser.id, 'Create PR', '', `Created PR ${prNum}`, 'PR', finalPr.id);
-      sendNotification('Approver', 'New PR Submitted', `PR ${prNum} submitted by ${currentUser.name}`);
-      notificationsApi.create({ recipientRole: 'Approver', title: 'New PR Submitted', message: `PR ${prNum} submitted by ${currentUser.name}`, readBy: [], read: false, timestamp: new Date().toISOString(), id: '' } as any).catch(() => { });
+      addAuditLog(currentUser.id, 'Create PR', '', `Created PR ${finalPr.prNumber}`, 'PR', finalPr.id);
+      sendNotification('Approver', 'New PR Submitted', `PR ${finalPr.prNumber} submitted by ${currentUser.name}`);
+      notificationsApi.create({ recipientRole: 'Approver', title: 'New PR Submitted', message: `PR ${finalPr.prNumber} submitted by ${currentUser.name}`, readBy: [], read: false, timestamp: new Date().toISOString(), id: '' } as any).catch(() => { });
 
       setPrForm({ projectId: '', requiredDate: new Date().toISOString().split('T')[0], priority: 'Medium', items: [], attachmentUrl: '' });
       setOpenModal(null);
-      toast.success(`Purchase Request ${prNum} created successfully!`);
+      toast.success(`Purchase Request ${finalPr.prNumber} created successfully!`);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to create Purchase Request via API. Data not saved.');
     }
@@ -426,7 +440,7 @@ export default function DashboardPage() {
     const selectedVendor = db.vendors.find(v => v.id === poForm.vendorId) || (poForm as any)._vendor;
     if (!selectedPr || !selectedVendor) { toast.error('Select valid PR & Vendor'); return; }
 
-    const poNum = `PO-${new Date().getFullYear()}-${String(db.purchaseOrders.length + 101).padStart(5, '0')}`;
+    const poNum = getNextDocNumber('PO', db.purchaseOrders, 'poNumber');
     let total = 0;
     const poItems = poForm.items.map((it: any) => {
       const rate = it.rate || 0;
@@ -473,6 +487,7 @@ export default function DashboardPage() {
       const createdItem = (res?.data || res) as any;
       const finalPo: PurchaseOrder = {
         ...newPoPayload,
+        poNumber: createdItem?.poNumber || poNum,
         id: createdItem?.id || createdItem?._id || `po-${Date.now()}`
       };
 
@@ -484,12 +499,12 @@ export default function DashboardPage() {
       }));
       await fetchTabData('po');
 
-      addAuditLog(currentUser.id, 'Create PO', '', `Generated PO ${poNum}`, 'PO', finalPo.id);
-      sendNotification('Store', 'New Purchase Order', `PO ${poNum} issued for ${selectedVendor.name}`);
+      addAuditLog(currentUser.id, 'Create PO', '', `Generated PO ${finalPo.poNumber}`, 'PO', finalPo.id);
+      sendNotification('Store', 'New Purchase Order', `PO ${finalPo.poNumber} issued for ${selectedVendor.name}`);
 
       setPoForm({ prId: '', vendorId: '', creditPeriod: 30, expectedDeliveryDate: '', deliveryLocation: '', termsConditions: '', remarks: '', items: [] });
       setOpenModal(null);
-      toast.success(`Purchase Order ${poNum} issued successfully!`);
+      toast.success(`Purchase Order ${finalPo.poNumber} issued successfully!`);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to create Purchase Order via API. Data not saved.');
     }
@@ -520,7 +535,7 @@ export default function DashboardPage() {
     const selectedPo = db.purchaseOrders.find(p => p.id === grnForm.poId) || (grnForm as any)._po;
     if (!selectedPo) { toast.error('Please select a valid Purchase Order'); return; }
 
-    const grnNum = `GRN-${new Date().getFullYear()}-${String(db.grns.length + 101).padStart(5, '0')}`;
+    const grnNum = getNextDocNumber('GRN', db.grns, 'grnNumber');
     const grnItems = selectedPo.items.map(it => ({
       itemId: it.itemId, itemName: it.itemName, orderedQty: it.quantity, receivedQty: it.quantity,
       shortQty: 0, excessQty: 0, damagedQty: 0, unit: it.unit || 'Pcs', batchNumber: `BATCH-${Date.now().toString().slice(-4)}`
@@ -544,18 +559,19 @@ export default function DashboardPage() {
       const createdItem = (res?.data || res) as any;
       const finalGrn: GRN = {
         ...newGrnPayload,
+        grnNumber: createdItem?.grnNumber || grnNum,
         id: createdItem?.id || createdItem?._id || `grn-${Date.now()}`
       };
 
       await fetchTabData('grn');
       await fetchTabData('stock');
 
-      addAuditLog(currentUser.id, 'Create GRN', '', `Received GRN ${grnNum} for PO ${selectedPo.poNumber}`, 'GRN', finalGrn.id);
-      sendNotification('Accounts', 'GRN Inward Verified', `GRN ${grnNum} received for ${selectedPo.vendorName}`);
+      addAuditLog(currentUser.id, 'Create GRN', '', `Received GRN ${finalGrn.grnNumber} for PO ${selectedPo.poNumber}`, 'GRN', finalGrn.id);
+      sendNotification('Accounts', 'GRN Inward Verified', `GRN ${finalGrn.grnNumber} received for ${selectedPo.vendorName}`);
 
       setGrnForm({ poId: '', vehicleNumber: '', challanNumber: '', vendorInvoiceNumber: '', remarks: '', items: [] });
       setOpenModal(null);
-      toast.success(`GRN ${grnNum} registered and stock updated via API!`);
+      toast.success(`GRN ${finalGrn.grnNumber} registered and stock updated via API!`);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to register GRN via API. Data not saved.');
     }
@@ -586,7 +602,7 @@ export default function DashboardPage() {
       return;
     }
 
-    const outNum = `OUT-${new Date().getFullYear()}-${String(db.storeOutwards.length + 101).padStart(5, '0')}`;
+    const outNum = getNextDocNumber('OUT', db.storeOutwards, 'outwardNumber');
     const issuedItem = { itemId: outwardItemInput.itemId, itemName: itemObj?.name || 'Item', quantity: outwardItemInput.quantity, unit: itemObj?.unit || 'Pcs' };
 
     const newOutwardPayload = {
@@ -602,18 +618,20 @@ export default function DashboardPage() {
       const createdItem = (res?.data || res) as any;
       const finalOut: StoreOutward = {
         ...newOutwardPayload,
+        outwardNumber: createdItem?.outwardNumber || outNum,
+        issueNumber: createdItem?.issueNumber || outNum,
         id: createdItem?.id || createdItem?._id || `out-${Date.now()}`
       };
 
       await fetchTabData('outward');
       await fetchTabData('stock');
 
-      addAuditLog(currentUser.id, 'Store Outward', '', `Issued ${outwardItemInput.quantity} ${itemObj?.unit} via ${outNum}`, 'Outward', finalOut.id);
+      addAuditLog(currentUser.id, 'Store Outward', '', `Issued ${outwardItemInput.quantity} ${itemObj?.unit} via ${finalOut.outwardNumber}`, 'Outward', finalOut.id);
 
       setOutwardForm({ projectId: '', issuedTo: '', department: '', purpose: '', remarks: '', items: [] });
       setOutwardItemInput({ itemId: '', quantity: 1 });
       setOpenModal(null);
-      toast.success(`Store Outward Voucher ${outNum} generated via API!`);
+      toast.success(`Store Outward Voucher ${finalOut.outwardNumber} generated via API!`);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to issue Store Outward via API. Data not saved.');
     }
@@ -626,7 +644,7 @@ export default function DashboardPage() {
     const selectedPo = db.purchaseOrders.find(p => p.id === billForm.poId) || (billForm as any)._po;
     if (!selectedPo) { toast.error('Select a valid Purchase Order'); return; }
 
-    const billNum = `BILL-${new Date().getFullYear()}-${String(db.vendorBills.length + 101).padStart(5, '0')}`;
+    const billNum = getNextDocNumber('BILL', db.vendorBills, 'billNumber');
     const billDateObj = new Date(billForm.billDate || Date.now());
     const dueDateObj = new Date(billDateObj.getTime() + (billForm.creditPeriod || 30) * 86400000);
 
@@ -648,17 +666,18 @@ export default function DashboardPage() {
       const createdItem = (res?.data || res) as any;
       const finalBill: VendorBill = {
         ...newBillPayload,
+        billNumber: createdItem?.billNumber || billNum,
         id: createdItem?.id || createdItem?._id || `bill-${Date.now()}`
       };
 
       await fetchTabData('bills');
 
-      addAuditLog(currentUser.id, 'Create Bill', '', `Registered Bill ${billNum}`, 'Bill', finalBill.id);
-      sendNotification('Accounts', 'New Vendor Invoice', `Invoice ${finalBill.vendorInvoiceNumber} registered for ${finalBill.vendorName}`);
+      addAuditLog(currentUser.id, 'Register Bill', '', `Registered Bill ${finalBill.billNumber} for PO ${selectedPo.poNumber}`, 'Finance', finalBill.id);
+      sendNotification('Accounts', 'New Vendor Invoice', `Bill ${finalBill.billNumber} registered for ${selectedPo.vendorName}`);
 
       setBillForm({ poId: '', vendorInvoiceNumber: '', billDate: new Date().toISOString().split('T')[0], billAmount: 0, creditPeriod: 30, dueDate: '' });
       setOpenModal(null);
-      toast.success(`Vendor Bill ${billNum} registered via API!`);
+      toast.success(`Vendor Bill ${finalBill.billNumber} registered successfully!`);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to register Vendor Bill via API. Data not saved.');
     }

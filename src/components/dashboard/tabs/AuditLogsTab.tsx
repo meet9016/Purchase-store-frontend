@@ -42,7 +42,7 @@ export function AuditLogsTab({ auditLogs }: AuditLogsTabProps) {
               </span>
             </td>
             <td className="px-4 py-3 text-xs font-medium text-slate-800">{log.module}</td>
-            <td className="px-4 py-3 text-xs font-medium text-slate-800">{log.newValue || log.oldValue || '-'}</td>
+            <td className="px-4 py-3 text-xs font-medium text-slate-800">{log.description || log.newValue || log.oldValue || '-'}</td>
           </tr>
         )}
       />

@@ -285,6 +285,7 @@ export interface AuditLog {
   action: string;
   oldValue?: string;
   newValue?: string;
+  description?: string;
   module: string;
   entityType?: string;
   details?: string;
