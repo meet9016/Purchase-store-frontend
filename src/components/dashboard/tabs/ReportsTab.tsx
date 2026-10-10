@@ -22,7 +22,78 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
   const [reportType, setReportType] = useState<string>('pr');
 
   const exportCSV = () => {
-    toast.success(`Exporting ${reportType.toUpperCase()} Report to CSV file...`);
+    let headers: string[] = [];
+    let rows: (string | number)[][] = [];
+    const filename = `${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`;
+
+    if (reportType === 'pr') {
+      headers = ['PR Number', 'Project', 'Requester', 'Required Date', 'Items Count', 'Priority', 'Status'];
+      rows = purchaseRequests.map(pr => [
+        pr.prNumber,
+        pr.projectName,
+        pr.requesterName,
+        pr.requiredDate,
+        pr.items?.length || 0,
+        pr.priority,
+        pr.status
+      ]);
+    } else if (reportType === 'po') {
+      headers = ['PO Number', 'Vendor', 'Project', 'PO Date', 'Total Value', 'Status'];
+      rows = purchaseOrders.map(po => [
+        po.poNumber,
+        po.vendorName,
+        po.projectName,
+        po.poDate,
+        po.totalPOAmount || po.totalAmount || 0,
+        po.status
+      ]);
+    } else if (reportType === 'stock') {
+      headers = ['Item Name', 'Code', 'Project', 'Stock Qty', 'Unit', 'Reorder Threshold'];
+      rows = stocks.map(s => [
+        s.itemName,
+        s.itemCode || '',
+        s.projectName,
+        s.quantity,
+        s.unit,
+        s.reorderLevel || 10
+      ]);
+    } else if (reportType === 'bills') {
+      headers = ['Bill Number', 'Vendor Invoice Number', 'Vendor Name', 'Bill Amount', 'Paid Amount', 'Status'];
+      rows = bills.map(b => [
+        b.billNumber,
+        b.vendorInvoiceNumber || b.billNumber,
+        b.vendorName,
+        b.billAmount,
+        b.paidAmount || 0,
+        b.status || b.paymentStatus
+      ]);
+    } else if (reportType === 'payments') {
+      headers = ['Voucher Number', 'Bill Number', 'Vendor', 'Amount Paid', 'Mode', 'Transaction / UTR'];
+      rows = payments.map(p => [
+        p.paymentNumber || p.paymentId || p.id,
+        p.billNumber,
+        p.vendorName,
+        p.paymentAmount,
+        p.paymentMode,
+        p.transactionNumber || ''
+      ]);
+    }
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${String(val ?? '').replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filename} successfully!`);
   };
 
   const formatCurrency = (num: number) => {

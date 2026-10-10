@@ -150,6 +150,13 @@ export function Modals({
     }
   }, [openModal]);
 
+  const availableApprovedPRs = backendApprovedPRs.length > 0 ? backendApprovedPRs : purchaseRequests.filter(p => p.status === 'Approved');
+  const availableVendors = backendVendors.length > 0 ? backendVendors : vendors;
+  const availablePOs = backendPOs.length > 0 ? backendPOs : purchaseOrders;
+  const availableProjects = backendProjects.length > 0 ? backendProjects : projects;
+  const availableItems = backendItems.length > 0 ? backendItems : items;
+  const availableBills = backendBills.length > 0 ? backendBills : vendorBills;
+
   const clearError = (field: string) => {
     setErrors((prev) => ({ ...prev, [field]: '' }));
   };
@@ -350,10 +357,10 @@ export function Modals({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select
                   label="Select Approved Requisition"
-                  options={backendApprovedPRs.map(pr => ({ value: pr.id, label: `${pr.prNumber} - ${pr.projectName}` }))}
+                  options={availableApprovedPRs.map(pr => ({ value: pr.id, label: `${pr.prNumber} - ${pr.projectName}` }))}
                   value={poForm.prId}
                   onChange={e => {
-                    const selectedPr = backendApprovedPRs.find(pr => pr.id === e.target.value);
+                    const selectedPr = availableApprovedPRs.find(pr => pr.id === e.target.value);
                     if (selectedPr) {
                       const poItems = selectedPr.items.map(it => ({
                         itemId: it.itemId,
@@ -373,10 +380,10 @@ export function Modals({
                 />
                 <Select
                   label="Select Vendor"
-                  options={backendVendors.map(v => ({ value: v.id, label: v.name }))}
+                  options={availableVendors.map(v => ({ value: v.id, label: v.name }))}
                   value={poForm.vendorId}
                   onChange={e => {
-                    const selectedVendor = backendVendors.find(v => v.id === e.target.value);
+                    const selectedVendor = availableVendors.find(v => v.id === e.target.value);
                     setPoForm({ ...poForm, vendorId: e.target.value, _vendor: selectedVendor });
                     clearError('vendorId');
                   }}
@@ -452,10 +459,10 @@ export function Modals({
             >
               <Select
                 label="Select Purchase Order"
-                options={backendPOs.map(p => ({ value: p.id, label: `${p.poNumber} - ${p.vendorName} (${p.projectName})` }))}
+                options={availablePOs.map(p => ({ value: p.id, label: `${p.poNumber} - ${p.vendorName} (${p.projectName})` }))}
                 value={grnForm.poId}
                 onChange={e => {
-                  const selectedPO = backendPOs.find(p => p.id === e.target.value);
+                  const selectedPO = availablePOs.find(p => p.id === e.target.value);
                   if (selectedPO) {
                     const grnItems = selectedPO.items.map(it => ({
                       itemId: it.itemId,
@@ -552,10 +559,10 @@ export function Modals({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Select
                   label="Project Site"
-                  options={backendProjects.map(p => ({ value: p.id, label: `${p.name} (${p.location})` }))}
+                  options={availableProjects.map(p => ({ value: p.id, label: `${p.name} (${p.location})` }))}
                   value={outwardForm.projectId}
                   onChange={e => {
-                    const selectedProject = backendProjects.find(p => p.id === e.target.value);
+                    const selectedProject = availableProjects.find(p => p.id === e.target.value);
                     setOutwardForm({ ...outwardForm, projectId: e.target.value, _project: selectedProject } as any);
                     clearError('projectId');
                   }}
@@ -597,10 +604,10 @@ export function Modals({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Select
                     label="Item Name"
-                    options={backendItems.map(i => ({ value: i.id, label: i.name }))}
+                    options={availableItems.map(i => ({ value: i.id, label: i.name }))}
                     value={outwardItemInput.itemId}
                     onChange={e => {
-                      const selectedItem = backendItems.find(i => i.id === e.target.value);
+                      const selectedItem = availableItems.find(i => i.id === e.target.value);
                       setOutwardItemInput({ ...outwardItemInput, itemId: e.target.value, _item: selectedItem } as any);
                       clearError('item');
                     }}
@@ -661,10 +668,10 @@ export function Modals({
             >
               <Select
                 label="Select Purchase Order"
-                options={backendPOs.map(p => ({ value: p.id, label: `${p.poNumber} - (${p.vendorName})` }))}
+                options={availablePOs.map(p => ({ value: p.id, label: `${p.poNumber} - (${p.vendorName})` }))}
                 value={billForm?.poId || ''}
                 onChange={e => {
-                  const selPo = backendPOs.find(p => p.id === e.target.value);
+                  const selPo = availablePOs.find(p => p.id === e.target.value);
                   if (setBillForm) {
                     setBillForm({
                       ...billForm,
@@ -764,17 +771,17 @@ export function Modals({
             >
               <Select
                 label="Select Vendor Bill"
-                options={backendBills.filter(b => (b.outstandingAmount || b.billAmount) > 0).map(b => ({
+                options={availableBills.filter(b => (b.outstandingAmount !== undefined ? b.outstandingAmount : b.billAmount) > 0).map(b => ({
                   value: b.id,
-                  label: `${b.billNumber} (${b.vendorName}) - Due: ${formatCurrency(b.outstandingAmount || b.billAmount)}`
+                  label: `${b.billNumber} (${b.vendorName}) - Due: ${formatCurrency(b.outstandingAmount !== undefined ? b.outstandingAmount : b.billAmount)}`
                 }))}
                 value={paymentReqForm.billId}
                 onChange={e => {
-                  const sel = backendBills.find(b => b.id === e.target.value);
+                  const sel = availableBills.find(b => b.id === e.target.value);
                   setPaymentReqForm({
                     ...paymentReqForm,
                     billId: e.target.value,
-                    requestedAmount: sel?.outstandingAmount || sel?.billAmount || 0,
+                    requestedAmount: sel?.outstandingAmount !== undefined ? sel.outstandingAmount : (sel?.billAmount || 0),
                     _bill: sel
                   } as any);
                   clearError('billId');
@@ -844,17 +851,17 @@ export function Modals({
             >
               <Select
                 label="Select Verified Bill"
-                options={vendorBills.map(b => ({
+                options={availableBills.map(b => ({
                   value: b.id,
-                  label: `${b.billNumber} (${b.vendorName}) - Amount: ${formatCurrency(b.billAmount)}`
+                  label: `${b.billNumber} (${b.vendorName}) - Due: ${formatCurrency(b.outstandingAmount !== undefined ? b.outstandingAmount : b.billAmount)}`
                 }))}
                 value={paymentEntryForm.billId}
                 onChange={e => {
-                  const sel = vendorBills.find(b => b.id === e.target.value);
+                  const sel = availableBills.find(b => b.id === e.target.value);
                   setPaymentEntryForm({
                     ...paymentEntryForm,
                     billId: e.target.value,
-                    paymentAmount: sel?.outstandingAmount || sel?.billAmount || 0
+                    paymentAmount: sel?.outstandingAmount !== undefined ? sel.outstandingAmount : (sel?.billAmount || 0)
                   });
                   clearError('billId');
                   clearError('paymentAmount');

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { VendorBill, User } from '@/lib/storeData';
 import { Table } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Plus, Layers, CheckCircle2, X, Eye } from 'lucide-react';
 
 interface VendorBillsTabProps {
@@ -29,6 +30,14 @@ const statusBadge = (status: string) => {
 
 export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpenCreateBillModal, onUpdateBillStatus }: VendorBillsTabProps) {
   const [selectedBill, setSelectedBill] = useState<VendorBill | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant: 'primary' | 'success';
+    onConfirm: () => void;
+  } | null>(null);
   const formatCurrency = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 
   const isAccountsOrAdmin = currentUser?.role === 'Accounts' || currentUser?.role === 'Admin';
@@ -125,9 +134,14 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm("Are you sure you want to verify this Vendor Bill?")) {
-                        onUpdateBillStatus(bill.id, 'Verified');
-                      }
+                      setConfirmModal({
+                        isOpen: true,
+                        title: "Verify Vendor Bill",
+                        description: `Are you sure you want to verify Vendor Bill "${bill.billNumber || bill.id}"? Once verified, it will proceed to payment approval.`,
+                        confirmText: "Yes, Verify",
+                        variant: "success",
+                        onConfirm: () => onUpdateBillStatus(bill.id, 'Verified')
+                      });
                     }}
                     className="p-2 rounded-xl bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white border border-teal-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Verify Bill"
@@ -139,9 +153,14 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm("Are you sure you want to approve this bill for payment?")) {
-                        onUpdateBillStatus(bill.id, 'Approved for Payment');
-                      }
+                      setConfirmModal({
+                        isOpen: true,
+                        title: "Approve Bill for Payment",
+                        description: `Are you sure you want to approve Vendor Bill "${bill.billNumber || bill.id}" for payment?`,
+                        confirmText: "Yes, Approve",
+                        variant: "primary",
+                        onConfirm: () => onUpdateBillStatus(bill.id, 'Approved for Payment')
+                      });
                     }}
                     className="p-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-200/80 transition-all cursor-pointer shadow-2xs"
                     title="Approve for Payment"
@@ -193,12 +212,36 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
               <div className="flex space-x-2">
                 {isAccountsOrAdmin && selectedBill.status === 'Submitted' && (
                   <Button variant="success" size="sm" onClick={() => {
-                    if (window.confirm("Are you sure you want to verify this Vendor Bill?")) {
-                      onUpdateBillStatus(selectedBill.id, 'Verified'); 
-                      setSelectedBill(null); 
-                    }
+                    setConfirmModal({
+                      isOpen: true,
+                      title: "Verify Vendor Bill",
+                      description: `Are you sure you want to verify Vendor Bill "${selectedBill.billNumber || selectedBill.id}"? Once verified, it will proceed to payment approval.`,
+                      confirmText: "Yes, Verify",
+                      variant: "success",
+                      onConfirm: () => {
+                        onUpdateBillStatus(selectedBill.id, 'Verified');
+                        setSelectedBill(null);
+                      }
+                    });
                   }}>
                     Verify Bill
+                  </Button>
+                )}
+                {isAccountsOrAdmin && selectedBill.status === 'Verified' && (
+                  <Button variant="primary" size="sm" onClick={() => {
+                    setConfirmModal({
+                      isOpen: true,
+                      title: "Approve Bill for Payment",
+                      description: `Are you sure you want to approve Vendor Bill "${selectedBill.billNumber || selectedBill.id}" for payment?`,
+                      confirmText: "Yes, Approve",
+                      variant: "primary",
+                      onConfirm: () => {
+                        onUpdateBillStatus(selectedBill.id, 'Approved for Payment');
+                        setSelectedBill(null);
+                      }
+                    });
+                  }}>
+                    Approve for Payment
                   </Button>
                 )}
                 <Button variant="secondary" onClick={() => setSelectedBill(null)}>Close</Button>
@@ -206,6 +249,19 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
             </div>
           </div>
         </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          description={confirmModal.description}
+          confirmText={confirmModal.confirmText}
+          variant={confirmModal.variant}
+          onConfirm={confirmModal.onConfirm}
+          onClose={() => setConfirmModal(null)}
+        />
       )}
     </div>
   );

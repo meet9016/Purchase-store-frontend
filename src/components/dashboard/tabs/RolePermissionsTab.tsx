@@ -6,6 +6,7 @@ import { Table } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Edit3, X, Shield, Search, Plus, Trash2, Lock, Sparkles, Check } from 'lucide-react';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 interface RolePermissionsTabProps {
   rolePermissions: RolePermission[];
@@ -53,6 +54,7 @@ export function RolePermissionsTab({
   const [editModalRole, setEditModalRole] = useState<RolePermission | null>(null);
   const [showAddRoleModal, setShowAddRoleModal] = useState(false);
   const [currentPerms, setCurrentPerms] = useState<Record<string, ActionCapability>>({});
+  const [deleteRoleTarget, setDeleteRoleTarget] = useState<string | null>(null);
 
   // Add Role Form State
   const [newRoleForm, setNewRoleForm] = useState({
@@ -275,11 +277,7 @@ export function RolePermissionsTab({
                   {!isSystem && onDeleteRolePermission && (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to delete custom role "${rp.role}"?`)) {
-                          onDeleteRolePermission(rp.role);
-                        }
-                      }}
+                      onClick={() => setDeleteRoleTarget(rp.role)}
                       className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200 transition-all cursor-pointer shadow-2xs"
                       title="Delete Custom Role"
                     >
@@ -551,6 +549,24 @@ export function RolePermissionsTab({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Delete Role Confirm Modal */}
+      {deleteRoleTarget && (
+        <ConfirmModal
+          isOpen={!!deleteRoleTarget}
+          title="Delete Custom Role"
+          description={`Are you sure you want to delete custom role "${deleteRoleTarget}"? Users assigned to this role may lose their access permissions.`}
+          confirmText="Yes, Delete Role"
+          variant="danger"
+          onConfirm={() => {
+            if (onDeleteRolePermission && deleteRoleTarget) {
+              onDeleteRolePermission(deleteRoleTarget);
+            }
+            setDeleteRoleTarget(null);
+          }}
+          onClose={() => setDeleteRoleTarget(null)}
+        />
       )}
     </div>
   );

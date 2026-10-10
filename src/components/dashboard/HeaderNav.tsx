@@ -81,10 +81,15 @@ export function HeaderNav({
         </div>
       </div>
       <div className="flex items-center space-x-2.5">
-        {/* Current User Role Badge (Read-only Display) */}
-        <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-50/80 border border-blue-200/80 rounded-xl text-xs font-semibold text-blue-800 shadow-2xs">
-          <Shield className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
-          <span className="truncate max-w-[120px] font-medium">{currentUser?.role || 'Admin'}</span>
+        {/* Active Role Switcher / Simulator */}
+        <div className="w-[150px] flex-shrink-0" title="Simulate Active Role for RBAC Testing">
+          <Select
+            options={roleOptions}
+            value={currentUser?.role || 'Admin'}
+            onChange={(e) => simulateRole(e.target.value)}
+            icon={<Shield className="h-3.5 w-3.5 text-blue-600" />}
+            size="sm"
+          />
         </div>
         <button
           type="button"
