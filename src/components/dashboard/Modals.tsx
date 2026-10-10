@@ -20,7 +20,7 @@ interface ModalsProps {
   vendorBills: VendorBill[];
   paymentRequests: PaymentRequest[];
   stocks?: Stock[];
-  
+
   // PR Forms & Handlers
   prForm: any;
   setPrForm: React.Dispatch<React.SetStateAction<any>>;
@@ -109,7 +109,7 @@ export function Modals({
   setSelectedPo
 }: ModalsProps) {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
-  
+
   // States for backend-fetched PO dropdown data
   const [backendApprovedPRs, setBackendApprovedPRs] = React.useState<PurchaseRequest[]>([]);
   const [backendVendors, setBackendVendors] = React.useState<Vendor[]>([]);
@@ -138,7 +138,7 @@ export function Modals({
       projectsApi.getAll().then(res => {
         if (res?.data && Array.isArray(res.data)) setBackendProjects(res.data);
       }).catch(console.error);
-      
+
       itemsApi.getAll().then(res => {
         if (res?.data && Array.isArray(res.data)) setBackendItems(res.data);
       }).catch(console.error);
@@ -163,7 +163,7 @@ export function Modals({
       {/* 1. Create PR Modal */}
       {openModal === 'create-pr' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-visible shadow-2xl max-w-2xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-bold text-[#0F172C]">Create Purchase Request</h3>
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
@@ -192,22 +192,23 @@ export function Modals({
                   label="Project Location"
                   options={projects.map(p => ({ value: p.id, label: `${p.name} (${p.location})` }))}
                   value={prForm.projectId}
-                  onChange={e => { setPrForm({...prForm, projectId: e.target.value}); clearError('projectId'); }}
+                  onChange={e => { setPrForm({ ...prForm, projectId: e.target.value }); clearError('projectId'); }}
                   error={errors.projectId}
                   required
                 />
                 <DatePicker
                   label="Required by Date"
                   value={prForm.requiredDate}
-                  onChange={val => { setPrForm({...prForm, requiredDate: val}); clearError('requiredDate'); }}
+                  onChange={val => { setPrForm({ ...prForm, requiredDate: val }); clearError('requiredDate'); }}
                   error={errors.requiredDate}
                   required
+                  disablePastDates={true}
                 />
                 <Select
                   label="Priority Level"
-                  options={[{value: 'Low', label: 'Low'}, {value: 'Medium', label: 'Medium'}, {value: 'High', label: 'High'}, {value: 'Urgent', label: 'Urgent'}]}
+                  options={[{ value: 'Low', label: 'Low' }, { value: 'Medium', label: 'Medium' }, { value: 'High', label: 'High' }, { value: 'Urgent', label: 'Urgent' }]}
                   value={prForm.priority}
-                  onChange={e => setPrForm({...prForm, priority: e.target.value})}
+                  onChange={e => setPrForm({ ...prForm, priority: e.target.value })}
                 />
               </div>
 
@@ -217,9 +218,13 @@ export function Modals({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Select
                     label="Select Master Item"
-                    options={items.map(i => ({ value: i.id, label: `${i.name} (${i.itemCode || 'No Code'})` }))}
+                    options={items.map(i => ({
+                      value: i.id,
+                      label: `${i.name} (${i.itemCode || 'No Code'})`,
+                      disabled: prForm.items.some((it: any) => it.itemId === i.id)
+                    }))}
                     value={prItemInput.itemId}
-                    onChange={e => { setPrItemInput({...prItemInput, itemId: e.target.value}); clearError('itemInput'); }}
+                    onChange={e => { setPrItemInput({ ...prItemInput, itemId: e.target.value }); clearError('itemInput'); }}
                     error={errors.itemInput}
                   />
                   <Input
@@ -227,12 +232,12 @@ export function Modals({
                     type="number"
                     min={1}
                     value={prItemInput.quantity}
-                    onChange={e => setPrItemInput({...prItemInput, quantity: Number(e.target.value)})}
+                    onChange={e => setPrItemInput({ ...prItemInput, quantity: Number(e.target.value) })}
                   />
                   <Input
                     label="Remarks / Specifications"
                     value={prItemInput.remarks}
-                    onChange={e => setPrItemInput({...prItemInput, remarks: e.target.value})}
+                    onChange={e => setPrItemInput({ ...prItemInput, remarks: e.target.value })}
                     placeholder="e.g. For Phase 2 foundation"
                   />
                 </div>
@@ -318,8 +323,8 @@ export function Modals({
 
       {/* 2. Create PO Modal */}
       {openModal === 'create-po' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade ">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-visible">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-bold text-[#0F172C]">Create Purchase Order</h3>
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
@@ -370,10 +375,10 @@ export function Modals({
                   label="Select Vendor"
                   options={backendVendors.map(v => ({ value: v.id, label: v.name }))}
                   value={poForm.vendorId}
-                  onChange={e => { 
+                  onChange={e => {
                     const selectedVendor = backendVendors.find(v => v.id === e.target.value);
-                    setPoForm({...poForm, vendorId: e.target.value, _vendor: selectedVendor}); 
-                    clearError('vendorId'); 
+                    setPoForm({ ...poForm, vendorId: e.target.value, _vendor: selectedVendor });
+                    clearError('vendorId');
                   }}
                   error={errors.vendorId}
                   required
@@ -384,22 +389,23 @@ export function Modals({
                 <DatePicker
                   label="Expected Delivery Date"
                   value={poForm.expectedDeliveryDate}
-                  onChange={val => { setPoForm({...poForm, expectedDeliveryDate: val}); clearError('expectedDeliveryDate'); }}
+                  onChange={val => { setPoForm({ ...poForm, expectedDeliveryDate: val }); clearError('expectedDeliveryDate'); }}
                   error={errors.expectedDeliveryDate}
                   required
+                  disablePastDates={true}
                 />
                 <Input
                   label="Credit Period (Days)"
                   type="number"
                   value={poForm.creditPeriod}
-                  onChange={e => setPoForm({...poForm, creditPeriod: Number(e.target.value)})}
+                  onChange={e => setPoForm({ ...poForm, creditPeriod: Number(e.target.value) })}
                 />
               </div>
 
               <Input
                 label="Delivery Location"
                 value={poForm.deliveryLocation}
-                onChange={e => { setPoForm({...poForm, deliveryLocation: e.target.value}); clearError('deliveryLocation'); }}
+                onChange={e => { setPoForm({ ...poForm, deliveryLocation: e.target.value }); clearError('deliveryLocation'); }}
                 placeholder="Site location / Main Warehouse"
                 error={errors.deliveryLocation}
                 required
@@ -548,10 +554,10 @@ export function Modals({
                   label="Project Site"
                   options={backendProjects.map(p => ({ value: p.id, label: `${p.name} (${p.location})` }))}
                   value={outwardForm.projectId}
-                  onChange={e => { 
+                  onChange={e => {
                     const selectedProject = backendProjects.find(p => p.id === e.target.value);
-                    setOutwardForm({ ...outwardForm, projectId: e.target.value, _project: selectedProject } as any); 
-                    clearError('projectId'); 
+                    setOutwardForm({ ...outwardForm, projectId: e.target.value, _project: selectedProject } as any);
+                    clearError('projectId');
                   }}
                   error={errors.projectId}
                   required
@@ -593,10 +599,10 @@ export function Modals({
                     label="Item Name"
                     options={backendItems.map(i => ({ value: i.id, label: i.name }))}
                     value={outwardItemInput.itemId}
-                    onChange={e => { 
+                    onChange={e => {
                       const selectedItem = backendItems.find(i => i.id === e.target.value);
-                      setOutwardItemInput({ ...outwardItemInput, itemId: e.target.value, _item: selectedItem } as any); 
-                      clearError('item'); 
+                      setOutwardItemInput({ ...outwardItemInput, itemId: e.target.value, _item: selectedItem } as any);
+                      clearError('item');
                     }}
                     error={errors.item}
                     required

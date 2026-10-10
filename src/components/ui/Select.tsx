@@ -8,6 +8,7 @@ export interface SelectOption {
   value: string;
   label: string;
   icon?: React.ReactNode;
+  disabled?: boolean;
 }
 
 export interface SelectProps {
@@ -258,11 +259,16 @@ export function Select({
                   <button
                     key={`${opt.value}-${idx}`}
                     type="button"
-                    onClick={() => handleSelect(opt.value)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left cursor-pointer transition-colors ${
-                      isSelected 
-                        ? 'text-blue-700 bg-blue-50 font-bold border border-blue-200/60' 
-                        : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 font-medium'
+                    disabled={opt.disabled}
+                    onClick={() => {
+                      if (!opt.disabled) handleSelect(opt.value);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left transition-colors ${
+                      opt.disabled 
+                        ? 'text-slate-400 bg-slate-50 cursor-not-allowed opacity-60' 
+                        : isSelected 
+                          ? 'text-blue-700 bg-blue-50 font-bold border border-blue-200/60 cursor-pointer' 
+                          : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 font-medium cursor-pointer'
                     }`}
                   >
                     <div className="flex items-center space-x-2 truncate min-w-0">

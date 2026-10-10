@@ -12,6 +12,7 @@ interface DatePickerProps {
   className?: string;
   helperText?: string;
   error?: string;
+  disablePastDates?: boolean;
 }
 
 export function DatePicker({
@@ -22,7 +23,8 @@ export function DatePicker({
   required = false,
   className = '',
   helperText,
-  error
+  error,
+  disablePastDates = false
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,11 +129,10 @@ export function DatePicker({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 border ${
-            error
-              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
-              : 'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 focus:bg-white'
-          } text-slate-900 text-sm font-semibold focus:outline-none transition-all text-left cursor-pointer shadow-xs ${className}`}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 border ${error
+            ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
+            : 'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 focus:bg-white'
+            } text-slate-900 text-sm font-semibold focus:outline-none transition-all text-left cursor-pointer shadow-xs ${className}`}
         >
           <span className={value ? 'text-slate-900 font-semibold' : 'text-slate-400 font-normal'}>
             {value ? formatDateDisplay(value) : placeholder}
@@ -161,7 +162,7 @@ export function DatePicker({
       {/* Custom Theme Calendar Popover */}
       {isOpen && (
         <div className="absolute left-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl z-55 w-72 p-4 animate-modal-zoom">
-          
+
           {/* Header Month/Year Selector */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <button
@@ -209,20 +210,26 @@ export function DatePicker({
               const checkDateStr = `${currentYear}-${formattedMonth}-${formattedDay}`;
 
               const isSelected = value === checkDateStr;
-              const isToday = new Date().toISOString().split('T')[0] === checkDateStr;
+              const todayStr = new Date().toISOString().split('T')[0];
+              const isToday = todayStr === checkDateStr;
+              const isPastDate = disablePastDates && checkDateStr < todayStr;
 
               return (
                 <button
                   key={day}
                   type="button"
-                  onClick={() => handleSelectDay(day)}
-                  className={`p-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-xs font-bold'
+                  onClick={() => {
+                    if (!isPastDate) handleSelectDay(day);
+                  }}
+                  disabled={isPastDate}
+                  className={`p-1.5 rounded-lg font-semibold transition-all ${isPastDate
+                    ? 'text-slate-300 cursor-not-allowed bg-slate-50'
+                    : isSelected
+                      ? 'bg-blue-600 text-white shadow-xs font-bold cursor-pointer'
                       : isToday
-                      ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200'
-                      : 'text-slate-700 hover:bg-slate-100'
-                  }`}
+                        ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200 cursor-pointer'
+                        : 'text-slate-700 hover:bg-slate-100 cursor-pointer'
+                    }`}
                 >
                   {day}
                 </button>
