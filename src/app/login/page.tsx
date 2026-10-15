@@ -169,14 +169,7 @@ export default function LoginPage() {
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-<<<<<<< HEAD
-<<<<<<< HEAD
     e.stopPropagation();
-=======
->>>>>>> 7d55476 (feat: implement GRN and Purchase Order dashboard tabs with reusable table components)
-=======
-    e.stopPropagation();
->>>>>>> f5fbfc4 (feat: add dashboard and login pages)
     if (!validateLoginForm()) return;
     performLogin(email, password);
   };
