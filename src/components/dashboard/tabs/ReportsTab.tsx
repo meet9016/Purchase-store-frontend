@@ -113,19 +113,19 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3.5 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
             <FileSpreadsheet className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Store &amp; Purchase MIS Reports</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Store &amp; Purchase MIS Reports</h3>
             <p className="text-xs text-slate-500 font-medium">Generate data logs, audit compliance &amp; CSV exports</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="min-w-[220px]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+          <div className="w-full sm:w-auto sm:min-w-[220px]">
             <Select
               options={[
                 { value: 'pr', label: 'PR Summary Report' },
@@ -143,6 +143,7 @@ export function ReportsTab({ purchaseRequests, purchaseOrders, stocks, bills, pa
             variant="outline"
             icon={<Download className="h-4 w-4" />}
             onClick={exportCSV}
+            className="w-full sm:w-auto justify-center whitespace-nowrap shrink-0"
           >
             Export CSV
           </Button>

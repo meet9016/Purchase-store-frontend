@@ -12,12 +12,12 @@ interface AuditLogsTabProps {
 export function AuditLogsTab({ auditLogs }: AuditLogsTabProps) {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center space-x-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex items-center space-x-3 bg-white border border-slate-200 rounded-xl p-3.5 sm:px-4 sm:py-3 shadow-xs">
         <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
           <History className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#0F172C]">System Audit Logs &amp; Activity Trail</h2>
+          <h2 className="text-base sm:text-lg font-bold text-[#0F172C]">System Audit Logs &amp; Activity Trail</h2>
           <p className="text-xs text-slate-500 font-medium">Immutable real-time audit ledger of all procurement and inventory events</p>
         </div>
       </div>

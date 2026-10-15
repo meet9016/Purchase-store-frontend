@@ -98,6 +98,7 @@ export default function DashboardPage() {
   const [db, setDb] = useState<DatabaseState>(getDatabase);
   const [navLayout, setNavLayout] = useState<'sidebar' | 'header'>('sidebar');
   const [backendOnline, setBackendOnline] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Sync if URL route changes directly
   useEffect(() => {
@@ -931,6 +932,8 @@ export default function DashboardPage() {
           rolePermissions={db.rolePermissions}
           onLogout={handleLogout}
           unreadNotificationsCount={unreadNotificationsCount}
+          isMobileNavOpen={isMobileNavOpen}
+          onCloseMobile={() => setIsMobileNavOpen(false)}
         />
       )}
 
@@ -951,9 +954,10 @@ export default function DashboardPage() {
           rolePermissions={db.rolePermissions}
           simulateRole={simulateRole}
           onOpenCreatePRModal={() => setOpenModal('create-pr')}
+          onToggleMobileMenu={() => setIsMobileNavOpen(prev => !prev)}
         />
 
-        <main className="flex-1 p-6 overflow-y-auto space-y-6">
+        <main className="flex-1 p-3 sm:p-5 lg:p-6 overflow-y-auto space-y-4 sm:space-y-6 max-w-full overflow-x-hidden">
           {activeTab === 'dashboard' && (
             <DashboardOverview
               purchaseRequests={db.purchaseRequests}

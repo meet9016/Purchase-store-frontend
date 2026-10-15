@@ -113,10 +113,10 @@ export function DashboardOverview({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Header Card with subtle modern gradient */}
-      <div className="bg-gradient-to-r from-blue-50/60 via-white to-indigo-50/50 p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-blue-50/60 via-white to-indigo-50/50 p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2.5 mb-1">
-            <h1 className="text-xl font-black text-[#0F172C] tracking-tight">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h1 className="text-lg sm:text-xl font-black text-[#0F172C] tracking-tight">
               Operational Workspace Overview
             </h1>
             <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
@@ -124,17 +124,18 @@ export function DashboardOverview({
               <span>Live Engine</span>
             </span>
           </div>
-          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
             Consolidated pipeline tracking for requisitions, vendor orders, inventory registers &amp; accounts settlement.
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 w-full sm:w-auto">
           {canCreatePO && (
             <Button
               variant="outline"
               icon={<Plus className="w-4 h-4" />}
               onClick={onOpenCreatePOModal}
+              className="flex-1 sm:flex-none justify-center"
             >
               Create PO
             </Button>
@@ -144,6 +145,7 @@ export function DashboardOverview({
               variant="primary"
               icon={<Plus className="w-4 h-4" />}
               onClick={onOpenCreatePRModal}
+              className="flex-1 sm:flex-none justify-center"
             >
               Create PR
             </Button>
@@ -245,7 +247,7 @@ export function DashboardOverview({
 
       {/* Recent Requisitions Table */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
           <div>
             <h2 className="text-base font-bold text-[#0F172C]">Recent Purchase Requests</h2>
             <p className="text-xs text-slate-500 font-medium">Latest material requisitions from active project sites</p>
@@ -256,6 +258,7 @@ export function DashboardOverview({
             onClick={() => setActiveTab('pr')}
             icon={<ArrowRight className="w-3.5 h-3.5" />}
             iconPosition="right"
+            className="self-start sm:self-auto"
           >
             View All PRs
           </Button>

@@ -60,34 +60,34 @@ export function PaymentEntriesTab({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3.5 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
             <Banknote className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Payment Entries</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Payment Entries</h3>
             <p className="text-xs text-slate-500 font-medium">Disbursement vouchers and payment receipts</p>
           </div>
         </div>
         {canCreatePayment && (
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreatePaymentModal}>
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreatePaymentModal} className="w-full sm:w-auto justify-center">
             Add Payment Entry
           </Button>
         )}
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Total Payments', value: payments.length },
           { label: 'Total Disbursed', value: formatCurrency(totalPaid), highlight: true },
           { label: 'Bank Transfer / NEFT', value: payments.filter(p => p.paymentMode?.includes('NEFT') || p.paymentMode?.includes('Transfer')).length },
           { label: 'UPI / Cheque / Cash', value: payments.filter(p => !p.paymentMode?.includes('NEFT') && !p.paymentMode?.includes('Transfer')).length },
         ].map((stat, i) => (
-          <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div key={i} className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 shadow-xs">
             <p className="text-xs text-slate-500 font-semibold">{stat.label}</p>
-            <p className={`text-xl font-black mt-1 ${stat.highlight ? 'text-teal-600' : 'text-[#0F172C]'}`}>{stat.value}</p>
+            <p className={`text-base sm:text-xl font-black mt-1 ${stat.highlight ? 'text-teal-600' : 'text-[#0F172C]'}`}>{stat.value}</p>
           </div>
         ))}
       </div>

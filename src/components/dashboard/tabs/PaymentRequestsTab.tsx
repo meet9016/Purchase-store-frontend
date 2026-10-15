@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from 'react';
 import { PaymentRequest, User } from '@/lib/storeData';
@@ -115,9 +115,9 @@ export function PaymentRequestsTab({
     <div className="space-y-5">
 
       {/* ── Page Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl px-5 py-3.5 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3.5 sm:px-5 sm:py-3.5 shadow-xs">
         <div className="flex items-center space-x-3.5">
-          <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
+          <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/25 shrink-0">
             <CreditCard className="h-5 w-5" />
           </div>
           <div>
@@ -126,25 +126,25 @@ export function PaymentRequestsTab({
           </div>
         </div>
         {canCreatePayReq && (
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreatePaymentReqModal}>
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreatePaymentReqModal} className="w-full sm:w-auto justify-center">
             Raise Payment Request
           </Button>
         )}
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((stat, i) => (
           <div
             key={i}
-            className="bg-white border border-slate-200 rounded-2xl px-4 py-4 shadow-xs flex items-center gap-3.5 hover:shadow-sm transition-shadow"
+            className="bg-white border border-slate-200 rounded-2xl p-3 sm:px-4 sm:py-4 shadow-xs flex items-center gap-3 hover:shadow-sm transition-shadow"
           >
-            <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${stat.iconBg} ${stat.iconColor}`}>
+            <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${stat.iconBg} ${stat.iconColor}`}>
               {stat.icon}
             </div>
             <div className="min-w-0">
               <p className="text-[11px] text-slate-500 font-semibold truncate">{stat.label}</p>
-              <p className={`text-xl font-black mt-0.5 ${stat.valueColor}`}>{stat.value}</p>
+              <p className={`text-base sm:text-xl font-black mt-0.5 ${stat.valueColor}`}>{stat.value}</p>
             </div>
           </div>
         ))}

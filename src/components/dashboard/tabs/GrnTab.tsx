@@ -36,18 +36,18 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
             <ArrowDownLeft className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-[#0F172C]">Goods Receipt Notes (GRN)</h3>
-            <p className="text-xs text-slate-500 font-medium">Material inward records & stock updates</p>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Goods Receipt Notes (GRN)</h3>
+            <p className="text-xs text-slate-500 font-medium">Material inward records &amp; stock updates</p>
           </div>
         </div>
         {canCreateGRN && (
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreateGRNModal}>
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreateGRNModal} className="w-full sm:w-auto justify-center" size="sm">
             Create GRN
           </Button>
         )}
@@ -88,27 +88,27 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
 
       {/* GRN Detail Modal */}
       {selectedGrn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-lg font-bold text-[#0F172C]">{selectedGrn.grnNumber}</h3>
-                <p className="text-xs text-slate-500">GRN Detail & Item Receipt Records</p>
+                <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">{selectedGrn.grnNumber}</h3>
+                <p className="text-xs text-slate-500">GRN Detail &amp; Item Receipt Records</p>
               </div>
-              <button onClick={() => setSelectedGrn(null)} className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">
+              <button onClick={() => setSelectedGrn(null)} className="p-1.5 sm:p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+              <div className="space-y-1.5 sm:space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs sm:text-sm">
                 <p className="text-xs font-bold text-slate-700">Reference Info</p>
                 <p><span className="text-slate-500">PO Number:</span> <span className="font-bold text-slate-800">{selectedGrn.poNumber}</span></p>
                 <p><span className="text-slate-500">Vendor Invoice:</span> <span className="font-semibold text-slate-700">{selectedGrn.vendorInvoiceNumber || '-'}</span></p>
                 <p><span className="text-slate-500">Challan No:</span> <span className="font-semibold text-slate-700">{selectedGrn.challanNumber || '-'}</span></p>
                 <p><span className="text-slate-500">Vehicle No:</span> <span className="font-semibold text-slate-700">{selectedGrn.vehicleNumber || '-'}</span></p>
               </div>
-              <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="space-y-1.5 sm:space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs sm:text-sm">
                 <p className="text-xs font-bold text-slate-700">Receipt Info</p>
                 <p><span className="text-slate-500">Vendor:</span> <span className="font-bold text-slate-800">{selectedGrn.vendorName}</span></p>
                 <p><span className="text-slate-500">Project:</span> <span className="font-semibold text-slate-700">{selectedGrn.projectName || '-'}</span></p>
@@ -119,9 +119,9 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
 
             {/* Items Table */}
             <div>
-              <h4 className="text-sm font-bold text-[#0F172C] mb-2">Received Items</h4>
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-xs">
+              <h4 className="text-xs sm:text-sm font-bold text-[#0F172C] mb-2">Received Items</h4>
+              <div className="border border-slate-200 rounded-xl overflow-x-auto">
+                <table className="w-full text-xs min-w-[500px]">
                   <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-2 text-left">Item</th>
@@ -149,7 +149,7 @@ export function GrnTab({ grns, currentUser, rolePermissions = [], onOpenCreateGR
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button variant="secondary" onClick={() => setSelectedGrn(null)}>Close</Button>
+              <Button variant="secondary" onClick={() => setSelectedGrn(null)} size="sm">Close</Button>
             </div>
           </div>
         </div>

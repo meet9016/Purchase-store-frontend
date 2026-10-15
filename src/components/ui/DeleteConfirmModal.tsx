@@ -25,7 +25,7 @@ export function DeleteConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 animate-modal-zoom space-y-4">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
         {/* Header with Danger Icon */}
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
@@ -58,13 +58,14 @@ export function DeleteConfirmModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
-          <Button variant="secondary" onClick={onClose}>
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-slate-100">
+          <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto justify-center">
             Cancel
           </Button>
           <Button
             variant="danger"
             icon={<Trash2 className="h-4 w-4" />}
+            className="w-full sm:w-auto justify-center"
             onClick={() => {
               onConfirm();
               onClose();

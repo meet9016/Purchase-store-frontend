@@ -55,19 +55,19 @@ export function PurchaseRequestsTab({
   return (
     <div className="space-y-6">
       {/* Action Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
             <FileSpreadsheet className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Purchase Requests (PR)</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Purchase Requests (PR)</h3>
             <p className="text-xs text-slate-500 font-medium">Requisitions created across site projects</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="min-w-[160px]">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="flex-1 sm:flex-none sm:w-[160px]">
             <Select
               options={[
                 { value: '', label: 'All Statuses' },
@@ -78,6 +78,7 @@ export function PurchaseRequestsTab({
               ]}
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
+              size="sm"
             />
           </div>
 
@@ -86,6 +87,8 @@ export function PurchaseRequestsTab({
               variant="primary"
               icon={<Plus className="h-4 w-4" />}
               onClick={onOpenCreatePRModal}
+              className="w-full sm:w-auto justify-center shrink-0"
+              size="sm"
             >
               Create New PR
             </Button>

@@ -52,24 +52,25 @@ export function PurchaseOrdersTab({
   return (
     <div className="space-y-6">
       {/* Tab Header & Filter Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
             <ShoppingCart className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Purchase Orders (PO)</h3>
-            <p className="text-xs text-slate-500 font-medium">Vendor purchase orders & fulfillment tracking</p>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Purchase Orders (PO)</h3>
+            <p className="text-xs text-slate-500 font-medium">Vendor purchase orders &amp; fulfillment tracking</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
           {canCreatePO && (
             <Button
               variant="primary"
               icon={<Plus className="h-4 w-4" />}
               onClick={onOpenCreatePOModal}
+              className="w-full sm:w-auto justify-center"
+              size="sm"
             >
               Create New PO
             </Button>
