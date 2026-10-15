@@ -29,14 +29,7 @@ const getInitialUser = (): User => {
   };
 };
 
-const getInitialToken = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('auth_token') || localStorage.getItem('purchase_token');
-  }
-  return null;
-};
-
-const initialUser = typeof window !== 'undefined' ? getInitialUser() : {
+const initialUser: User = {
   id: 'usr-admin',
   name: 'Alok Sharma',
   email: 'admin@gmail.com',
@@ -47,9 +40,9 @@ const initialUser = typeof window !== 'undefined' ? getInitialUser() : {
 
 const initialState: AuthState = {
   currentUser: initialUser,
-  token: typeof window !== 'undefined' ? getInitialToken() : null,
+  token: null,
   isAuthenticated: !!initialUser,
-  activeRole: initialUser?.role || 'Admin',
+  activeRole: initialUser.role,
 };
 
 export const authSlice = createSlice({

@@ -33,26 +33,7 @@ interface DataState {
   lastSynced: string | null;
 }
 
-const seed: DatabaseState = typeof window !== 'undefined' ? getDatabase() : {
-  users: [],
-  projects: [],
-  vendors: [],
-  categories: [],
-  units: [],
-  items: [],
-  purchaseRequests: [],
-  purchaseOrders: [],
-  grns: [],
-  stock: [],
-  stockTransactions: [],
-  storeOutwards: [],
-  vendorBills: [],
-  paymentRequests: [],
-  paymentEntries: [],
-  auditLogs: [],
-  notifications: [],
-  rolePermissions: []
-};
+const seed: DatabaseState = getDatabase();
 
 const initialState: DataState = {
   projects: seed.projects,
