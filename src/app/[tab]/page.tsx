@@ -153,6 +153,12 @@ export default function DashboardPage() {
     try {
       if (tab === 'dashboard') {
         let fetchedRoles = db.rolePermissions;
+        if (!fetchedRoles || fetchedRoles.length === 0) {
+          const cached = typeof window !== 'undefined' ? localStorage.getItem('cached_roles') : null;
+          if (cached) {
+            try { fetchedRoles = JSON.parse(cached); } catch (e) { }
+          }
+        }
 
         const userStr = typeof window !== 'undefined' ? localStorage.getItem('active_user') : null;
         let currentRole = 'Admin';
@@ -165,14 +171,22 @@ export default function DashboardPage() {
         if (currentRole === 'Admin') {
           canViewPR = canViewPO = canViewGRN = canViewStock = canViewBills = canViewPayReq = true;
         } else {
-          const rolePerm = fetchedRoles.find(rp => rp.role.toLowerCase() === currentRole.toLowerCase());
-          if (rolePerm && rolePerm.permissions) {
+          const rolePerm = (fetchedRoles || []).find(rp => rp.role?.toLowerCase() === currentRole.toLowerCase());
+          if (rolePerm && rolePerm.permissions && Object.keys(rolePerm.permissions).length > 0) {
             canViewPR = !!(rolePerm.permissions['Purchase Requests']?.viewGlobal || rolePerm.permissions['Purchase Requests']?.viewOwn);
             canViewPO = !!(rolePerm.permissions['Purchase Orders']?.viewGlobal || rolePerm.permissions['Purchase Orders']?.viewOwn);
             canViewGRN = !!(rolePerm.permissions['Goods Receipt (GRN)']?.viewGlobal || rolePerm.permissions['Goods Receipt (GRN)']?.viewOwn);
             canViewStock = !!(rolePerm.permissions['Stock']?.viewGlobal || rolePerm.permissions['Stock']?.viewOwn);
             canViewBills = !!(rolePerm.permissions['Vendor Invoices']?.viewGlobal || rolePerm.permissions['Vendor Invoices']?.viewOwn);
             canViewPayReq = !!(rolePerm.permissions['Payment Requests']?.viewGlobal || rolePerm.permissions['Payment Requests']?.viewOwn);
+          } else {
+            // Default to visible if granular permissions not explicitly defined
+            canViewPR = true;
+            canViewPO = true;
+            canViewGRN = true;
+            canViewStock = true;
+            canViewBills = true;
+            canViewPayReq = true;
           }
         }
 
@@ -295,16 +309,26 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Fetch tab-specific data on tab change (only after client mounted)
-  useEffect(() => {
-    if (mounted) {
-      fetchTabData(activeTab);
-    }
-  }, [activeTab, fetchTabData, mounted]);
-
-  // Load initial complete state from backend on mount
+  // Check auth and load initial state on mount
   useEffect(() => {
     setMounted(true);
+
+    const active = typeof window !== 'undefined' ? localStorage.getItem('active_user') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+    if (!active || !token || token.startsWith('local_')) {
+      router.replace('/login');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(active);
+      setCurrentUser(parsed);
+    } catch (e) {
+      console.error(e);
+      router.replace('/login');
+      return;
+    }
 
     const cachedRoles = localStorage.getItem('cached_roles');
     if (cachedRoles) {
@@ -316,36 +340,29 @@ export default function DashboardPage() {
       }
     }
 
-    const active = localStorage.getItem('active_user');
-    const token = localStorage.getItem('auth_token');
-
-    if (active) {
-      try {
-        const parsed = JSON.parse(active);
-        setCurrentUser(parsed);
-
-        // If auth token is missing or old local mock, obtain valid JWT from backend
-        if (!token || token.startsWith('local_')) {
-          authApi.login(parsed.email || 'admin@gmail.com', '123456')
-            .then((res) => {
-              const d = (res.data || res) as any;
-              if (d?.token) {
-                localStorage.setItem('auth_token', d.token);
-                fetchTabData(activeTab);
-              }
-            })
-            .catch(() => { });
+    // Refresh role permissions from backend
+    rolePermissionsApi.getAll()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          const fetched = deduplicateById(res.data);
+          localStorage.setItem('cached_roles', JSON.stringify(fetched));
+          setDb(prev => ({ ...prev, rolePermissions: fetched }));
         }
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-      router.push('/login');
-      return;
-    }
+      })
+      .catch(() => {});
 
     setBackendOnline(true);
-  }, [fetchTabData, router]);
+  }, [router]);
+
+  // Fetch tab-specific data on tab change (only after client mounted and authenticated)
+  useEffect(() => {
+    if (mounted) {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (token && !token.startsWith('local_')) {
+        fetchTabData(activeTab);
+      }
+    }
+  }, [activeTab, fetchTabData, mounted]);
 
   const simulateRole = (role: string) => {
     if (!db) return;

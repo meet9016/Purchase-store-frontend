@@ -28,6 +28,8 @@ axiosClient.interceptors.request.use(
   }
 );
 
+let isHandling401 = false;
+
 // ─── Response Interceptor: Standard Error & 401 Handling ──────────────────────
 axiosClient.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -47,8 +49,14 @@ axiosClient.interceptors.response.use(
       console.warn('[AxiosClient 401 Unauthorized]:', message);
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname;
-        if (!currentPath.includes('/login')) {
+        if (!currentPath.includes('/login') && !isHandling401) {
+          isHandling401 = true;
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('active_user');
           toast.error('Session expired. Please log in again.');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 400);
         }
       }
     } else if (status === 403) {
