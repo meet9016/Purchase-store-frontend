@@ -608,7 +608,7 @@ export function MastersTab({
                       <Lock className="w-2.5 h-2.5 mr-1 text-slate-500" /> System Default
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/70 text-[11px] font-semibold">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[11px] font-semibold">
                       Custom Role
                     </span>
                   )}
@@ -976,17 +976,20 @@ export function MastersTab({
                   errors.email = 'Please enter a valid email address';
                 }
 
-                if (!userForm.department?.trim()) errors.department = 'Department is required';
-
                 if (Object.keys(errors).length > 0) {
                   setFormErrors(errors);
                   return;
                 }
 
+                const finalUser = {
+                  ...userForm,
+                  department: userForm.department?.trim() || 'General'
+                };
+
                 if (editingId && onEditUser) {
-                  onEditUser(editingId, userForm);
+                  onEditUser(editingId, finalUser);
                 } else {
-                  onAddUser({ ...userForm, active: true });
+                  onAddUser({ ...finalUser, active: true });
                 }
                 setShowModal(false);
               }} className="space-y-3">
@@ -1023,11 +1026,11 @@ export function MastersTab({
                   onChange={e => setUserForm({ ...userForm, role: e.target.value })}
                 />
                 <Input
-                  label="Department"
+                  label="Department (Optional)"
                   value={userForm.department}
                   onChange={e => { setUserForm({ ...userForm, department: e.target.value }); clearError('department'); }}
+                  placeholder="e.g. Operations, Procurement, Site"
                   error={formErrors.department}
-                  required
                 />
                 <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>

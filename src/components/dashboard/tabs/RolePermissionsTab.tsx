@@ -245,7 +245,7 @@ export function RolePermissionsTab({
                   </div>
                   <span className="font-bold text-[#0F172C]">{rp.role}</span>
                   {rp.role === 'Admin' ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
                       Superuser
                     </span>
                   ) : !isSystem ? (
@@ -354,26 +354,26 @@ export function RolePermissionsTab({
 
       {/* Granular Permission Matrix Modal */}
       {editModalRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/75 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#0F172C] via-[#1E293B] to-[#0F172C] text-white px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh] overflow-hidden animate-modal-zoom">
+            {/* Modal Header - Theme-Wise Clean White with Blue Accent */}
+            <div className="bg-white px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-slate-100">
               <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs flex-shrink-0">
                   <Shield className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold tracking-tight text-white flex items-center space-x-2">
+                  <h3 className="text-base font-bold tracking-tight text-[#0F172C] flex items-center space-x-2">
                     <span>Edit Role Permissions:</span>
-                    <span className="text-blue-400 font-extrabold">{editModalRole.role}</span>
+                    <span className="text-blue-600 font-extrabold">{editModalRole.role}</span>
                   </h3>
-                  <p className="text-[11px] text-slate-300 mt-0.5">Toggle checkboxes to enable or restrict specific features &amp; action buttons</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Toggle checkboxes to enable or restrict specific features &amp; action capabilities</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setEditModalRole(null)}
-                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -381,12 +381,12 @@ export function RolePermissionsTab({
 
             {/* Modal Body */}
             <form noValidate onSubmit={handleSaveModal} className="flex-1 flex flex-col overflow-hidden">
-              <div className="p-6 space-y-5 overflow-y-auto flex-1 bg-slate-50/40">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 bg-slate-50/50">
                 {/* Role Header Info */}
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <span className="text-xs font-semibold text-slate-500">Target Role</span>
-                    <h4 className="text-sm font-bold text-[#0F172C]">{editModalRole.role}</h4>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Target Role</span>
+                    <h4 className="text-sm font-extrabold text-[#0F172C] mt-0.5">{editModalRole.role}</h4>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
@@ -398,7 +398,7 @@ export function RolePermissionsTab({
                         });
                         setCurrentPerms(newPerms);
                       }}
-                      className="px-3 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 transition-all cursor-pointer shadow-xs"
                     >
                       Grant All
                     </button>
@@ -411,7 +411,7 @@ export function RolePermissionsTab({
                         });
                         setCurrentPerms(newPerms);
                       }}
-                      className="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer shadow-xs"
                     >
                       Clear All
                     </button>
@@ -419,20 +419,20 @@ export function RolePermissionsTab({
                 </div>
 
                 {/* Permissions Grid Table */}
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                <div className="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-xs">
                   {editModalRole.role === 'Admin' && (
-                    <div className="bg-purple-50 border-b border-purple-200 px-5 py-3 flex items-center justify-between text-xs text-purple-800 font-medium">
-                      <span className="flex items-center space-x-2">
-                        <Shield className="h-4 w-4 text-purple-600" />
+                    <div className="bg-blue-50/80 border-b border-blue-100 px-5 py-3 flex items-center justify-between text-xs text-blue-900 font-medium">
+                      <span className="flex items-center space-x-2.5">
+                        <Shield className="h-4 w-4 text-blue-600 flex-shrink-0" />
                         <span><strong>Admin Superuser:</strong> All permissions and action capabilities are permanently enabled by default.</span>
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-purple-200/70 text-purple-900 font-bold text-[10px]">LOCKED</span>
+                      <span className="px-2.5 py-0.5 rounded-md bg-blue-200/80 text-blue-900 font-extrabold text-[10px] tracking-wide">LOCKED</span>
                     </div>
                   )}
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                        <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[11px]">
                           <th className="px-5 py-3 w-1/3">Feature / Module</th>
                           <th className="px-5 py-3">Granted Action Capabilities</th>
                         </tr>
@@ -444,16 +444,16 @@ export function RolePermissionsTab({
                           const isAdminRole = editModalRole.role === 'Admin';
 
                           return (
-                            <tr key={feature} className="hover:bg-blue-50/30 transition-colors">
+                            <tr key={feature} className="hover:bg-blue-50/25 transition-colors">
                               <td className="px-5 py-3 font-semibold text-slate-800 text-xs">
-                                <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-medium text-[11px] mr-2">
+                                <span className="inline-block px-3 py-1 rounded-lg bg-slate-100 text-[#0F172C] font-bold text-xs border border-slate-200/70">
                                   {feature}
                                 </span>
                               </td>
                               <td className="px-5 py-3">
                                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                                   {/* View Global */}
-                                  <label className={`inline-flex items-center space-x-1.5 select-none text-slate-700 text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-slate-900'}`}>
+                                  <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
                                     <input
                                       type="checkbox"
                                       disabled={isAdminRole}
@@ -461,12 +461,12 @@ export function RolePermissionsTab({
                                       onChange={() => toggleCapability(feature, 'viewGlobal')}
                                       className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                                     />
-                                    <span>View (Global)</span>
+                                    <span className={cap.viewGlobal ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>View (Global)</span>
                                   </label>
 
                                   {/* View Own */}
                                   {!isReportOnly && (
-                                    <label className={`inline-flex items-center space-x-1.5 select-none text-slate-700 text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-slate-900'}`}>
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
                                       <input
                                         type="checkbox"
                                         disabled={isAdminRole}
@@ -474,13 +474,13 @@ export function RolePermissionsTab({
                                         onChange={() => toggleCapability(feature, 'viewOwn')}
                                         className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                                       />
-                                      <span>View (Own)</span>
+                                      <span className={cap.viewOwn ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>View (Own)</span>
                                     </label>
                                   )}
 
                                   {/* Create */}
                                   {!isReportOnly && (
-                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-blue-900'}`}>
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
                                       <input
                                         type="checkbox"
                                         disabled={isAdminRole}
@@ -488,13 +488,13 @@ export function RolePermissionsTab({
                                         onChange={() => toggleCapability(feature, 'create')}
                                         className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                                       />
-                                      <span className={`font-bold ${cap.create ? 'text-blue-700' : 'text-slate-700'}`}>Create</span>
+                                      <span className={cap.create ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>Create</span>
                                     </label>
                                   )}
 
                                   {/* Update */}
                                   {!isReportOnly && (
-                                    <label className={`inline-flex items-center space-x-1.5 select-none text-slate-700 text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-slate-900'}`}>
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
                                       <input
                                         type="checkbox"
                                         disabled={isAdminRole}
@@ -502,13 +502,13 @@ export function RolePermissionsTab({
                                         onChange={() => toggleCapability(feature, 'update')}
                                         className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                                       />
-                                      <span>Update</span>
+                                      <span className={cap.update ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>Update</span>
                                     </label>
                                   )}
 
                                   {/* Delete */}
                                   {!isReportOnly && (
-                                    <label className={`inline-flex items-center space-x-1.5 select-none text-slate-700 text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-slate-900'}`}>
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
                                       <input
                                         type="checkbox"
                                         disabled={isAdminRole}
@@ -516,7 +516,7 @@ export function RolePermissionsTab({
                                         onChange={() => toggleCapability(feature, 'delete')}
                                         className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
                                       />
-                                      <span>Delete</span>
+                                      <span className={cap.delete ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>Delete</span>
                                     </label>
                                   )}
                                 </div>
@@ -531,20 +531,19 @@ export function RolePermissionsTab({
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t border-slate-200 px-6 py-4 bg-white flex items-center justify-end space-x-3 flex-shrink-0">
-                <button
-                  type="button"
+              <div className="border-t border-slate-100 px-6 py-4 bg-white flex items-center justify-end space-x-3 flex-shrink-0">
+                <Button
+                  variant="outline"
                   onClick={() => setEditModalRole(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
                   type="submit"
-                  className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs shadow-blue-600/20"
                 >
                   Save Changes
-                </button>
+                </Button>
               </div>
             </form>
           </div>

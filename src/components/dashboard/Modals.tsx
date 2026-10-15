@@ -838,9 +838,12 @@ export function Modals({
               onSubmit={(e) => {
                 e.preventDefault();
                 const errs: Record<string, string> = {};
+                const isCash = paymentEntryForm.paymentMode === 'Cash';
                 if (!paymentEntryForm.billId) errs.billId = 'Please select a verified bill';
                 if (!paymentEntryForm.paymentAmount || paymentEntryForm.paymentAmount <= 0) errs.paymentAmount = 'Please enter valid disbursement amount';
-                if (!paymentEntryForm.transactionNumber?.trim()) errs.transactionNumber = 'Please enter transaction / UTR reference number';
+                if (!isCash && !paymentEntryForm.transactionNumber?.trim()) {
+                  errs.transactionNumber = 'Please enter transaction / UTR reference number';
+                }
                 if (Object.keys(errs).length > 0) {
                   setErrors(errs);
                   return;
@@ -891,20 +894,25 @@ export function Modals({
                     { value: 'Cash', label: 'Cash' }
                   ]}
                   value={paymentEntryForm.paymentMode}
-                  onChange={e => setPaymentEntryForm({ ...paymentEntryForm, paymentMode: e.target.value })}
+                  onChange={e => {
+                    setPaymentEntryForm({ ...paymentEntryForm, paymentMode: e.target.value });
+                    if (e.target.value === 'Cash') {
+                      clearError('transactionNumber');
+                    }
+                  }}
                 />
               </div>
 
               <Input
-                label="Transaction / UTR Reference Number"
+                label={paymentEntryForm.paymentMode === 'Cash' ? "Transaction / Receipt Reference Number (Optional for Cash)" : "Transaction / UTR Reference Number"}
                 value={paymentEntryForm.transactionNumber}
                 onChange={e => {
                   setPaymentEntryForm({ ...paymentEntryForm, transactionNumber: e.target.value });
                   clearError('transactionNumber');
                 }}
-                placeholder="UTR-2026-987654321"
+                placeholder={paymentEntryForm.paymentMode === 'Cash' ? "Cash Voucher / Receipt (Optional)" : "UTR-2026-987654321"}
                 error={errors.transactionNumber}
-                required
+                required={paymentEntryForm.paymentMode !== 'Cash'}
               />
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">

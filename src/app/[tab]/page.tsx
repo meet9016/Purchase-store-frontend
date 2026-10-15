@@ -82,34 +82,45 @@ async function apiCall<T>(fn: () => Promise<T>, onSuccess?: (result: T) => void)
 export default function DashboardPage() {
   const router = useRouter();
   const params = useParams();
-  const activeTab = (params?.tab as SidebarTab) || 'dashboard';
+  const tabFromParam = (params?.tab as SidebarTab) || 'dashboard';
+  const [activeTab, setActiveTab] = useState<SidebarTab>(tabFromParam);
 
+  const [mounted, setMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
-      const active = localStorage.getItem('active_user');
-      if (active) {
-        try { return JSON.parse(active); } catch (e) { console.error(e); }
-      }
+      try {
+        const active = localStorage.getItem('active_user');
+        if (active) return JSON.parse(active);
+      } catch (e) {}
     }
     return null;
   });
-
-  const [db, setDb] = useState<DatabaseState>(() => {
-    const initialDb = getDatabase();
-    if (typeof window !== 'undefined') {
-      const cachedRoles = localStorage.getItem('cached_roles');
-      if (cachedRoles) {
-        try { initialDb.rolePermissions = JSON.parse(cachedRoles); } catch (e) { console.error(e); }
-      }
-    }
-    return initialDb;
-  });
+  const [db, setDb] = useState<DatabaseState>(getDatabase);
   const [navLayout, setNavLayout] = useState<'sidebar' | 'header'>('sidebar');
   const [backendOnline, setBackendOnline] = useState(false);
 
+  // Sync if URL route changes directly
+  useEffect(() => {
+    if (params?.tab && params.tab !== activeTab) {
+      setActiveTab(params.tab as SidebarTab);
+    }
+  }, [params?.tab]);
+
+  // Handle browser back / forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\//, '') as SidebarTab;
+      if (path) setActiveTab(path);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Smooth client-side tab change without remounting the page tree
   const handleTabChange = useCallback((tab: SidebarTab) => {
-    router.push(`/${tab}`);
-  }, [router]);
+    setActiveTab(tab);
+    window.history.pushState(null, '', `/${tab}`);
+  }, []);
 
   // Modal & Selected Drawer States
   const [openModal, setOpenModal] = useState<string | null>(null);
@@ -129,7 +140,7 @@ export default function DashboardPage() {
   const [outwardItemInput, setOutwardItemInput] = useState({ itemId: '', quantity: 1 });
   const [billForm, setBillForm] = useState({ poId: '', vendorInvoiceNumber: '', billDate: new Date().toISOString().split('T')[0], billAmount: 0, creditPeriod: 30, dueDate: '' });
   const [paymentReqForm, setPaymentReqForm] = useState({ billId: '', requestedAmount: 0, remarks: '' });
-  const [paymentEntryForm, setPaymentEntryForm] = useState({ billId: '', paymentAmount: 0, paymentMode: 'Bank Transfer/NEFT/RTGS' as const, transactionNumber: '', remarks: '' });
+  const [paymentEntryForm, setPaymentEntryForm] = useState({ billId: '', paymentAmount: 0, paymentMode: 'Bank Transfer/NEFT/RTGS' as 'Bank Transfer/NEFT/RTGS' | 'Cheque' | 'UPI' | 'Cash', transactionNumber: '', remarks: '' });
 
   // Update DB helper — updates React state
   const updateDB = useCallback((newDb: DatabaseState) => {
@@ -284,13 +295,27 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Fetch tab-specific data on tab change
+  // Fetch tab-specific data on tab change (only after client mounted)
   useEffect(() => {
-    fetchTabData(activeTab);
-  }, [activeTab, fetchTabData]);
+    if (mounted) {
+      fetchTabData(activeTab);
+    }
+  }, [activeTab, fetchTabData, mounted]);
 
   // Load initial complete state from backend on mount
   useEffect(() => {
+    setMounted(true);
+
+    const cachedRoles = localStorage.getItem('cached_roles');
+    if (cachedRoles) {
+      try {
+        const parsedRoles = JSON.parse(cachedRoles);
+        setDb(prev => ({ ...prev, rolePermissions: parsedRoles }));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     const active = localStorage.getItem('active_user');
     const token = localStorage.getItem('auth_token');
 
@@ -320,7 +345,7 @@ export default function DashboardPage() {
     }
 
     setBackendOnline(true);
-  }, [fetchTabData, router]); // Removed activeTab dependency
+  }, [fetchTabData, router]);
 
   const simulateRole = (role: string) => {
     if (!db) return;
@@ -738,8 +763,10 @@ export default function DashboardPage() {
       vendorId: selectedBill.vendorId, vendorName: selectedBill.vendorName,
       billId: selectedBill.id, billNumber: selectedBill.billNumber,
       poNumber: selectedBill.poNumber,
-      paymentAmount: paymentEntryForm.paymentAmount, paymentMode: paymentEntryForm.paymentMode,
-      transactionNumber: paymentEntryForm.transactionNumber, remarks: paymentEntryForm.remarks || '',
+      paymentAmount: paymentEntryForm.paymentAmount,
+      paymentMode: paymentEntryForm.paymentMode as any,
+      transactionNumber: paymentEntryForm.transactionNumber?.trim() || (paymentEntryForm.paymentMode === 'Cash' ? 'CASH' : ''),
+      remarks: paymentEntryForm.remarks || '',
       enteredBy: currentUser.id, enteredByName: currentUser.name
     };
 
@@ -786,7 +813,20 @@ export default function DashboardPage() {
     }
   };
 
-  if (!currentUser) return null;
+  if (!currentUser && !mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100/70 text-slate-900">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium text-slate-500">Loading Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return null;
+  }
 
   // Filtered datasets by Project, Search, and View Scope (Global vs Own)
   const prScope = getViewScope(db.rolePermissions, currentUser, 'Purchase Requests');
