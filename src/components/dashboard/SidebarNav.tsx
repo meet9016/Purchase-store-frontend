@@ -70,20 +70,33 @@ export function SidebarNav({
     reports: 'Reports',
   };
 
+  const DEFAULT_ROLE_MODULES: Record<string, SidebarTab[]> = {
+    Admin: ['dashboard', 'masters', 'pr', 'po', 'grn', 'stock', 'outward', 'bills', 'payment-req', 'payments', 'reports', 'audit', 'notifications', 'permissions'],
+    Purchase: ['dashboard', 'masters', 'pr', 'po', 'grn', 'reports', 'notifications'],
+    Store: ['dashboard', 'grn', 'stock', 'outward', 'reports', 'notifications'],
+    Accounts: ['dashboard', 'bills', 'payment-req', 'payments', 'reports', 'notifications'],
+    Approver: ['dashboard', 'pr', 'po', 'payment-req', 'reports', 'notifications'],
+    Requester: ['dashboard', 'pr', 'stock', 'reports', 'notifications'],
+    Management: ['dashboard', 'reports', 'audit', 'notifications'],
+  };
+
   const isTabVisible = (tabId: SidebarTab): boolean => {
     if (currentRole === 'Admin') return true;
     if (tabId === 'dashboard' || tabId === 'notifications') return true;
     if (tabId === 'permissions' || tabId === 'audit') return false; // Admin/Management only
 
     const featureName = tabFeatureMap[tabId];
-    if (featureName && rolePerm && rolePerm.permissions) {
+    if (featureName && rolePerm && rolePerm.permissions && Object.keys(rolePerm.permissions).length > 0) {
       const p = rolePerm.permissions[featureName];
-      // If neither viewGlobal nor viewOwn is selected, the module is hidden!
-      return !!(p?.viewGlobal || p?.viewOwn);
+      if (p) {
+        return !!(p.viewGlobal || p.viewOwn);
+      }
     }
 
-    // Default fallback to allowedModules if no granular perm defined
-    const allowedModules = rolePerm?.modules || ['dashboard'];
+    // Fallback to allowedModules or system defaults for standard roles
+    const allowedModules = (rolePerm?.modules && rolePerm.modules.length > 0)
+      ? rolePerm.modules
+      : (DEFAULT_ROLE_MODULES[currentRole] || ['dashboard', 'pr', 'stock', 'reports']);
     return allowedModules.includes(tabId);
   };
 
@@ -161,11 +174,11 @@ export function SidebarNav({
         <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs">
           <div className="flex items-center space-x-2.5 truncate min-w-0 pr-1">
             <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-xs">
-              {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'A'}
+              {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : (currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : 'U')}
             </div>
             <div className="truncate min-w-0">
               <p className="text-xs font-bold text-[#0F172C] truncate leading-tight">
-                {currentUser?.name || 'Alok Sharma'}
+                {currentUser?.name || currentUser?.email || 'User'}
               </p>
               <span className="inline-block text-xs font-semibold text-blue-600 leading-none mt-0.5 capitalize">
                 {currentRole}

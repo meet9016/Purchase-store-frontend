@@ -43,6 +43,16 @@ export default function LoginPage() {
 
   const router = useRouter();
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token');
+      const user = localStorage.getItem('active_user');
+      if (token && user && !token.startsWith('local_')) {
+        router.replace('/dashboard');
+      }
+    }
+  }, [router]);
+
   const validateLoginForm = () => {
     const errs: Record<string, string> = {};
     const cleanEmail = email.trim();
@@ -90,81 +100,21 @@ export default function LoginPage() {
         }
 
         toast.success(`Welcome back, ${user.name || 'User'}!`);
-        window.location.href = '/dashboard';
+        router.replace('/dashboard');
         return;
+      } else {
+        throw new Error('Invalid authentication response from server');
       }
     } catch (apiErr: any) {
       const serverMsg = apiErr?.message || apiErr?.data?.message || apiErr?.response?.data?.message;
       console.warn('[Backend Auth Failed]', serverMsg || apiErr);
 
-      // If backend explicitly rejected with invalid credentials (400, 401, 403, 404)
-      if (apiErr?.status === 401 || apiErr?.status === 400 || apiErr?.status === 403 || apiErr?.status === 404) {
-        const errorMsg = serverMsg || 'Invalid email or password. Please try again.';
-        setError(errorMsg);
-        toast.error(errorMsg);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // 2. Local Fallback authentication (Only if backend server is unreachable)
-    const activeDb = getDatabase();
-    let user = activeDb?.users?.find((u) => u.email.toLowerCase().trim() === cleanEmail);
-
-    // Auto-seed demo role if matching demo email
-    const demoMatch = DEMO_ROLES.find((d) => d.email.toLowerCase().trim() === cleanEmail);
-    if (!user && demoMatch) {
-      const defaultNames: Record<string, string> = {
-        Admin: 'Alok Sharma',
-        Purchase: 'Rahul Verma',
-        Store: 'Vikram Singh',
-        Accounts: 'Sneha Patel',
-        Approver: 'Priya Mehta',
-      };
-      user = {
-        id: `usr-${Date.now()}`,
-        name: defaultNames[demoMatch.role] || demoMatch.role,
-        email: cleanEmail,
-        role: demoMatch.role,
-        department: 'Operations Division',
-        active: true,
-        password: demoMatch.pass || '123456',
-      };
-      if (activeDb?.users) {
-        activeDb.users.push(user);
-        saveDatabase(activeDb);
-      }
-    }
-
-    if (!user) {
-      const errMsg = `Account '${targetEmail}' not found.`;
+      const errorMsg = serverMsg || 'Invalid email or password. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
       setLoading(false);
-      setError(errMsg);
-      toast.error(errMsg);
       return;
     }
-
-    if (!user.active) {
-      const errMsg = 'This user account is currently deactivated.';
-      setLoading(false);
-      setError(errMsg);
-      toast.error(errMsg);
-      return;
-    }
-
-    const validPassword = user.password || '123456';
-    if (cleanPass !== '123456' && cleanPass !== validPassword) {
-      const errMsg = 'Invalid email or password.';
-      setLoading(false);
-      setError(errMsg);
-      toast.error(errMsg);
-      return;
-    }
-
-    localStorage.setItem('active_user', JSON.stringify(user));
-    localStorage.setItem('auth_token', 'local_jwt_' + Date.now());
-    toast.success(`Welcome back, ${user.name || 'User'}!`);
-    window.location.href = '/dashboard';
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
