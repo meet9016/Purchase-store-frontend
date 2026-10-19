@@ -17,7 +17,7 @@ axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('auth_token');
-      if (token && !token.startsWith('local_')) {
+      if (token && token !== 'null' && token !== 'undefined' && !token.startsWith('local_')) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }

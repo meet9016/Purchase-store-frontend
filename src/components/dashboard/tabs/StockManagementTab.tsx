@@ -27,19 +27,19 @@ export function StockManagementTab({ stocks, items, categories }: StockManagemen
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl p-3.5 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
             <Package className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Inventory Stock Balances</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Inventory Stock Balances</h3>
             <p className="text-xs text-slate-500 font-medium">Real-time stock balance &amp; min-stock alerts</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <label className="flex items-center space-x-2 text-xs font-semibold text-[#0F172C] cursor-pointer">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+          <label className="flex items-center space-x-2 text-xs font-semibold text-[#0F172C] cursor-pointer shrink-0">
             <input
               type="checkbox"
               checked={onlyLowStock}
@@ -49,7 +49,7 @@ export function StockManagementTab({ stocks, items, categories }: StockManagemen
             <span>Low Stock Alerts Only</span>
           </label>
 
-          <div className="min-w-[170px]">
+          <div className="w-full sm:w-auto sm:min-w-[170px]">
             <Select
               options={[
                 { value: '', label: 'All Categories' },

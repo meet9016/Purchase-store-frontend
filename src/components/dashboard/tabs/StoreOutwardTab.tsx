@@ -36,18 +36,18 @@ export function StoreOutwardTab({ outwards, currentUser, rolePermissions = [], o
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3.5 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
             <ArrowUpRight className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Store Outward Issues</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Store Outward Issues</h3>
             <p className="text-xs text-slate-500 font-medium">Material issued from store to site/department</p>
           </div>
         </div>
         {canCreateOutward && (
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreateOutwardModal}>
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenCreateOutwardModal} className="w-full sm:w-auto justify-center">
             Issue Material
           </Button>
         )}
@@ -97,7 +97,7 @@ export function StoreOutwardTab({ outwards, currentUser, rolePermissions = [], o
       {/* Detail Modal */}
       {selectedOutward && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-[#0F172C]">{selectedOutward.outwardNumber || selectedOutward.issueNumber}</h3>
@@ -108,7 +108,7 @@ export function StoreOutwardTab({ outwards, currentUser, rolePermissions = [], o
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
                 <p className="text-xs font-bold text-slate-700">Issue Details</p>
                 <p><span className="text-slate-500 text-xs">Date:</span> <span className="font-semibold">{selectedOutward.issueDate || selectedOutward.date}</span></p>
@@ -127,8 +127,8 @@ export function StoreOutwardTab({ outwards, currentUser, rolePermissions = [], o
 
             <div>
               <h4 className="text-sm font-bold text-[#0F172C] mb-2">Issued Items</h4>
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-xs">
+              <div className="border border-slate-200 rounded-xl overflow-x-auto">
+                <table className="w-full min-w-[320px] text-xs">
                   <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-2 text-left">Item Name</th>

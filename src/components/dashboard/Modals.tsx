@@ -170,7 +170,7 @@ export function Modals({
       {/* 1. Create PR Modal */}
       {openModal === 'create-pr' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-visible shadow-2xl max-w-2xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-bold text-[#0F172C]">Create Purchase Request</h3>
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
@@ -277,8 +277,8 @@ export function Modals({
                     <span className="text-xs text-red-500 font-medium">{errors.items}</span>
                   )}
                 </div>
-                <div className={`border rounded-xl overflow-hidden shadow-xs ${errors.items ? 'border-red-400' : 'border-slate-200'}`}>
-                  <table className="w-full text-sm text-left">
+                <div className={`border rounded-xl overflow-x-auto shadow-xs ${errors.items ? 'border-red-400' : 'border-slate-200'}`}>
+                  <table className="w-full min-w-[340px] text-xs sm:text-sm text-left">
                     <thead className="bg-slate-50 text-slate-700 font-semibold text-xs border-b border-slate-200">
                       <tr>
                         <th className="p-3">Item Name</th>
@@ -330,8 +330,8 @@ export function Modals({
 
       {/* 2. Create PO Modal */}
       {openModal === 'create-po' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade ">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-visible">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-lg font-bold text-[#0F172C]">Create Purchase Order</h3>
               <button onClick={() => setOpenModal(null)} className="text-slate-400 hover:text-slate-700 font-bold text-lg cursor-pointer">✕</button>
@@ -430,7 +430,7 @@ export function Modals({
       {/* 3. Create GRN Modal */}
       {openModal === 'create-grn' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
@@ -526,7 +526,7 @@ export function Modals({
       {/* 4. Create Store Outward Modal */}
       {openModal === 'create-outward' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
@@ -638,7 +638,7 @@ export function Modals({
       {/* 5. Create Vendor Bill Modal */}
       {openModal === 'create-bill' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
@@ -743,7 +743,7 @@ export function Modals({
       {/* 6. Create Payment Request Modal */}
       {openModal === 'create-pay-req' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 animate-modal-zoom space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
@@ -822,7 +822,7 @@ export function Modals({
       {/* 7. Create Payment Entry Modal */}
       {openModal === 'create-payment' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 animate-modal-zoom space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
@@ -927,7 +927,7 @@ export function Modals({
       {/* 8. PR Detail Modal */}
       {selectedPrDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 animate-modal-zoom space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-[#0F172C]">{selectedPrDetail.prNumber}</h3>
@@ -937,7 +937,7 @@ export function Modals({
             </div>
 
             <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
                 <div><span className="font-semibold text-slate-500">Requester:</span> <span className="font-bold text-[#0F172C] ml-1">{selectedPrDetail.requesterName}</span></div>
                 <div><span className="font-semibold text-slate-500">Date:</span> <span className="font-bold text-[#0F172C] ml-1">{selectedPrDetail.requestDate}</span></div>
                 <div><span className="font-semibold text-slate-500">Priority:</span> <span className="font-bold text-[#0F172C] ml-1">{selectedPrDetail.priority}</span></div>
@@ -945,8 +945,8 @@ export function Modals({
               </div>
 
               <h4 className="font-bold text-[#0F172C] text-xs">Requested Line Items</h4>
-              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                <table className="w-full text-left text-xs">
+              <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+                <table className="w-full min-w-[320px] text-left text-xs">
                   <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                     <tr><th className="p-3">Item Name</th><th className="p-3">Quantity</th><th className="p-3">Remarks</th></tr>
                   </thead>
@@ -973,19 +973,19 @@ export function Modals({
       {/* 9. PO View / Print Drawer */}
       {selectedPo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full p-8 animate-modal-zoom space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full p-4 sm:p-8 animate-modal-zoom space-y-4 sm:space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-sm">
+                <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-sm shrink-0">
                   <ShoppingBag className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-[#0F172C]">Purchase Store Order</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-[#0F172C]">Purchase Store Order</h2>
                   <p className="text-xs text-slate-500 font-medium">PO #: {selectedPo.poNumber}</p>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-between sm:justify-end space-x-2">
                 <Button
                   variant="primary"
                   icon={<Printer className="h-4 w-4" />}
@@ -997,50 +997,50 @@ export function Modals({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200">
               <div>
                 <p className="font-semibold text-slate-400 text-xs">Vendor Details</p>
-                <p className="font-bold text-[#0F172C] text-base mt-0.5">{selectedPo.vendorName}</p>
+                <p className="font-bold text-[#0F172C] text-sm sm:text-base mt-0.5">{selectedPo.vendorName}</p>
               </div>
               <div>
                 <p className="font-semibold text-slate-400 text-xs">Project &amp; Location</p>
-                <p className="font-bold text-[#0F172C] text-base mt-0.5">{selectedPo.projectName}</p>
+                <p className="font-bold text-[#0F172C] text-sm sm:text-base mt-0.5">{selectedPo.projectName}</p>
                 <p className="text-slate-600 font-normal text-xs mt-0.5">{selectedPo.deliveryLocation}</p>
               </div>
             </div>
 
-            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              <table className="w-full text-sm text-left">
+            <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+              <table className="w-full min-w-[420px] text-xs sm:text-sm text-left">
                 <thead className="bg-slate-50 text-slate-700 font-semibold text-xs border-b border-slate-200">
                   <tr>
-                    <th className="p-3.5">Item Name</th>
-                    <th className="p-3.5">Quantity</th>
-                    <th className="p-3.5">Unit Rate</th>
-                    <th className="p-3.5">Tax Rate</th>
-                    <th className="p-3.5 text-right">Total Amount</th>
+                    <th className="p-3 sm:p-3.5">Item Name</th>
+                    <th className="p-3 sm:p-3.5">Quantity</th>
+                    <th className="p-3 sm:p-3.5">Unit Rate</th>
+                    <th className="p-3 sm:p-3.5">Tax Rate</th>
+                    <th className="p-3 sm:p-3.5 text-right">Total Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {selectedPo.items?.map((it, idx) => (
                     <tr key={idx}>
-                      <td className="p-3.5 font-semibold text-[#0F172C]">{it.itemName}</td>
-                      <td className="p-3.5 font-medium text-slate-800">{it.quantity} {it.unit}</td>
-                      <td className="p-3.5 font-normal text-slate-700">{formatCurrency(it.rate)}</td>
-                      <td className="p-3.5 text-slate-600 font-normal">{it.tax}%</td>
-                      <td className="p-3.5 font-bold text-[#0F172C] text-right">{formatCurrency(it.amount || it.totalAmount)}</td>
+                      <td className="p-3 sm:p-3.5 font-semibold text-[#0F172C]">{it.itemName}</td>
+                      <td className="p-3 sm:p-3.5 font-medium text-slate-800">{it.quantity} {it.unit}</td>
+                      <td className="p-3 sm:p-3.5 font-normal text-slate-700">{formatCurrency(it.rate)}</td>
+                      <td className="p-3 sm:p-3.5 text-slate-600 font-normal">{it.tax}%</td>
+                      <td className="p-3 sm:p-3.5 font-bold text-[#0F172C] text-right">{formatCurrency(it.amount || it.totalAmount)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pt-4 border-t border-slate-200">
               <div className="text-sm font-semibold text-slate-600">
                 Status: <span className="text-emerald-700 font-bold ml-1">{selectedPo.status}</span>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-xs text-slate-500 font-semibold">Grand Total Amount</p>
-                <p className="text-2xl font-black text-[#0F172C]">{formatCurrency(selectedPo.totalPOAmount || selectedPo.totalAmount || 0)}</p>
+                <p className="text-xl sm:text-2xl font-black text-[#0F172C]">{formatCurrency(selectedPo.totalPOAmount || selectedPo.totalAmount || 0)}</p>
               </div>
             </div>
           </div>

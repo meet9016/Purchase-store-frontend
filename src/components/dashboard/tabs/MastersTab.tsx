@@ -284,8 +284,8 @@ export function MastersTab({
   return (
     <div className="space-y-6">
       {/* Sub-tab Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
-        <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
+        <div className="flex items-center space-x-1.5 overflow-x-auto max-w-full pb-2 sm:pb-0 no-scrollbar">
           {[
             { id: 'items', label: 'Item Master', icon: <Package className="w-4 h-4" /> },
             { id: 'categories', label: 'Categories', icon: <Tags className="w-4 h-4" /> },
@@ -299,7 +299,7 @@ export function MastersTab({
               key={tab.id}
               type="button"
               onClick={() => setSubTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${subTab === tab.id
+              className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${subTab === tab.id
                 ? 'bg-blue-600 text-white shadow-xs font-bold'
                 : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80 hover:text-slate-900'
                 }`}
@@ -315,7 +315,7 @@ export function MastersTab({
             variant="primary"
             icon={<Plus className="w-4 h-4" />}
             onClick={handleOpenAdd}
-            className="whitespace-nowrap shrink-0 shadow-sm"
+            className="w-full sm:w-auto justify-center whitespace-nowrap shrink-0 shadow-sm"
           >
             Add New {getSubTabLabel(subTab)}
           </Button>
@@ -864,7 +864,7 @@ export function MastersTab({
                   error={formErrors.contactPerson}
                   required
                 />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="Phone Number"
                     value={vendorForm.phone}
@@ -884,7 +884,7 @@ export function MastersTab({
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
                     label="GST Number"
                     value={vendorForm.gstNo}
@@ -903,7 +903,7 @@ export function MastersTab({
                     error={formErrors.panNo}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input label="Credit Period (Days)" type="number" value={vendorForm.creditPeriod} onChange={e => setVendorForm({ ...vendorForm, creditPeriod: Number(e.target.value) })} />
                   <Input label="Address" value={vendorForm.address} onChange={e => setVendorForm({ ...vendorForm, address: e.target.value })} placeholder="City, State" />
                 </div>
@@ -976,6 +976,10 @@ export function MastersTab({
                   errors.email = 'Please enter a valid email address';
                 }
 
+                if (!editingId && !userForm.password?.trim()) {
+                  errors.password = 'Password is required';
+                }
+
                 if (Object.keys(errors).length > 0) {
                   setFormErrors(errors);
                   return;
@@ -1010,11 +1014,13 @@ export function MastersTab({
                   required
                 />
                 <Input
-                  label={editingId ? "Reset Password (Optional)" : "Password (Default: 123456)"}
+                  label={editingId ? "Reset Password (Optional)" : "Password"}
                   type="password"
                   value={userForm.password}
-                  onChange={e => setUserForm({ ...userForm, password: e.target.value })}
+                  onChange={e => { setUserForm({ ...userForm, password: e.target.value }); clearError('password'); }}
                   placeholder={editingId ? "Leave blank to keep existing, or enter new password" : "Enter account password"}
+                  error={formErrors.password}
+                  required={!editingId}
                 />
                 <Select
                   label="Assign Role (Dynamic Role Master)"

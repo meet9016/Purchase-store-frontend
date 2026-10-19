@@ -65,34 +65,34 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3.5 sm:px-4 sm:py-3 shadow-xs">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
             <Layers className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-[#0F172C]">Vendor Bills &amp; Invoices</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[#0F172C]">Vendor Bills &amp; Invoices</h3>
             <p className="text-xs text-slate-500 font-medium">Inward invoices, 3-way matching &amp; payment schedules</p>
           </div>
         </div>
         {canRegisterBill && (
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenRegisterBillModal}>
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={onOpenRegisterBillModal} className="w-full sm:w-auto justify-center">
             Register Bill
           </Button>
         )}
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Total Bills', value: bills.length, color: 'blue' },
           { label: 'Total Billed', value: formatCurrency(bills.reduce((s, b) => s + (b.billAmount || 0), 0)), color: 'slate' },
           { label: 'Total Paid', value: formatCurrency(bills.reduce((s, b) => s + (b.paidAmount || 0), 0)), color: 'emerald' },
           { label: 'Outstanding', value: formatCurrency(bills.reduce((s, b) => s + (b.outstandingAmount || 0), 0)), color: 'rose' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div key={i} className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 shadow-xs">
             <p className="text-xs text-slate-500 font-semibold">{stat.label}</p>
-            <p className={`text-lg font-black mt-1 ${stat.color === 'emerald' ? 'text-emerald-600' : stat.color === 'rose' ? 'text-rose-600' : 'text-[#0F172C]'}`}>
+            <p className={`text-base sm:text-lg font-black mt-1 ${stat.color === 'emerald' ? 'text-emerald-600' : stat.color === 'rose' ? 'text-rose-600' : 'text-[#0F172C]'}`}>
               {stat.value}
             </p>
           </div>
@@ -177,7 +177,7 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
       {/* Bill Detail Modal */}
       {selectedBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-4 sm:p-6 animate-modal-zoom space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-[#0F172C]">{selectedBill.billNumber}</h3>
@@ -188,7 +188,7 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-sm">
                 <p className="text-xs font-bold text-slate-700">Bill Info</p>
                 <p><span className="text-slate-500 text-xs">Vendor:</span> <span className="font-bold">{selectedBill.vendorName}</span></p>
@@ -205,11 +205,11 @@ export function VendorBillsTab({ bills, currentUser, rolePermissions = [], onOpe
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-2">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${statusBadge(selectedBill.status)}`}>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pt-2">
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${statusBadge(selectedBill.status)} w-fit`}>
                 {selectedBill.status}
               </span>
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {isAccountsOrAdmin && selectedBill.status === 'Submitted' && (
                   <Button variant="success" size="sm" onClick={() => {
                     setConfirmModal({
