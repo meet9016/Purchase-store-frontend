@@ -1,6 +1,7 @@
 // Purchase Store Enterprise — Centralized Typed API Service Layer
 // Built with Axios Client, Interceptors, and Standard Response Envelopes
 
+import axios from 'axios';
 import axiosClient from './axiosClient';
 import {
   DatabaseState,
@@ -50,11 +51,40 @@ export interface QueryParams {
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 export const authApi = {
   login: async (email: string, password: string) => {
-    const res = await axiosClient.post<ApiResponseEnvelope<{ token: string; user: User }>>('/auth/login', {
-      email,
-      password,
-    });
-    return res.data;
+    try {
+      const res = await axiosClient.post<ApiResponseEnvelope<{ token: string; user: User }>>('/auth/login', {
+        email,
+        password,
+      });
+      return res.data;
+    } catch (err: any) {
+      // Smart Fallback: If initial call failed (e.g. double /api or proxy issue), call the direct clean API URL
+      if (typeof window !== 'undefined') {
+        const { hostname, origin, protocol } = window.location;
+        let directUrl = '';
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          directUrl = 'http://localhost:5005/api/auth/login';
+        } else if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)) {
+          directUrl = `${protocol}//${hostname}:5005/api/auth/login`;
+        } else {
+          directUrl = `${origin}/api/auth/login`;
+        }
+
+        try {
+          const directRes = await axios.post<ApiResponseEnvelope<{ token: string; user: User }>>(
+            directUrl,
+            { email, password },
+            { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+          );
+          if (directRes?.data?.data?.token) {
+            return directRes.data;
+          }
+        } catch (directErr) {
+          console.warn('[Direct Login Fallback Error]', directErr);
+        }
+      }
+      throw err;
+    }
   },
   register: async (userData: { name: string; email: string; password: string; role: string; department?: string }) => {
     const res = await axiosClient.post<ApiResponseEnvelope<{ token: string; user: User }>>('/auth/register', userData);

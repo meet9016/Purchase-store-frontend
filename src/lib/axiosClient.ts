@@ -1,7 +1,24 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005/api';
+export const getCleanApiBase = (): string => {
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname, origin } = window.location;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname);
+      if (isIp) {
+        return `${protocol}//${hostname}:5005/api`;
+      }
+      return `${origin}/api`;
+    }
+  }
+  let base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5005/api';
+  base = base.replace(/\/+$/, '');
+  base = base.replace(/\/api\/api$/, '/api');
+  return base;
+};
+
+export const API_BASE = getCleanApiBase();
 
 // Create Centralized Axios Instance
 export const axiosClient: AxiosInstance = axios.create({
@@ -12,9 +29,22 @@ export const axiosClient: AxiosInstance = axios.create({
   },
 });
 
-// ─── Request Interceptor: JWT Auth Injection ──────────────────────────────────
+// ─── Request Interceptor: Dynamic baseURL & JWT Auth Injection ────────────────
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Dynamically ensure clean baseURL in browser
+    if (typeof window !== 'undefined') {
+      const cleanBase = getCleanApiBase();
+      if (config.baseURL !== cleanBase) {
+        config.baseURL = cleanBase;
+      }
+    }
+
+    // Safety: ensure no accidental double /api/api
+    if (config.baseURL) {
+      config.baseURL = config.baseURL.replace(/\/+$/, '').replace(/\/api\/api$/, '/api');
+    }
+
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('auth_token');
       if (token && token !== 'null' && token !== 'undefined' && !token.startsWith('local_')) {
