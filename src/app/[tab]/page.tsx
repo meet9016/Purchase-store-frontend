@@ -1179,6 +1179,27 @@ export default function DashboardPage() {
                 }
               }}
               roles={db.rolePermissions}
+              onSaveRolePermission={async (role, payload) => {
+                const finalRole = payload.newRoleName || role;
+                try {
+                  await rolePermissionsApi.update(role, payload);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Update Role Permissions', '', `Updated permissions for ${finalRole}`, 'RolePermissions', finalRole);
+                  toast.success(`Role & capabilities saved for ${finalRole} via API!`);
+                } catch (err: any) {
+                  toast.error(err?.message || `Failed to save role permissions for ${finalRole} via API`);
+                }
+              }}
+              onDeleteRolePermission={async (role) => {
+                try {
+                  await rolePermissionsApi.delete(role);
+                  await fetchTabData('masters');
+                  addAuditLog(currentUser.id, 'Delete Role', '', `Deleted role ${role}`, 'RolePermissions', role);
+                  toast.success(`Role ${role} deleted successfully via API`);
+                } catch (err: any) {
+                  toast.error(err?.message || `Failed to delete role ${role} via API`);
+                }
+              }}
               onAddRole={async (r) => {
                 try {
                   await rolesApi.create(r);

@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState } from 'react';
-import { User, Project, Vendor, Category, Unit, Item, RolePermission } from '@/lib/storeData';
+import { User, Project, Vendor, Category, Unit, Item, RolePermission, ActionCapability } from '@/lib/storeData';
 import { Table } from '@/components/ui/Table';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { DeleteConfirmModal } from '@/components/ui/DeleteConfirmModal';
-import { Plus, Users, Building, Truck, Tags, Package, Scale, Edit2, Trash2, Shield, Lock, ShieldCheck } from 'lucide-react';
+import { Plus, Users, Building, Truck, Tags, Package, Scale, Edit2, Trash2, Shield, Lock, ShieldCheck, X } from 'lucide-react';
 import { isValidEmail, isValidPhone, formatPhone, isValidGST, formatGST, formatPAN, isValidPAN } from '@/lib/validation';
+import { PERMISSION_FEATURES, FIXED_SYSTEM_ROLES } from './RolePermissionsTab';
 
 interface MastersTabProps {
   users: User[];
@@ -19,7 +20,7 @@ interface MastersTabProps {
   items: Item[];
   roles?: RolePermission[];
   currentUser?: any;
-  rolePermissions?: any[];
+  rolePermissions?: RolePermission[];
 
   onAddUser: (user: Omit<User, 'id'>) => void;
   onEditUser?: (id: string, user: Partial<User>) => void;
@@ -45,9 +46,11 @@ interface MastersTabProps {
   onEditItem?: (id: string, item: Partial<Item>) => void;
   onDeleteItem?: (id: string) => void;
 
-  onAddRole?: (role: Partial<RolePermission>) => void;
-  onEditRole?: (id: string, role: Partial<RolePermission>) => void;
-  onDeleteRole?: (id: string) => void;
+  onAddRole?: (role: Partial<RolePermission>) => void | Promise<any>;
+  onEditRole?: (id: string, role: Partial<RolePermission>) => void | Promise<any>;
+  onDeleteRole?: (id: string) => void | Promise<any>;
+  onSaveRolePermission?: (role: string, payload: { modules?: string[]; permissions?: Record<string, ActionCapability>; newRoleName?: string }) => void | Promise<any>;
+  onDeleteRolePermission?: (role: string) => void | Promise<any>;
 }
 
 const DEFAULT_SYSTEM_ROLES = [
@@ -91,12 +94,96 @@ export function MastersTab({
   onDeleteItem,
   onAddRole,
   onEditRole,
-  onDeleteRole
+  onDeleteRole,
+  onSaveRolePermission,
+  onDeleteRolePermission
 }: MastersTabProps) {
   const [subTab, setSubTab] = useState<'items' | 'categories' | 'units' | 'vendors' | 'projects' | 'users' | 'roles'>('items');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Permission Matrix Modal State
+  const [permissionModalRole, setPermissionModalRole] = useState<RolePermission | null>(null);
+  const [permissionDraft, setPermissionDraft] = useState<Record<string, ActionCapability>>({});
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+
+  const handleOpenPermissionModal = (r: RolePermission) => {
+    const existingPerms: Record<string, ActionCapability> = {};
+    const isAdmin = r.role?.toLowerCase() === 'admin';
+    PERMISSION_FEATURES.forEach(f => {
+      if (isAdmin) {
+        existingPerms[f] = {
+          viewGlobal: true,
+          viewOwn: false,
+          create: true,
+          update: true,
+          delete: true,
+        };
+      } else {
+        const p = (r.permissions as any)?.[f] || {};
+        existingPerms[f] = {
+          viewGlobal: !!p.viewGlobal,
+          viewOwn: !p.viewGlobal && !!p.viewOwn,
+          create: !!p.create,
+          update: !!p.update,
+          delete: !!p.delete,
+        };
+      }
+    });
+    setPermissionDraft(existingPerms);
+    setPermissionModalRole(r);
+  };
+
+  const togglePermissionCapability = (feature: string, cap: keyof ActionCapability) => {
+    if (permissionModalRole?.role?.toLowerCase() === 'admin') return;
+
+    setPermissionDraft(prev => {
+      const featPerm = prev[feature] || { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
+      const nextPerm = { ...featPerm };
+
+      if (cap === 'viewGlobal') {
+        const nextVal = !featPerm.viewGlobal;
+        nextPerm.viewGlobal = nextVal;
+        if (nextVal) nextPerm.viewOwn = false;
+      } else if (cap === 'viewOwn') {
+        const nextVal = !featPerm.viewOwn;
+        nextPerm.viewOwn = nextVal;
+        if (nextVal) nextPerm.viewGlobal = false;
+      } else {
+        nextPerm[cap] = !featPerm[cap];
+      }
+
+      return {
+        ...prev,
+        [feature]: nextPerm
+      };
+    });
+  };
+
+  const handleSavePermissions = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!permissionModalRole) return;
+
+    if (permissionModalRole.role?.toLowerCase() === 'admin') {
+      setPermissionModalRole(null);
+      return;
+    }
+
+    setIsSavingPermissions(true);
+    try {
+      if (onSaveRolePermission) {
+        await onSaveRolePermission(permissionModalRole.role, {
+          permissions: permissionDraft,
+          modules: permissionModalRole.modules || ['dashboard'],
+          newRoleName: permissionModalRole.name || permissionModalRole.role
+        });
+      }
+      setPermissionModalRole(null);
+    } finally {
+      setIsSavingPermissions(false);
+    }
+  };
 
   const clearError = (field: string) => {
     setFormErrors((prev) => ({ ...prev, [field]: '' }));
@@ -265,21 +352,49 @@ export function MastersTab({
     else if (type === 'vendor' && onDeleteVendor) onDeleteVendor(id);
     else if (type === 'project' && onDeleteProject) onDeleteProject(id);
     else if (type === 'user' && onDeleteUser) onDeleteUser(id);
-    else if (type === 'role' && onDeleteRole) onDeleteRole(id);
+    else if (type === 'role') {
+      if (onDeleteRolePermission) onDeleteRolePermission(id);
+      else if (onDeleteRole) onDeleteRole(id);
+    }
     setDeleteModalState(prev => ({ ...prev, isOpen: false }));
   };
 
-  const availableRolesList = (roles && roles.length > 0)
-    ? roles
-    : DEFAULT_SYSTEM_ROLES.map(r => ({
-      id: r.role,
-      role: r.role,
-      name: r.role,
-      description: r.description,
+  // Combine roles from rolePermissions & roles props with default fallback
+  const sourceRoles = (rolePermissions && rolePermissions.length > 0) ? rolePermissions : roles;
+
+  const allRolesMap = new Map<string, RolePermission & { isSystemRole?: boolean }>();
+
+  FIXED_SYSTEM_ROLES.forEach(fixed => {
+    allRolesMap.set(fixed.role.toLowerCase(), {
+      id: fixed.role,
+      role: fixed.role,
+      name: fixed.role,
+      description: fixed.description,
       isSystemRole: true,
-      status: 'Active' as const,
-      modules: []
-    }));
+      status: 'Active',
+      modules: [],
+      permissions: {}
+    });
+  });
+
+  (sourceRoles || []).forEach(rp => {
+    const key = (rp.role || '').toLowerCase();
+    if (!key) return;
+    const existing = allRolesMap.get(key);
+    allRolesMap.set(key, {
+      ...existing,
+      ...rp,
+      id: rp.id || (rp as any)._id || existing?.id || key,
+      role: rp.role || existing?.role || key,
+      name: rp.name || rp.role || existing?.name || key,
+      modules: rp.modules || existing?.modules || [],
+      permissions: rp.permissions || existing?.permissions || {},
+      isSystemRole: rp.isSystemRole ?? existing?.isSystemRole ?? false,
+      status: rp.status || existing?.status || 'Active'
+    });
+  });
+
+  const availableRolesList = Array.from(allRolesMap.values());
 
   return (
     <div className="space-y-6">
@@ -583,14 +698,18 @@ export function MastersTab({
 
       {subTab === 'roles' && (
         <Table
-          headers={['Role Name', 'Role Type', 'Status', 'Actions']}
+          headers={['Role Name', 'Role Type', 'Capability Status', 'Status', 'Actions']}
           data={availableRolesList}
           itemsPerPage={10}
           emptyMessage="No roles created yet."
           renderRow={(r, idx) => {
-            const isSystem = r.isSystemRole || ['admin', 'requester', 'approver', 'purchase', 'store', 'accounts', 'management'].includes(r.role?.toLowerCase());
+            const isSystem = r.isSystemRole || FIXED_SYSTEM_ROLES.some(f => f.role.toLowerCase() === r.role?.toLowerCase());
             const isAdmin = r.role?.toLowerCase() === 'admin';
-            const roleKey = r.id || r._id || `${r.role}-${idx}`;
+            const roleKey = r.id || (r as any)._id || `${r.role}-${idx}`;
+
+            const permCount = Object.values(r.permissions || {}).reduce((acc: number, cap: any) => {
+              return acc + (cap?.viewGlobal ? 1 : 0) + (cap?.viewOwn ? 1 : 0) + (cap?.create ? 1 : 0) + (cap?.update ? 1 : 0) + (cap?.delete ? 1 : 0);
+            }, 0);
 
             return (
               <tr key={roleKey} className="hover:bg-slate-50 transition-colors">
@@ -600,6 +719,16 @@ export function MastersTab({
                       <Shield className="w-3.5 h-3.5" />
                     </span>
                     <span className="font-bold text-slate-900">{r.name || r.role}</span>
+                    {isAdmin && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        Superuser
+                      </span>
+                    )}
+                    {!isSystem && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Custom
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -614,6 +743,19 @@ export function MastersTab({
                   )}
                 </td>
                 <td className="px-4 py-3">
+                  {isAdmin ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5" />
+                      Full Access Superuser
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 mr-1.5" />
+                      {permCount} Capabilities Enabled
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${r.status !== 'Inactive' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70' : 'bg-rose-50 text-rose-700 border border-rose-200/70'
                     }`}>
                     {r.status || 'Active'}
@@ -623,16 +765,25 @@ export function MastersTab({
                   <div className="inline-flex items-center space-x-1.5 justify-end">
                     <button
                       type="button"
+                      onClick={() => handleOpenPermissionModal(r)}
+                      className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs shadow-blue-600/20"
+                      title="Configure Permissions"
+                    >
+                      <Shield className="h-3.5 w-3.5" />
+                      <span>Permissions</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleOpenEdit(r)}
-                      className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
-                      title="Edit Role"
+                      className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer shadow-2xs"
+                      title="Edit Role Details"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
-                    {!isAdmin && (
+                    {!isAdmin && !isSystem && (
                       <button
                         type="button"
-                        onClick={() => handleTriggerDelete(roleKey, r.name || r.role, 'role')}
+                        onClick={() => handleTriggerDelete(r.role, r.name || r.role, 'role')}
                         className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
                         title="Delete Role"
                       >
@@ -1046,7 +1197,7 @@ export function MastersTab({
             )}
 
             {subTab === 'roles' && (
-              <form noValidate onSubmit={(e) => {
+              <form noValidate onSubmit={async (e) => {
                 e.preventDefault();
                 const errors: Record<string, string> = {};
                 if (!roleForm.role?.trim()) errors.role = 'Role code is required';
@@ -1057,19 +1208,49 @@ export function MastersTab({
                   return;
                 }
 
+                const cleanRole = roleForm.role.trim().replace(/\s+/g, '');
+                const cleanName = roleForm.name.trim() || cleanRole;
+
                 const payload = {
-                  role: roleForm.role.trim(),
-                  name: roleForm.name.trim() || roleForm.role.trim(),
-                  status: roleForm.status
+                  role: cleanRole,
+                  name: cleanName,
+                  status: roleForm.status,
+                  isSystemRole: false
                 };
 
                 if (editingId && onEditRole) {
-                  onEditRole(editingId, payload);
+                  await onEditRole(editingId, payload);
+                  setShowModal(false);
                 } else if (onAddRole) {
-                  onAddRole(payload);
+                  const initialPerms: Record<string, ActionCapability> = {};
+                  PERMISSION_FEATURES.forEach(f => {
+                    initialPerms[f] = { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
+                  });
+
+                  await onAddRole({ ...payload, permissions: initialPerms, modules: ['dashboard'] });
+                  setShowModal(false);
+
+                  // Immediately open Permission Configuration Modal for this newly created role!
+                  handleOpenPermissionModal({
+                    id: cleanRole,
+                    role: cleanRole,
+                    name: cleanName,
+                    permissions: initialPerms,
+                    modules: ['dashboard'],
+                    status: roleForm.status,
+                    isSystemRole: false
+                  });
                 }
-                setShowModal(false);
-              }} className="space-y-3">
+              }} className="space-y-3.5">
+                <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-100 flex items-start space-x-2 text-xs text-blue-900">
+                  <Shield className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                  <span>
+                    {editingId
+                      ? 'Update role details below. You can also configure its permission capabilities directly.'
+                      : 'After entering role details, click "Save & Configure Permissions" to directly set granular action capabilities for this role.'}
+                  </span>
+                </div>
+
                 <Input
                   label="Role Code / Identifier"
                   value={roleForm.role}
@@ -1103,9 +1284,29 @@ export function MastersTab({
                   value={roleForm.status}
                   onChange={e => setRoleForm({ ...roleForm, status: e.target.value as any })}
                 />
-                <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-100">
                   <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-                  <Button variant="primary" type="submit">{editingId ? 'Update Role' : 'Save Role'}</Button>
+                  {editingId && (
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() => {
+                        const targetRole = availableRolesList.find(r => r.role === roleForm.role || r.id === editingId);
+                        if (targetRole) {
+                          setShowModal(false);
+                          handleOpenPermissionModal(targetRole);
+                        }
+                      }}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      <Shield className="w-3.5 h-3.5 mr-1 text-blue-600" />
+                      Configure Permissions
+                    </Button>
+                  )}
+                  <Button variant="primary" type="submit">
+                    <Shield className="w-3.5 h-3.5 mr-1" />
+                    {editingId ? 'Update Role' : 'Save & Configure Permissions'}
+                  </Button>
                 </div>
               </form>
             )}
@@ -1158,6 +1359,214 @@ export function MastersTab({
         title={`Delete ${getSubTabLabel(deleteModalState.type)}`}
         itemName={deleteModalState.name}
       />
+
+      {/* Granular Permission Matrix Modal */}
+      {permissionModalRole && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172C]/70 backdrop-blur-xs animate-backdrop-fade">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full flex flex-col max-h-[90vh] overflow-hidden animate-modal-zoom">
+            {/* Modal Header */}
+            <div className="bg-white p-4 sm:px-6 sm:py-4 flex items-center justify-between flex-shrink-0 border-b border-slate-100">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs flex-shrink-0">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold tracking-tight text-[#0F172C] flex items-center space-x-2">
+                    <span>Manage Role Permissions:</span>
+                    <span className="text-blue-600 font-extrabold">{permissionModalRole.name || permissionModalRole.role}</span>
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Toggle checkboxes to enable or restrict specific features &amp; action capabilities</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPermissionModalRole(null)}
+                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form noValidate onSubmit={handleSavePermissions} className="flex-1 flex flex-col overflow-hidden">
+              <div className="p-3.5 sm:p-6 space-y-4 overflow-y-auto flex-1 bg-slate-50/50">
+                {/* Role Header Info */}
+                <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Target Role</span>
+                    <h4 className="text-sm font-extrabold text-[#0F172C] mt-0.5">{permissionModalRole.name || permissionModalRole.role}</h4>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      disabled={permissionModalRole.role?.toLowerCase() === 'admin'}
+                      onClick={() => {
+                        const newPerms: Record<string, ActionCapability> = {};
+                        PERMISSION_FEATURES.forEach(f => {
+                          newPerms[f] = { viewGlobal: true, viewOwn: true, create: true, update: true, delete: true };
+                        });
+                        setPermissionDraft(newPerms);
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      Grant All
+                    </button>
+                    <button
+                      type="button"
+                      disabled={permissionModalRole.role?.toLowerCase() === 'admin'}
+                      onClick={() => {
+                        const newPerms: Record<string, ActionCapability> = {};
+                        PERMISSION_FEATURES.forEach(f => {
+                          newPerms[f] = { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
+                        });
+                        setPermissionDraft(newPerms);
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+
+                {/* Permissions Grid Table */}
+                <div className="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-xs">
+                  {permissionModalRole.role?.toLowerCase() === 'admin' && (
+                    <div className="bg-blue-50/80 border-b border-blue-100 px-4 py-3 flex items-center justify-between text-xs text-blue-900 font-medium">
+                      <span className="flex items-center space-x-2.5">
+                        <Shield className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        <span><strong>Admin Superuser:</strong> All permissions are permanently enabled by default.</span>
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-md bg-blue-200/80 text-blue-900 font-extrabold text-[10px] tracking-wide">LOCKED</span>
+                    </div>
+                  )}
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[500px] text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[11px]">
+                          <th className="px-5 py-3 w-1/3">Feature / Module</th>
+                          <th className="px-5 py-3">Granted Action Capabilities</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {PERMISSION_FEATURES.map((feature) => {
+                          const cap = permissionDraft[feature] || { viewGlobal: false, viewOwn: false, create: false, update: false, delete: false };
+                          const isReportOnly = feature === 'Reports';
+                          const isAdminRole = permissionModalRole.role?.toLowerCase() === 'admin';
+
+                          return (
+                            <tr key={feature} className="hover:bg-blue-50/25 transition-colors">
+                              <td className="px-5 py-3 font-semibold text-slate-800 text-xs">
+                                <span className="inline-block px-3 py-1 rounded-lg bg-slate-100 text-[#0F172C] font-bold text-xs border border-slate-200/70">
+                                  {feature}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3">
+                                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                                  {/* View Global */}
+                                  <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
+                                    <input
+                                      type="checkbox"
+                                      disabled={isAdminRole}
+                                      checked={!!cap.viewGlobal}
+                                      onChange={() => togglePermissionCapability(feature, 'viewGlobal')}
+                                      className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                                    />
+                                    <span className={cap.viewGlobal ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>View (Global)</span>
+                                  </label>
+
+                                  {/* View Own */}
+                                  {!isReportOnly && (
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
+                                      <input
+                                        type="checkbox"
+                                        disabled={isAdminRole}
+                                        checked={!!cap.viewOwn}
+                                        onChange={() => togglePermissionCapability(feature, 'viewOwn')}
+                                        className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                                      />
+                                      <span className={cap.viewOwn ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>View (Own)</span>
+                                    </label>
+                                  )}
+
+                                  {/* Create */}
+                                  {!isReportOnly && (
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
+                                      <input
+                                        type="checkbox"
+                                        disabled={isAdminRole}
+                                        checked={!!cap.create}
+                                        onChange={() => togglePermissionCapability(feature, 'create')}
+                                        className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                                      />
+                                      <span className={cap.create ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>Create</span>
+                                    </label>
+                                  )}
+
+                                  {/* Update */}
+                                  {!isReportOnly && (
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
+                                      <input
+                                        type="checkbox"
+                                        disabled={isAdminRole}
+                                        checked={!!cap.update}
+                                        onChange={() => togglePermissionCapability(feature, 'update')}
+                                        className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                                      />
+                                      <span className={cap.update ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>Update</span>
+                                    </label>
+                                  )}
+
+                                  {/* Delete */}
+                                  {!isReportOnly && (
+                                    <label className={`inline-flex items-center space-x-1.5 select-none text-xs ${isAdminRole ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:text-[#0F172C]'}`}>
+                                      <input
+                                        type="checkbox"
+                                        disabled={isAdminRole}
+                                        checked={!!cap.delete}
+                                        onChange={() => togglePermissionCapability(feature, 'delete')}
+                                        className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-0 cursor-pointer disabled:cursor-not-allowed"
+                                      />
+                                      <span className={cap.delete ? 'font-bold text-[#0F172C]' : 'text-slate-500'}>Delete</span>
+                                    </label>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-white px-4 sm:px-6 py-3.5 border-t border-slate-200/80 flex items-center justify-between flex-shrink-0">
+                <span className="text-[11px] text-slate-500 font-medium">Changes affect users assigned this role immediately.</span>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={() => setPermissionModalRole(null)}
+                    disabled={isSavingPermissions}
+                  >
+                    Cancel
+                  </Button>
+                  {permissionModalRole.role?.toLowerCase() !== 'admin' && (
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      disabled={isSavingPermissions}
+                    >
+                      {isSavingPermissions ? 'Saving...' : 'Save Permissions'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
