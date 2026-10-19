@@ -99,12 +99,21 @@ export default function LoginPage() {
         throw new Error('Invalid authentication response from server');
       }
     } catch (apiErr: any) {
-      const serverMsg = apiErr?.message || apiErr?.data?.message || apiErr?.response?.data?.message;
+      let serverMsg = apiErr?.message || apiErr?.data?.message || apiErr?.response?.data?.message;
       console.warn('[Backend Auth Failed]', serverMsg || apiErr);
 
-      const errorMsg = serverMsg || 'Invalid email or password. Please try again.';
-      setError(errorMsg);
-      toast.error(errorMsg);
+      // Never show "Authentication required" or "token" on login screen
+      if (
+        !serverMsg ||
+        typeof serverMsg !== 'string' ||
+        serverMsg.toLowerCase().includes('token') ||
+        serverMsg.toLowerCase().includes('authentication required')
+      ) {
+        serverMsg = 'Invalid email or password. Please try again.';
+      }
+
+      setError(serverMsg);
+      toast.error(serverMsg);
       setLoading(false);
       return;
     }
