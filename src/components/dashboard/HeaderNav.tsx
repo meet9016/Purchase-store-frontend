@@ -40,7 +40,7 @@ export function HeaderNav({
   simulateRole,
   onToggleMobileMenu
 }: HeaderNavProps) {
-  const FIXED_ROLES = ['Admin', 'Requester', 'Purchase', 'Store', 'Accounts', 'Management'];
+  const FIXED_ROLES = ['Admin'];
   const roles = Array.from(new Set([...FIXED_ROLES, ...rolePermissions.map(rp => rp.role).filter(Boolean)]));
 
   const projectOptions = [

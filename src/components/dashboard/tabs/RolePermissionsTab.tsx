@@ -16,13 +16,7 @@ interface RolePermissionsTabProps {
 
 // Fixed system roles in Purchase Store ERP
 export const FIXED_SYSTEM_ROLES = [
-  { role: 'Admin', description: 'Complete system control, user administration, & full override permissions' },
-  { role: 'Requester', description: 'Site engineer / user raising Purchase Requests (PR) and tracking inventory' },
-  { role: 'Approver', description: 'Authorizer approving/rejecting PRs, POs, and Payment Requests' },
-  { role: 'Purchase', description: 'Procurement team generating POs, managing vendors, and materials' },
-  { role: 'Store', description: 'Storekeeper managing material inward (GRN), inventory, and outward issues' },
-  { role: 'Accounts', description: 'Finance team managing vendor invoices/bills and payment disbursements' },
-  { role: 'Management', description: 'Executive team reviewing audit trails, KPIs, and reports' }
+  { role: 'Admin', description: 'Complete system control, user administration, & full override permissions' }
 ];
 
 export const PERMISSION_FEATURES = [

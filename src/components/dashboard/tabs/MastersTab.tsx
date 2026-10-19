@@ -54,14 +54,7 @@ interface MastersTabProps {
 }
 
 const DEFAULT_SYSTEM_ROLES = [
-  { role: 'Admin', description: 'System Administrator with full system control' },
-  { role: 'Requester', description: 'Site Engineer / Requisitioner' },
-  { role: 'Approver', description: 'Project Manager / Authorizer' },
-  { role: 'PurchaseManager', description: 'Procurement Officer' },
-  { role: 'StoreKeeper', description: 'Inventory & Store Controller' },
-  { role: 'Accounts', description: 'Finance & Invoice Settlement' },
-  { role: 'Auditor', description: 'Read-only compliance & log reviewer' },
-  { role: 'Viewer', description: 'General read-only viewer' }
+  { role: 'Admin', description: 'System Administrator with full system control' }
 ];
 
 export function MastersTab({
@@ -221,7 +214,7 @@ export function MastersTab({
   });
 
   // Forms
-  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'Requester', department: '', active: true, password: '' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'Admin', department: '', active: true, password: '' });
   const [projectForm, setProjectForm] = useState({ name: '', location: '', status: 'Active' as const });
   const [vendorForm, setVendorForm] = useState({
     name: '', contactPerson: '', email: '', phone: '', gstNo: '', panNo: '',
@@ -234,7 +227,7 @@ export function MastersTab({
     status: 'Active' as 'Active' | 'Inactive'
   });
   const [itemForm, setItemForm] = useState({
-    itemCode: '', name: '', categoryId: '', subCategory: '', unit: 'Pcs',
+    itemCode: '', name: '', categoryId: '', subCategory: '', unit: '',
     description: '', minStock: 0, reorderLevel: 0
   });
   const [roleForm, setRoleForm] = useState({
@@ -260,12 +253,12 @@ export function MastersTab({
   const handleOpenAdd = () => {
     setEditingId(null);
     setFormErrors({});
-    setUserForm({ name: '', email: '', role: roles?.[0]?.role || 'Requester', department: '', active: true, password: '' });
+    setUserForm({ name: '', email: '', role: roles?.[0]?.role || 'Admin', department: '', active: true, password: '' });
     setProjectForm({ name: '', location: '', status: 'Active' });
     setVendorForm({ name: '', contactPerson: '', email: '', phone: '', gstNo: '', panNo: '', bankName: '', accountNo: '', ifscCode: '', creditPeriod: 30, address: '' });
     setCategoryForm({ name: '', description: '' });
     setUnitForm({ code: '', name: '', status: 'Active' });
-    setItemForm({ itemCode: '', name: '', categoryId: '', subCategory: '', unit: units?.[0]?.code || 'Pcs', description: '', minStock: 0, reorderLevel: 0 });
+    setItemForm({ itemCode: '', name: '', categoryId: '', subCategory: '', unit: units?.[0]?.code || '', description: '', minStock: 0, reorderLevel: 0 });
     setRoleForm({ role: '', name: '', description: '', status: 'Active' });
     setShowModal(true);
   };
@@ -279,7 +272,7 @@ export function MastersTab({
         name: item.name || '',
         categoryId: item.categoryId || '',
         subCategory: item.subCategory || '',
-        unit: item.unit || 'Pcs',
+        unit: item.unit || '',
         description: item.description || '',
         minStock: item.minStock || 0,
         reorderLevel: item.reorderLevel || 0
@@ -856,21 +849,9 @@ export function MastersTab({
                 <Select
                   label="Unit of Measurement (UOM)"
                   options={
-                    (units && units.length > 0
+                    (units && units.length > 0)
                       ? units.filter(u => u.status !== 'Inactive').map(u => ({ value: u.code, label: `${u.code} - ${u.name}` }))
-                      : [
-                        { value: 'Pcs', label: 'Pcs - Pieces' },
-                        { value: 'MT', label: 'MT - Metric Ton' },
-                        { value: 'Bag', label: 'Bag - Bags' },
-                        { value: 'Kg', label: 'Kg - Kilograms' },
-                        { value: 'Mtrs', label: 'Mtrs - Meters' },
-                        { value: 'Cu.M', label: 'Cu.M - Cubic Meters' },
-                        { value: 'Ltr', label: 'Ltr - Liters' },
-                        { value: 'Box', label: 'Box - Boxes' },
-                        { value: 'Nos', label: 'Nos - Numbers' },
-                        { value: 'SqFt', label: 'SqFt - Square Feet' },
-                        { value: 'Bundle', label: 'Bundle - Bundles' },
-                      ])
+                      : [{ value: '', label: 'No units registered yet (Add in Unit Master first)' }]
                   }
                   value={itemForm.unit}
                   onChange={e => { setItemForm({ ...itemForm, unit: e.target.value }); clearError('unit'); }}
