@@ -976,6 +976,10 @@ export function MastersTab({
                   errors.email = 'Please enter a valid email address';
                 }
 
+                if (!editingId && !userForm.password?.trim()) {
+                  errors.password = 'Password is required';
+                }
+
                 if (Object.keys(errors).length > 0) {
                   setFormErrors(errors);
                   return;
@@ -1010,11 +1014,13 @@ export function MastersTab({
                   required
                 />
                 <Input
-                  label={editingId ? "Reset Password (Optional)" : "Password (Default: 123456)"}
+                  label={editingId ? "Reset Password (Optional)" : "Password"}
                   type="password"
                   value={userForm.password}
-                  onChange={e => setUserForm({ ...userForm, password: e.target.value })}
+                  onChange={e => { setUserForm({ ...userForm, password: e.target.value }); clearError('password'); }}
                   placeholder={editingId ? "Leave blank to keep existing, or enter new password" : "Enter account password"}
+                  error={formErrors.password}
+                  required={!editingId}
                 />
                 <Select
                   label="Assign Role (Dynamic Role Master)"

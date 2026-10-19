@@ -19,13 +19,6 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-const DEMO_ROLES = [
-  { role: 'Admin', email: 'admin@gmail.com', pass: '123456', desc: 'Full System Access' },
-  { role: 'Purchase', email: 'purchase@gmail.com', pass: '123456', desc: 'PO & Vendor Lead' },
-  { role: 'Store', email: 'store@gmail.com', pass: '123456', desc: 'GRN & Stock Inward' },
-  { role: 'Accounts', email: 'accounts@gmail.com', pass: '123456', desc: 'Bills & Disbursements' },
-  { role: 'Approver', email: 'approver@gmail.com', pass: '123456', desc: 'PR/PO Authorization' }
-];
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 

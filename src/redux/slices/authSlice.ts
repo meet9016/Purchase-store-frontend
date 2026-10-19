@@ -8,42 +8,33 @@ interface AuthState {
   activeRole: string;
 }
 
-const getInitialUser = (): User => {
+const getInitialAuthState = (): AuthState => {
   if (typeof window !== 'undefined') {
-    const active = localStorage.getItem('active_user') || localStorage.getItem('purchase_user');
-    if (active) {
+    const token = localStorage.getItem('auth_token');
+    const active = localStorage.getItem('active_user');
+
+    if (token && token !== 'null' && token !== 'undefined' && !token.startsWith('local_') && active) {
       try {
-        return JSON.parse(active);
+        const user = JSON.parse(active);
+        return {
+          currentUser: user,
+          token,
+          isAuthenticated: true,
+          activeRole: user.role || 'Admin',
+        };
       } catch (e) {}
     }
-    const db = getDatabase();
-    if (db.users && db.users.length > 0) return db.users[0];
   }
+
   return {
-    id: 'usr-admin',
-    name: 'Alok Sharma',
-    email: 'admin@gmail.com',
-    role: 'Admin',
-    department: 'IT / Operations',
-    active: true
+    currentUser: null,
+    token: null,
+    isAuthenticated: false,
+    activeRole: 'Admin',
   };
 };
 
-const initialUser: User = {
-  id: 'usr-admin',
-  name: 'Alok Sharma',
-  email: 'admin@gmail.com',
-  role: 'Admin',
-  department: 'IT / Operations',
-  active: true
-};
-
-const initialState: AuthState = {
-  currentUser: initialUser,
-  token: null,
-  isAuthenticated: !!initialUser,
-  activeRole: initialUser.role,
-};
+const initialState: AuthState = getInitialAuthState();
 
 export const authSlice = createSlice({
   name: 'auth',

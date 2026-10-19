@@ -985,7 +985,7 @@ export default function DashboardPage() {
               currentUser={currentUser}
               rolePermissions={db.rolePermissions}
               onAddUser={async (u: any) => {
-                const newUser = { id: `usr-${Date.now()}`, ...u, password: u.password || '123456', email: u.email.toLowerCase().trim() };
+                const newUser = { id: `usr-${Date.now()}`, ...u, password: u.password, email: u.email.toLowerCase().trim() };
                 try {
                   await usersApi.create(newUser);
                   await fetchTabData('masters');

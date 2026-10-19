@@ -49,7 +49,7 @@ export interface QueryParams {
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 export const authApi = {
-  login: async (email: string, password: string = '123456') => {
+  login: async (email: string, password: string) => {
     const res = await axiosClient.post<ApiResponseEnvelope<{ token: string; user: User }>>('/auth/login', {
       email,
       password,
