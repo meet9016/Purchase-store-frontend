@@ -240,10 +240,19 @@ export default function DashboardPage() {
           setDb(prev => ({ ...prev, grns: deduplicateById(res.data) }));
         }
       } else if (tab === 'stock') {
-        const res = await stockApi.getAll();
-        if ((res?.status === 200 || res?.status === 'success') && Array.isArray(res.data)) {
-          setDb(prev => ({ ...prev, stock: deduplicateById(res.data) }));
-        }
+        const [stockRes, itemsRes, projectsRes, catsRes] = await Promise.all([
+          stockApi.getAll(),
+          itemsApi.getAll().catch(() => null),
+          projectsApi.getAll().catch(() => null),
+          categoriesApi.getAll().catch(() => null)
+        ]);
+        setDb(prev => ({
+          ...prev,
+          stock: (stockRes?.status === 200 || stockRes?.status === 'success') && Array.isArray(stockRes.data) ? deduplicateById(stockRes.data) : prev.stock,
+          items: itemsRes?.data && Array.isArray(itemsRes.data) ? deduplicateById(itemsRes.data) : prev.items,
+          projects: projectsRes?.data && Array.isArray(projectsRes.data) ? deduplicateById(projectsRes.data) : prev.projects,
+          categories: catsRes?.data && Array.isArray(catsRes.data) ? deduplicateById(catsRes.data) : prev.categories
+        }));
       } else if (tab === 'outward') {
         const [outRes, stockRes] = await Promise.all([
           outwardsApi.getAll(),
