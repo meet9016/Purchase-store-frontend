@@ -176,7 +176,7 @@ export function Select({
     opt.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const paddingY = size === 'sm' ? 'py-1.5 px-2.5 text-xs' : 'py-2 px-3 text-sm';
+  const paddingY = size === 'sm' ? 'py-1.5 px-3 text-xs' : 'py-2 px-3.5 text-sm';
 
   return (
     <div className="w-full relative flex flex-col" ref={containerRef}>
@@ -191,22 +191,22 @@ export function Select({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`w-full flex items-center justify-between rounded-xl bg-slate-50 border ${
+        className={`w-full flex items-center justify-between rounded-xl bg-white border ${
           error
             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/20'
             : isOpen
               ? 'border-blue-600 ring-2 ring-blue-600/10 bg-white'
-              : 'border-slate-200 hover:border-slate-300 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 focus:bg-white'
-        } text-slate-900 font-semibold focus:outline-none transition-all text-left cursor-pointer shadow-xs disabled:opacity-60 disabled:cursor-not-allowed ${paddingY} ${className}`}
+              : 'border-slate-200/90 hover:border-slate-300 focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600'
+        } text-slate-800 font-semibold focus:outline-none transition-all text-left cursor-pointer shadow-2xs hover:bg-slate-50/60 disabled:opacity-60 disabled:cursor-not-allowed ${paddingY} ${className}`}
       >
         <div className="flex items-center space-x-2 truncate min-w-0 flex-1">
-          {icon && <span className="text-blue-600 flex-shrink-0">{icon}</span>}
+          {icon && <span className="flex-shrink-0 text-slate-500">{icon}</span>}
           {selectedOption?.icon && <span className="flex-shrink-0">{selectedOption.icon}</span>}
-          <span className={`truncate ${!selectedOption ? 'text-slate-400 font-normal' : 'text-[#0F172C] font-semibold'}`}>
+          <span className={`truncate text-xs ${!selectedOption ? 'text-slate-400 font-normal' : 'text-slate-800 font-semibold'}`}>
             {displayLabel}
           </span>
         </div>
-        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 flex-shrink-0 ml-1.5 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
+        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 flex-shrink-0 ml-1.5 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
       </button>
 
       {/* Render outside of dialog into document.body with React Portal */}
