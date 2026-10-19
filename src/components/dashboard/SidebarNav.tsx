@@ -77,12 +77,6 @@ export function SidebarNav({
 
   const DEFAULT_ROLE_MODULES: Record<string, SidebarTab[]> = {
     Admin: ['dashboard', 'masters', 'pr', 'po', 'grn', 'stock', 'outward', 'bills', 'payment-req', 'payments', 'reports', 'audit', 'notifications', 'permissions'],
-    Purchase: ['dashboard', 'masters', 'pr', 'po', 'grn', 'reports', 'notifications'],
-    Store: ['dashboard', 'grn', 'stock', 'outward', 'reports', 'notifications'],
-    Accounts: ['dashboard', 'bills', 'payment-req', 'payments', 'reports', 'notifications'],
-    Approver: ['dashboard', 'pr', 'po', 'payment-req', 'reports', 'notifications'],
-    Requester: ['dashboard', 'pr', 'stock', 'reports', 'notifications'],
-    Management: ['dashboard', 'reports', 'audit', 'notifications'],
   };
 
   const isTabVisible = (tabId: SidebarTab): boolean => {

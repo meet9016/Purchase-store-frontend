@@ -16,13 +16,7 @@ interface RolePermissionsTabProps {
 
 // Fixed system roles in Purchase Store ERP
 export const FIXED_SYSTEM_ROLES = [
-  { role: 'Admin', description: 'Complete system control, user administration, & full override permissions' },
-  { role: 'Requester', description: 'Site engineer / user raising Purchase Requests (PR) and tracking inventory' },
-  { role: 'Approver', description: 'Authorizer approving/rejecting PRs, POs, and Payment Requests' },
-  { role: 'Purchase', description: 'Procurement team generating POs, managing vendors, and materials' },
-  { role: 'Store', description: 'Storekeeper managing material inward (GRN), inventory, and outward issues' },
-  { role: 'Accounts', description: 'Finance team managing vendor invoices/bills and payment disbursements' },
-  { role: 'Management', description: 'Executive team reviewing audit trails, KPIs, and reports' }
+  { role: 'Admin', description: 'Complete system control, user administration, & full override permissions' }
 ];
 
 export const PERMISSION_FEATURES = [
@@ -192,6 +186,17 @@ export function RolePermissionsTab({
     });
 
     setShowAddRoleModal(false);
+
+    // Automatically open the configure permissions modal for this new role!
+    handleOpenEdit({
+      role: normalizedRole,
+      name: newRoleForm.name.trim(),
+      description: '',
+      modules: ['dashboard'],
+      permissions: initialPerms,
+      isSystemRole: false
+    } as any);
+
     setNewRoleForm({ role: '', name: '' });
     setAddRoleErrors({});
   };
@@ -260,7 +265,7 @@ export function RolePermissionsTab({
                 <div className="flex items-center space-x-2">
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5" />
-                    {permCount} Capabilities Enabled
+                    {rp.role === 'Admin' ? 'Superuser (Full Access)' : `${permCount} Capabilities Enabled`}
                   </span>
                 </div>
               </td>
@@ -311,6 +316,13 @@ export function RolePermissionsTab({
               </button>
             </div>
 
+            <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-100 flex items-start space-x-2 text-xs text-blue-900">
+              <Shield className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <span>
+                Enter the role identifier and display name. Click &quot;Save &amp; Configure Permissions&quot; to immediately set its capabilities.
+              </span>
+            </div>
+
             <form noValidate onSubmit={handleCreateNewRole} className="space-y-3.5">
               <Input
                 label="Role Code / Identifier"
@@ -345,7 +357,8 @@ export function RolePermissionsTab({
                   Cancel
                 </Button>
                 <Button variant="primary" type="submit">
-                  Save Role
+                  <Shield className="w-3.5 h-3.5 mr-1" />
+                  Save & Configure Permissions
                 </Button>
               </div>
             </form>

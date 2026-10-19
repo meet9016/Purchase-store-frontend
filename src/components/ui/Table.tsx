@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, Check, Inbox } from 'lucide-react';
 
 interface TableProps<T> {
   headers: string[];
@@ -90,12 +90,15 @@ export function Table<T>({
           <tbody className="divide-y divide-slate-200/90 text-slate-800 text-[13px] font-medium">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={headers.length} className="px-6 py-12 text-center bg-white">
-                  <div className="flex flex-col items-center justify-center space-y-1.5">
-                    <span className="text-sm font-semibold text-slate-700">
+                <td colSpan={headers.length} className="px-6 py-14 text-center bg-white">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-400 mb-2.5 shadow-2xs">
+                      <Inbox className="h-6 w-6 stroke-[1.5]" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-800">
                       {emptyMessage || 'No records found'}
                     </span>
-                    <span className="text-xs text-slate-500">Try adjusting your search or filters</span>
+                    <span className="text-xs text-slate-500 font-medium mt-0.5">Try adjusting your search or filters</span>
                   </div>
                 </td>
               </tr>

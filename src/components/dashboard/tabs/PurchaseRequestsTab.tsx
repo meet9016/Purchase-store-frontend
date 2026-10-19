@@ -5,7 +5,7 @@ import { PurchaseRequest, Project, Item, User } from '@/lib/storeData';
 import { Table } from '@/components/ui/Table';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { Plus, Eye, CheckCircle2, XCircle, FileSpreadsheet } from 'lucide-react';
+import { Plus, Eye, CheckCircle2, XCircle, FileSpreadsheet, Filter } from 'lucide-react';
 
 interface PurchaseRequestsTabProps {
   purchaseRequests: PurchaseRequest[];
@@ -66,8 +66,8 @@ export function PurchaseRequestsTab({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-          <div className="flex-1 sm:flex-none sm:w-[160px]">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-end">
+          <div className="w-full sm:w-[145px] shrink-0">
             <Select
               options={[
                 { value: '', label: 'All Statuses' },
@@ -78,6 +78,7 @@ export function PurchaseRequestsTab({
               ]}
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
+              icon={<Filter className="h-3.5 w-3.5 text-slate-500" />}
               size="sm"
             />
           </div>
@@ -87,7 +88,7 @@ export function PurchaseRequestsTab({
               variant="primary"
               icon={<Plus className="h-4 w-4" />}
               onClick={onOpenCreatePRModal}
-              className="w-full sm:w-auto justify-center shrink-0"
+              className="w-full sm:w-auto justify-center shrink-0 whitespace-nowrap"
               size="sm"
             >
               Create New PR
